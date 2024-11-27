@@ -5,7 +5,7 @@ import Sidebar from './partials/sidebar'
 function Dashboard() {
   return (
   <>
-    <Sidebar/>
+    <Sidebar activeSection={'Dashboard'}/>
   </>
   )
 }

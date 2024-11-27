@@ -16,13 +16,13 @@ const Sidebar = ({activeSection}) => {
     {       
       title: "Dashboard",       
       icon: LayoutDashboard,       
-      href: "#",       
+      href: "/admin/dashboard",       
       isActive: activeSection === "Dashboard"     
     },     
     {       
       title: "Instructors",       
       icon: Users,       
-      href: "#",
+      href: "/admin/manage-tutor",
       isActive: activeSection === "Instructors"     
     },     
     {       

@@ -8,6 +8,9 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const path = require('path');
+const fs = require('fs');
+const axios = require('axios');
+const fsp = fs.promises; // For promise-based methods
 const { mailSender } = require('../utils/nodeMailer');
 const generateAccessToken = require('../utils/genarateAccesTocken');
 const generateRefreshToken = require("../utils/genarateRefreshTocken");
@@ -164,7 +167,7 @@ const getTutors = async(req,res)=>{
     // Build query
     let query = {};
     if (status !== undefined) {
-      query.status = status === 'true';
+      query.status = status === 'active';
     }
     if (search) {
       query.$or = [
@@ -320,46 +323,110 @@ const getInstructorApplications= async(req,res)=>{
   
 }
 
-const reviewInstructorApplication = async (req, res) => { 
-  const session = await mongoose.startSession();
+const getCertificates = async (req, res) => {
   try {
-    session.startTransaction();
+    const { certificateId } = req.params;
 
+    console.log('Requested Certificate ID:', certificateId); // Add detailed logging
+
+    // Find the application containing the certificate
+    const application = await InstructorApplication.findOne({
+      'credentials._id': new mongoose.Types.ObjectId(certificateId),
+    });
+
+    if (!application) {
+      console.error('No application found for certificateId:', certificateId);
+      return res.status(404).json({
+        success: false,
+        message: 'Certificate not found',
+      });
+    }
+
+    // Find the specific certificate
+    const certificate = application.credentials.find(
+      (cert) => cert._id.toString() === certificateId
+    );
+
+    if (!certificate) {
+      console.error('No certificate found in application:', certificateId);
+      return res.status(404).json({
+        success: false,
+        message: 'Specific certificate not found',
+      });
+    }
+
+    // Construct full file path
+    const filePath = path.resolve(certificate.certificate);
+    console.log('Resolved File Path:', filePath);
+
+    // Use fs.promises.access for file existence check
+    try {
+      await fsp.access(filePath);
+    } catch (accessError) {
+      console.error('File access error:', accessError);
+      return res.status(404).json({
+        success: false,
+        message: 'Certificate file not accessible',
+        error: accessError.message,
+      });
+    }
+
+    // Get file stats
+    const stats = await fsp.stat(filePath);
+    const fileExtension = path.extname(filePath).toLowerCase().slice(1);
+
+    res.set({
+      'Content-Type': `image/${fileExtension}`,
+      'Content-Length': stats.size,
+      'Cache-Control': 'public, max-age=86400',
+    });
+
+    // Stream the file for efficiency
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+
+    fileStream.on('error', (streamError) => {
+      console.error('Error while streaming the file:', streamError);
+      res.status(500).json({
+        success: false,
+        message: 'Error streaming the file',
+      });
+    });
+  } catch (error) {
+    console.error('Certificate Fetch Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving certificate',
+      error: error.message,
+    });
+  }
+};
+
+const reviewInstructorApplication = async (req, res) => {
+  try {
     const { id } = req.params;
-    const { 
-      status, 
-      reviewNotes, 
-      adminId 
-    } = req.body;
+    const { status } = req.body;
 
     // Validate status
     if (!['approved', 'rejected'].includes(status)) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid status' 
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status'
       });
     }
 
-    // Find and update application
+    // Find application
     const application = await InstructorApplication.findById(id);
     if (!application) {
-      await session.abortTransaction();
-      session.endSession();
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Application not found' 
+      return res.status(404).json({
+        success: false,
+        message: 'Application not found'
       });
     }
 
-    // Update application status
-    application.status = status;
-    application.reviewedBy = adminId;
-    application.reviewNotes = reviewNotes || '';
-
-    // If approved, create tutor
+    // Process based on status
     if (status === 'approved') {
+      // Create new tutor
       const newTutor = new Tutor({
         fullName: application.fullName,
         email: application.email,
@@ -368,17 +435,19 @@ const reviewInstructorApplication = async (req, res) => {
           certificate: cred.certificate,
           experience: cred.description
         })),
-        // Optional: You might want to add more fields or defaults
+        status: 'active'
       });
 
-      await newTutor.save({ session });
+      // Save new tutor
+      await newTutor.save();
+
+      // Delete the application after creating tutor
+      await InstructorApplication.findByIdAndDelete(id);
+    } 
+    else if (status === 'rejected') {
+      // Simply delete the application if rejected
+      await InstructorApplication.findByIdAndDelete(id);
     }
-
-    // Save updated application
-    await application.save({ session });
-
-    await session.commitTransaction();
-    session.endSession();
 
     res.json({
       success: true,
@@ -386,16 +455,64 @@ const reviewInstructorApplication = async (req, res) => {
       applicationId: id
     });
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
     console.error('Review Application Error:', error);
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: 'Error reviewing application',
-      error: error.message 
+      error: error.message
     });
   }
 };
+
+const approveTutor= async(req,res)=>{
+  try {
+    const { applicationId } = req.params;
+    const {status} = req.body
+
+    // Find the application by ID and update its status
+    const updatedApplication = await InstructorApplication.findByIdAndUpdate(
+      applicationId, 
+      { 
+        status: status, 
+        updatedAt: new Date() 
+      }, 
+      { new: true } // Returns the updated document
+    );
+
+    // Check if application exists
+    if (!updatedApplication) {
+      return res.status(404).json({
+        success: false,
+        message: 'Tutor application not found'
+      });
+    }
+
+    try {
+      const result = await axios.put(
+        `http://localhost:3000/admin/instructor-applications/${applicationId}/review`, 
+        { status } // Send status in request body
+      );
+    } catch(err) {
+      console.log("Error in application review", err.response?.data || err.message);
+    }
+
+    
+
+    // Respond with success message and updated application
+    res.status(200).json({
+      success: true,
+      message: 'Tutor application approved successfully',
+      data: updatedApplication
+    });
+  } catch (error) {
+    console.error('Error approving tutor application:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+}
 
 const listUser = async(req, res) => {
   try {
@@ -459,92 +576,7 @@ const unlisTtutor = async(req, res) => {
   }
 };
 
-const addCategory = async (req, res) => {
-  const { title, description } = req.body;
 
-  if (!title || !description) {
-    return res.status(400).json({ message: "Title and description are required" });
-  }
-
-  try {
-    const category = new Category({ title, description });
-    await category.save();
-    res.status(201).json({ message: "Category created successfully", category });
-  } catch (error) {
-    console.error("Error creating category:", error);
-    res.status(500).json({ message: "Failed to create category" });
-  }
-};
-
-const getCategories = async (req, res) => {
-  try {
-    const categories = await Category.find();
-    console.log("This is the category request coming ", categories);
-    return res.status(200).json(categories);
-  } catch (error) {
-    console.error("Error fetching categories:", error);
-    res.status(500).json({ message: "Failed to fetch categories" });
-  }                             
-};
-
-const updateCategory = async (req, res) => {
-  const { id } = req.params;
-  const { title, description } = req.body;
-
-  try {
-    const category = await Category.findByIdAndUpdate(id, { title, description }, { new: true });
-    if (!category) {
-      return res.status(404).json({ message: "Category not found" });
-    }
-    res.status(200).json({ message: "Category updated successfully", category });
-  } catch (error) {
-    console.error("Error updating category:", error);
-    res.status(500).json({ message: "Failed to update category" });
-  }
-};
-
-const deleteCategory = async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    const category = await Category.findByIdAndDelete(id);
-    if (!category) {
-      return res.status(404).json({ message: "Category not found" });
-    }
-    res.status(200).json({ message: "Category deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting category:", error);
-    res.status(500).json({ message: "Failed to delete category" });
-  }
-};
-
-const refreshAdminToken = async (req, res) => {
-  try {
-    const refreshToken = req.cookies.refreshToken;
-    if (!refreshToken) {
-      return res.status(401).json({ message: "Refresh token not found" });
-    }
-
-    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
-      if (err) {
-        return res.status(403).json({ message: "Invalid refresh token" });
-      }
-
-      const accessToken = jwt.sign({ id: decoded.id }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' });
-      res.cookie('accessToken', accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'Lax',
-        maxAge: 15 * 60 * 1000, // 15 minutes
-      });
-
-      res.status(200).json({ message: "Token refreshed successfully" });
-    });
-  } catch (error) {
-    console.error("Error refreshing token:", error);
-    res.status(500).json({ message: "Failed to refresh token" });
-  }
-};
 
 module.exports = {
   adminLogin,
@@ -557,13 +589,10 @@ module.exports = {
   unlistUser,
   lisTtutor,
   unlisTtutor,
-  addCategory,
-  getCategories,
-  updateCategory,
-  deleteCategory,
-  refreshAdminToken,
   submitInstructorApplication, 
   getInstructorApplications,
   reviewInstructorApplication,
-  getTutors
+  getTutors,
+  getCertificates,
+  approveTutor
 };
