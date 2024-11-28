@@ -1,5 +1,6 @@
  const express = require("express");
 const User = require("../model/userModel");
+const Tutor = require("../model/tutorModel")
 const bcrypt = require('bcryptjs');
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
@@ -49,57 +50,95 @@ const sendOtp = async (req, res) => {
     }
 };
 
-const securePassword = async (password) => bcrypt.hash(password, 10);
-
 const signUp = async (req, res) => {
-    try {
-        console.log(req.body);
-        const { userName, fullName, password, email, phone } = req.body;  // Updated field names
-        
-        const userExists = await User.findOne({ email });
-        if (userExists) {
-            return res.status(409).json({ message: "User already exists" });
-        }
-        
-        const userId = await generateUniqueUserId();
-        const passwordHash = await securePassword(password);
-        
-        const newUser = await User.create({
-            userName,      
-            fullName,    
-            password: passwordHash,
-            email,
-            phone,
-            role: "student",
-            user_id: userId
-        });
-       
-        res.status(200).json({ message: "User is registered", userData: newUser });
-    } catch (error) {
-        console.error("Error in signUp:", error);
-        res.status(500).json({ message: "Server error", error: error.message });
-    }
+  try {
+      const { userName, fullName, password, email, phone } = req.body;
+      
+      // Check if user exists in BOTH User and Tutor collections
+      const userExists = await User.findOne({ email });
+      const tutorExists = await Tutor.findOne({ email });
+      
+      if (userExists || tutorExists) {
+          return res.status(409).json({ 
+              message: "User already exists", 
+              existsAs: userExists ? "user" : "tutor" 
+          });
+      }
+      
+      const userId = await generateUniqueUserId();
+      const passwordHash = await securePassword(password);
+      
+      const newUser = await User.create({
+          userName,      
+          fullName,    
+          password: passwordHash,
+          email,
+          phone,
+          
+      });
+     
+      res.status(200).json({ 
+          message: "User is registered", 
+          userData: newUser 
+      });
+  } catch (error) {
+      console.error("Error in signUp:", error);
+      res.status(500).json({ 
+          message: "Server error", 
+          error: error.message 
+      });
+  }
 };
 
 const login = async (req, res) => {
-    try {
-        const { email, password } = req.body;
-        const user = await User.findOne({ email });
+  try {
+      const { email, password } = req.body;
 
-        if (!user) return res.status(401).json({ message: "Invalid email or password" });
-        if (user.isActive === false) return res.status(403).json({ message: "Your account is blocked. Contact support." });
+      // Find user or tutor
+      const user = await User.findOne({ email });
+      const tutor = await Tutor.findOne({ email });
 
-        if (await bcrypt.compare(password, user.password)) {
-            genarateAccesTocken(res,user._id)
-            genarateRefreshTocken(res,user._id)
-            res.status(200).json({ message: "Login successful", userData: user });
-        } else {
-            res.status(401).json({ message: "Invalid email or password" });
-        }
-    } catch (error) {
-        console.error("Error in login:", error);
-        res.status(500).json({ message: "Server error" });
-    }
+      console.log("user", user);
+      console.log("tutor", tutor);
+
+      // Check if user or tutor exists
+      if (!user && !tutor) {
+          return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+      // Determine which account to authenticate
+      let accountToAuthenticate = user || tutor;
+
+      // Check if account is blocked
+      if (accountToAuthenticate.isActive === false) {
+          return res.status(403).json({ message: "Your account is blocked. Contact support." });
+      }
+
+      // Compare passwords
+      const isPasswordCorrect = await bcrypt.compare(password, accountToAuthenticate.password);
+
+      if (isPasswordCorrect) {
+          // Determine user type
+          const userType = user ? 'user' : 'tutor';
+
+          // Generate tokens
+          genarateAccesTocken(res, accountToAuthenticate._id);
+          genarateRefreshTocken(res, accountToAuthenticate._id);
+
+          // Send response with user data and type
+          res.status(200).json({
+              message: "Login successful",
+              userData: accountToAuthenticate,
+              userType: userType,
+              redirectUrl: userType === 'user' ? '/' : '/tutor/dashboard'
+          });
+      } else {
+          res.status(401).json({ message: "Invalid email or password" });
+      }
+  } catch (error) {
+      console.error("Error in login:", error);
+      res.status(500).json({ message: "Server error" });
+  }
 };
 
 const googleLogin = async (req, res, next) => {
@@ -232,7 +271,7 @@ const passwordResetTemplate = (resetURL) => {
     };
 };
 
-const generateUniqueUserId = async (prefix = 'skfnty') => {
+const generateUniqueUserId = async (prefix = 'codemy') => {
     const randomNumber = Math.floor(100000 + Math.random() * 900000);
     const userId = `${prefix}${randomNumber}`;
     const exists = await User.findOne({ user_id: userId });

@@ -9,7 +9,7 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import EmailVerify from "./emailVerify";
 import { useDispatch } from 'react-redux';
-import{addUser} from '../../../redux/userSlice'
+import{addUser} from '../../../store/userSlice'
 
 
 export default function Signup() {
@@ -70,6 +70,20 @@ export default function Signup() {
 
     try {
       setIsLoading(true);
+
+       // First, check if email already exists
+    const checkEmailResponse = await axios.post('http://localhost:3000/admin/check-mail', {
+      email: formData.email
+    });
+
+    // If email exists, show error and stop further process
+    if (checkEmailResponse.data.exists) {
+      toast.error('Email already in use. Please use a different email.');
+      setErrors(prev => ({ ...prev, email: 'Email is already registered' }));
+      return;
+    }
+
+
       const response = await axios.post('http://localhost:3000/user/sendotp', {
         email: formData.email
       });

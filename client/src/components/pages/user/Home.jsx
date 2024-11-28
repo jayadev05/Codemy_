@@ -15,7 +15,7 @@ import cat7 from "../../../assets/cat-7.png";
 import cat8 from "../../../assets/cat-8.png";
 import { useNavigate } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
-import { addUser, selectUser, logoutUser } from "../../../redux/userSlice";
+import { addUser, selectUser, logoutUser } from "../../../store/userSlice";
 import defProfile from "../../../assets/user-profile.png";
 import { getItem, setItem } from "../../../../../server/utils/localStorage";
 import Footer from "../../layout/Footer";
@@ -274,13 +274,13 @@ export default function Login() {
                   </div>
 
                   <a
-                    href="/profile"
+                    href="/user/profile"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     Profile
                   </a>
                   <a
-                    href="/settings"
+                    href="/user/settings"
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     Settings

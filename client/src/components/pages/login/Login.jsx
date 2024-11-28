@@ -6,9 +6,10 @@ import google_logo from '../../../assets/google_icon.png';
 import { useNavigate } from 'react-router';
 import { toast, ToastContainer } from 'react-toastify';
 import { useDispatch } from 'react-redux';
-import { addUser } from '../../../redux/userSlice';
+import { addUser } from '../../../store/userSlice';
 import { useGoogleLogin } from '@react-oauth/google';
 import { setItem } from '../../../../../server/utils/localStorage';
+import { addTutor } from '../../../store/tutorSlice';
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -22,33 +23,39 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true); // Start loading
-
     try {
-      const response = await axios.post('http://localhost:3000/user/login', {
-        email,
-        password
-      });
-      
-      if (response.status === 200) {
-        dispatch(addUser(response.data.userData));
-        
-        if (response.data.token) {
-          localStorage.setItem('token', response.data.token);
+        const response = await axios.post('http://localhost:3000/user/login', {
+            email,
+            password
+        });
+
+        if (response.status === 200 ) {
+          if(response.userType==='user'){
+            dispatch(addUser(response.data.userData));
+          }
+          else if(response.userType==='tutor'){
+            dispatch(addTutor(response.data.userData))
+          }
+            
+
+            if (response.data.token) {
+                localStorage.setItem('token', response.data.token);
+            }
+
+            toast.success('Logged In Successfully!');
+
+            setTimeout(() => {
+                // Use the redirectUrl from the backend response
+                navigate(response.data.redirectUrl);
+            }, 1000);
         }
-        
-        toast.success('Logged In Successfully!');
-        
-        setTimeout(() => {
-          navigate('/');
-        }, 1000);
-      }
     } catch (error) {
-      console.error('Login error:', error);
-      toast.error(error.response?.data?.message || 'Login failed. Please try again.');
+        console.error('Login error:', error);
+        toast.error(error.response?.data?.message || 'Login failed. Please try again.');
     } finally {
-      setIsLoading(false); // End loading
+        setIsLoading(false); // End loading
     }
-  };
+};
  
   const handleGoogleResponse = async (authResult) => {
     try {

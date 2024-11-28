@@ -8,7 +8,7 @@ const tutorSchema = new mongoose.Schema({
   },
   userName: {
     type: String,
-    required: true,
+    required:true,
     unique: true,
     trim: true
   },
@@ -18,6 +18,10 @@ const tutorSchema = new mongoose.Schema({
     unique: true,
     lowercase: true,
     trim: true
+  },
+  password:{
+    type:String,
+    required:true,
   },
   profileImg: {
     type: String,

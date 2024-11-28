@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import Sidebar from "./partials/sidebar";
 import axios from "axios";
+import { toast, ToastContainer } from "react-toastify";
 
 const TutorManagement = () => {
   const [activeTab, setActiveTab] = useState("tutors");
@@ -34,20 +35,109 @@ const TutorManagement = () => {
     try {
       setLoading(true);
       const [tutorsResponse, applicationsResponse] = await Promise.all([
-        axios.get("http://localhost:3000/admin/get-tutors"), // Updated endpoint
+        axios.get("http://localhost:3000/admin/get-tutors"),
         axios.get("http://localhost:3000/admin/instructor-applications"),
       ]);
       
-      // Update to match the new response structure
-      setTutors(tutorsResponse.data.tutors);
-      setApplications(applicationsResponse.data.applications);
+      // Ensure we have a clean list of tutors and applications
+      setTutors(tutorsResponse.data.tutors || []);
+      setApplications(applicationsResponse.data.applications || []);
       setLoading(false);
     } catch (err) {
       setError("Failed to fetch tutors and applications");
       setLoading(false);
       console.error(err);
+      toast.error("Failed to load tutors and applications");
     }
   };
+
+  const handleApplicationAction = async (applicationId, action) => {
+    try {
+      
+      const result = await axios.patch(
+        `http://localhost:3000/admin/approve-tutor/${applicationId}`,
+        {
+          status: action,
+        }
+      );
+  
+      if (action === 'approved') {
+        // Ensure the new tutor is added to the tutors list
+        if (result.data.tutor) {
+          // Transform the application data to match tutor data structure
+          const newTutor = {
+            _id: result.data.tutor._id,
+            fullName: result.data.tutor.fullName,
+            email: result.data.tutor.email,
+            userName: result.data.tutor.userName,
+            status: result.data.tutor.status || 'active',
+            profileImg: result.data.tutor.profileImg,
+            // Spread the rest of the tutor data
+            ...result.data.tutor
+          };
+  
+          // Add the new tutor to the tutors list
+          setTutors((prevTutors) => {
+            // Check if tutor already exists to prevent duplicates
+            const tutorExists = prevTutors.some(tutor => tutor._id === newTutor._id);
+            return tutorExists 
+              ? prevTutors.map(tutor => 
+                  tutor._id === newTutor._id ? { ...tutor, ...newTutor } : tutor
+                )
+              : [...prevTutors, newTutor];
+          });
+        }
+        
+      
+
+        // Remove the application from the list
+        setApplications((prevApplications) =>
+          prevApplications.filter((app) => app._id !== applicationId)
+        );
+        
+      
+        toast.success("Tutor Application Approved Successfully");
+        
+        // Optionally, switch to the tutors tab to show the newly added tutor
+        setActiveTab("tutors");
+      } else {
+        // If rejected, update the application status
+        setApplications((prevApplications) =>
+          prevApplications.map((app) =>
+            app._id === applicationId ? { ...app, status: 'rejected' } : app
+          )
+        );
+  
+        toast.error("Tutor Application Rejected");
+      }
+    } catch (error) {
+      console.error(
+        `Error ${
+          action === "approved" ? "approving" : "rejecting"
+        } tutor application:`,
+        error
+      );
+      
+      toast.error(
+        `There was an error ${
+          action === "approved" ? "approving" : "rejecting"
+        } the Tutor`
+      );
+    }
+  };
+
+  const handleList=async(id)=>{
+      try {
+        const result = await axios.put(`http://localhost:3000/admin/unlisttutor/${id}`)
+        if(result){
+          toast.success("Tutor blocked successfully")
+        }
+
+      } catch (error) {
+        console.log(error.message)
+        res.status(500).send("Error blocking/unblocking user")
+      }
+  }
 
   const openModal = (item, content) => {
     setSelectedApplication(item);
@@ -70,42 +160,8 @@ const TutorManagement = () => {
     setSelectedCertificate(null);
   };
 
-  const handleApplicationAction = async (applicationId, action) => {
-    try {
-      const result = await axios.patch(
-        `http://localhost:3000/admin/approve-tutor/${applicationId}`,
-        {
-          status: action, // 'approved' or 'rejected'
-        }
-      );
+  
 
-      // Update local state to reflect the change
-      setApplications((prevApplications) =>
-        prevApplications.map((app) =>
-          app._id === applicationId ? { ...app, status: action } : app
-        )
-      );
-
-      // Show appropriate alert
-      alert(
-        action === "approved"
-          ? "Tutor Application Approved Successfully"
-          : "Tutor Application Rejected"
-      );
-    } catch (error) {
-      console.error(
-        `Error ${
-          action === "approved" ? "approving" : "rejecting"
-        } tutor application:`,
-        error
-      );
-      alert(
-        `There was an error ${
-          action === "approved" ? "approving" : "rejecting"
-        } the Tutor`
-      );
-    }
-  };
 
   const filteredItems =
     activeTab === "tutors"
@@ -140,6 +196,7 @@ const TutorManagement = () => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-white">
+      <ToastContainer/>
     <Sidebar activeSection={"Instructors"} />
     <div className="flex-1 flex flex-col overflow-hidden">
       <header className="bg-white border-b border-gray-200 p-6">
@@ -207,6 +264,7 @@ const TutorManagement = () => {
                           <div className="text-sm text-gray-500">2</div>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                          
                           <div className="flex space-x-2">
                             <button
                               onClick={() => openModal(tutor, "details")}
@@ -216,7 +274,7 @@ const TutorManagement = () => {
                               <FileText className="h-5 w-5" />
                             </button>
                             <button
-                              onClick={() => {/* Implement unlist user logic */}}
+                              onClick={()=>handleList(tutor._id)}
                               className="text-red-500 hover:text-red-700 transition-colors"
                               title="Unlist User"
                             >

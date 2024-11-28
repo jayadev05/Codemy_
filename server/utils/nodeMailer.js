@@ -65,5 +65,59 @@ const otpEmailTemplate = (otp) => {
       `
     };
   };
+
+const tutorApprovedEmailTemplate = (tutorName,randomPassword) => {
+
   
-module.exports = { mailSender, otpEmailTemplate };
+    
+    return {
+      subject: `Welcome to Codemy - You're Now an Approved Tutor!`,
+      htmlContent: `
+        <!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Welcome to Codemy</title>
+          </head>
+          <body style="font-family: Arial, sans-serif; background-color: #eb5a0c; margin: 0; padding: 20px;">
+            <div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+              <div style="background: #eb5a0c; color: #ffffff; text-align: center; padding: 20px;">
+                <h1 style="margin: 0; font-size: 24px;">Welcome to Codemy!</h1>
+              </div>
+              <div style="padding: 20px;">
+                <p style="font-size: 16px; color: #333;">Dear <strong>${tutorName}</strong>,</p>
+                <p style="font-size: 16px; color: #333;">
+                  Congratulations! Your application to become a tutor on Codemy has been approved. 
+                  We are thrilled to have you join our platform and can't wait to see the amazing courses you'll create.
+                </p>
+                <p style="font-size: 16px; color: #333;">Here are some next steps to get started:</p>
+                <ul style="font-size: 16px; color: #333; padding-left: 20px;">
+                  <li>Log in to your account to access your tutor dashboard.</li>
+                  <li>Your Password is <strong>${randomPassword}</strong>, Please change the password after Login!</li>
+                  <li>Start creating and publishing your courses.</li>
+                  <li>Engage with students and build your community.</li>
+                </ul>
+                <p style="font-size: 16px; color: #333;">
+                  Need help? Feel free to reach out to our support team for assistance.
+                </p>
+                <div style="text-align: center; margin: 20px 0;">
+                  <a href="http://localhost:5173/login" style="display: inline-block; padding: 10px 20px; background: #4caf50; color: #ffffff; text-decoration: none; border-radius: 4px; font-size: 16px;">
+                    Log In Now
+                  </a>
+                </div>
+                <p style="font-size: 14px; color: #666;">Thank you for being part of Codemy. We look forward to supporting your journey as a tutor!</p>
+              </div>
+              <div style="background: #f0f0f0; text-align: center; padding: 10px; font-size: 12px; color: #666;">
+                <p style="margin: 0;">This is an automated message, please do not reply to this email.</p>
+                <p style="margin: 0;">© 2024 Codemy. All rights reserved.</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `,
+    };
+  };
+  
+  
+module.exports = { mailSender, otpEmailTemplate,tutorApprovedEmailTemplate };

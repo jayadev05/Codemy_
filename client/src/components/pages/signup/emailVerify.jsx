@@ -71,7 +71,6 @@ export default function EmailVerify({ formData, setIsModalVisible }) {
       } catch (error) {
         console.error('Full error:', error);
         console.error('Response data:', error.response?.data);
-        console.error('Request payload:', requestPayload);
         
         toast.error(error.response?.data?.message || 'Failed to verify OTP');
       } finally {
