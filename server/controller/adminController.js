@@ -11,10 +11,9 @@ const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
 const fsp = fs.promises; // For promise-based methods
-const { mailSender,tutorApprovedEmailTemplate } = require('../utils/nodeMailer');
+const { mailSender,tutorApprovedEmailTemplate, passwordResetTemplate } = require('../utils/nodeMailer');
 const generateAccessToken = require('../utils/genarateAccesTocken');
 const generateRefreshToken = require("../utils/genarateRefreshTocken");
-const tutorModel = require("../model/tutorModel");
 const generateDefaultPassword=require('../utils/generateDefaultPasswordd');
 const generateUniqueUsername=require("../utils/generateUniqueUserName");
 require("dotenv").config();
@@ -24,46 +23,55 @@ require("dotenv").config();
 // Controllers
 
 
-const passwordResetTemplate = (resetURL) => {
-  return {
-    subject: "Password Reset Request",
-    htmlContent: `
-      <h1>Password Reset Request</h1>
-      <p>You are receiving this because you (or someone else) have requested the reset of the password for your account.</p>
-      <p>Please click on the following link, or paste this into your browser to complete the process:</p>
-      <a href="${resetURL}">${resetURL}</a>
-      <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
-    `
-  };
-};
-
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
   
   try {
-    const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: "User doesn't exist" });
+    const normalizedEmail = email.trim().toLowerCase();
 
-    if(user?.role === "admin"){
+    const user = await User.findOne({ email: normalizedEmail });
+    const tutor = await Tutor.findOne({ email: normalizedEmail });
+
+    const currentUser= user || tutor;
+
+    if (!currentUser) return res.status(404).json({ message: "If an account exists, a reset link will be sent" });
+
+    else{
       const resetToken = crypto.randomBytes(20).toString('hex');
 
-      user.resetPasswordToken = resetToken;
-      user.resetPasswordExpires = Date.now() + 3600000; 
+      currentUser.resetPasswordToken = resetToken;
+      currentUser.resetPasswordExpires = Date.now() + 3600000; 
 
-      await user.save();
+      await currentUser.save();
 
       const resetURL = `http://localhost:5173/admin/reset-password/${resetToken}`;
 
       const { subject, htmlContent } = passwordResetTemplate(resetURL);
-      await mailSender(email, subject, htmlContent);
 
-      res.status(200).json({ message: 'Password reset link sent' });
-    } else {
-      res.status(403).json({ message: 'Not authorized for password reset' });
-    }
+      try {
+
+        await mailSender(email, subject, htmlContent);
+        res.status(200).json({ message: 'Password reset link sent' });
+      }
+       catch (Emailerror) {
+         // Handle email sending failure
+      console.error('Email sending failed:', emailError);
+      
+      // Optionally, remove the reset token if email fails
+      currentUser.resetPasswordToken = undefined;
+      currentUser.resetPasswordExpires = undefined;
+      await currentUser.save();
+
+      return res.status(500).json({ message: 'Failed to send reset email' });
+      }
+    
+
+   
+    } 
+    
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Something went wrong' });
+    console.error('Forgot password error:', error.message);
+    res.status(500).json({ message: 'Server error during password reset process' });
   }
 }; 
 
@@ -94,7 +102,6 @@ const resetPassword = async (req, res) => {
     res.status(500).json({ message: 'Something went wrong' });
   }
 };
-
 
 const users = async(req, res) => {
   

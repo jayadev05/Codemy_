@@ -1,113 +1,112 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import logo from '../../../assets/logo_cap.png';
-import illustration from '../../../assets/login_ill.png';
-import google_logo from '../../../assets/google_icon.png';
-import { useNavigate } from 'react-router';
-import { toast, ToastContainer } from 'react-toastify';
-import { useDispatch, useSelector } from 'react-redux';
-import { addUser } from '../../../store/userSlice';
-import { useGoogleLogin } from '@react-oauth/google';
-import { setItem } from '../../../../../server/utils/localStorage';
-import { addTutor } from '../../../store/tutorSlice';
-import { addAdmin } from '../../../store/adminSlice';
+import React, { useState } from "react";
+import axios from "axios";
+import logo from "../../../assets/logo_cap.png";
+import illustration from "../../../assets/login_ill.png";
+import google_logo from "../../../assets/google_icon.png";
+import { useNavigate } from "react-router";
+import { toast, ToastContainer } from "react-toastify";
+import { useDispatch, useSelector } from "react-redux";
+import { addUser } from "../../../store/userSlice";
+import { useGoogleLogin } from "@react-oauth/google";
+import { setItem } from "../../../../../server/utils/localStorage";
+import { addTutor } from "../../../store/tutorSlice";
+import { addAdmin } from "../../../store/adminSlice";
 
 const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false); // Added loading state
-
-  const user=useSelector((state)=>state.user.currentUser);
-  const admin=useSelector((state)=>state.admin.currentUser);
-  const tutor=useSelector((state)=>state.tutor.currentTutor);
-
-  console.log(user,admin,tutor)
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-        const response = await axios.post('http://localhost:3000/user/login', {
-            email,
-            password
-        });
+      const response = await axios.post("http://localhost:3000/user/login", {
+        email,
+        password,
+      });
 
-        if (response.status === 200) {
-            const { userData, userType, token, redirectUrl } = response.data;
+      if (response.status === 200) {
+        const { userData, userType, token, redirectUrl } = response.data;
 
- // Check if the user is active before proceeding
- if (userData.isActive === false) {
-  toast.error('Your account is blocked. Please contact support.');
-  setIsLoading(false);
-  return;
-}
-            // Dispatch based on user type
-            switch (userType) {
-                case 'admin':
-                    dispatch(addAdmin(userData));
-                    
-                    console.log('dispatched admin',userData);
-                    break;
-                case 'user':
-                    dispatch(addUser(userData));
-                    console.log('dispatched user');
-                    break;
-                case 'tutor':
-                    // Ensure you have a tutorSlice with addTutor action
-                    dispatch(addTutor(userData));
-                    console.log('dispatched tutor');
-                    break;
-                default:
-                    console.warn('Unknown user type:', userType);
-            }
-
-            // Store token in localStorage
-            if (token) {
-                localStorage.setItem('token', token);
-            }
-
-            toast.success('Logged In Successfully!');
-
-            // Navigate after a short delay
-            setTimeout(() => {
-                navigate(redirectUrl || '/dashboard');
-            }, 1000);
+        // Check if the user is active before proceeding
+        if (userData.isActive === false) {
+          toast.error("Your account is blocked. Please contact support.");
+          setIsLoading(false);
+          return;
         }
+        // Dispatch based on user type
+        switch (userType) {
+          case "admin":
+            dispatch(addAdmin(userData));
+
+            console.log("dispatched admin", userData);
+            break;
+          case "user":
+            dispatch(addUser(userData));
+            console.log("dispatched user");
+            break;
+          case "tutor":
+            // Ensure you have a tutorSlice with addTutor action
+            dispatch(addTutor(userData));
+            console.log("dispatched tutor");
+            break;
+          default:
+            console.warn("Unknown user type:", userType);
+        }
+
+        // Store token in localStorage
+        if (token) {
+          localStorage.setItem("token", token);
+        }
+
+        toast.success("Logged In Successfully!");
+
+        // Navigate after a short delay
+        setTimeout(() => {
+          navigate(redirectUrl || "/dashboard");
+        }, 1000);
+      }
     } catch (error) {
-        console.error('Login error:', error);
-        toast.error(error.response?.data?.message || 'Login failed. Please try again.');
+      console.error("Login error:", error);
+      toast.error(
+        error.response?.data?.message || "Login failed. Please try again."
+      );
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
-};
+  };
 
   const handleGoogleResponse = async (authResult) => {
     try {
       setIsLoading(true);
-      
+
       if (authResult.code) {
-        const response = await axios.post('http://localhost:3000/auth/google', {
-          code: authResult.code
+        const response = await axios.post("http://localhost:3000/auth/google", {
+          code: authResult.code,
         });
 
         if (response.data.success) {
-          localStorage.setItem('token', response.data.data.token);
-          setItem('user',response.data.data.user)
+          localStorage.setItem("token", response.data.data.token);
+          setItem("user", response.data.data.user);
           dispatch(addUser(response.data.data.user));
-          toast.success('Google Sign-in Successful!');
-          
+          toast.success("Google Sign-in Successful!");
+
           setTimeout(() => {
-            navigate('/');
+            navigate("/");
           }, 1000);
         }
       }
     } catch (error) {
-      console.error('Error during Google sign-in:', error);
-      toast.error(error.response?.data?.message || 'Google sign-in failed. Please try again.');
+      console.error("Error during Google sign-in:", error);
+      toast.error(
+        error.response?.data?.message ||
+          "Google sign-in failed. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -116,12 +115,27 @@ const Login = () => {
   const googleLogin = useGoogleLogin({
     onSuccess: handleGoogleResponse,
     onError: (error) => {
-      console.error('Google Login Error:', error);
-      toast.error('Failed to connect with Google. Please try again.');
+      console.error("Google Login Error:", error);
+      toast.error("Failed to connect with Google. Please try again.");
       setIsLoading(false); // Make sure to handle loading state on error
     },
-    flow: 'auth-code'
+    flow: "auth-code",
   });
+
+  const handleForgotPassword = async () => {
+    try {
+      const response = await axios.post("http://localhost:3000/admin/forgot", {
+        email,
+      });
+
+      if(response.status===200){
+        toast.success("A Password reset link has been sent to your Email")
+      }
+    } catch (error) {
+      console.log("error in forgot password");
+      toast.error(error.response?.data?.message || "Error Resetting Password");
+    }
+  };
 
   return (
     <>
@@ -138,8 +152,8 @@ const Login = () => {
         </div>
         <div>
           <span className="text-gray-500 mr-2">Don't have an account?</span>
-          <button 
-            onClick={() => navigate('/signup')} 
+          <button
+            onClick={() => navigate("/signup")}
             className="text-orange-500 font-semibold hover:underline"
           >
             Create Account
@@ -159,7 +173,7 @@ const Login = () => {
             <h2 className="text-2xl font-semibold text-gray-800 mb-6">
               Sign in to your account
             </h2>
-            
+
             <form onSubmit={handleLogin} className="space-y-5">
               <div>
                 <label className="block text-gray-600 mb-2">Email</label>
@@ -180,15 +194,20 @@ const Login = () => {
                     placeholder="Password"
                     className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-orange-400"
                   />
-                  <span 
-                    onClick={() => setShowPassword(!showPassword)} 
+                  <span
+                    onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-3 cursor-pointer"
                   >
-                    <i className={`ri-${showPassword ? "eye" : "eye-off"}-line`}></i>
+                    <i
+                      className={`ri-${showPassword ? "eye" : "eye-off"}-line`}
+                    ></i>
                   </span>
                 </div>
                 <div className="flex justify-end">
-                  <a href="#" className="text-sm text-orange-500 hover:underline">
+                  <a
+                    onClick={handleForgotPassword}
+                    className="text-sm text-orange-500 hover:underline"
+                  >
                     Forgot password?
                   </a>
                 </div>
@@ -206,7 +225,7 @@ const Login = () => {
                 disabled={isLoading}
                 className="w-full py-2 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 disabled:opacity-50"
               >
-                {isLoading ? 'Signing In...' : 'Sign In'}
+                {isLoading ? "Signing In..." : "Sign In"}
               </button>
             </form>
 
