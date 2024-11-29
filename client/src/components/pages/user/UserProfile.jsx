@@ -1,6 +1,9 @@
 import React from 'react'
 import { Bell, ChevronDown, Heart, Search, ShoppingCart } from 'lucide-react'
 import { useNavigate } from 'react-router'
+import { useSelector } from 'react-redux'
+import { selectUser } from '../../../store/userSlice'
+import defProfile from '../../../assets/user-profile.png'
 
 
 
@@ -15,10 +18,10 @@ const TopHeader = () => (
       </nav>
       <div className="flex items-center space-x-4 text-sm">
         <a href="#" className="hover:text-gray-300">Become an instructor</a>
-        {['USD', 'English'].map((item) => (
+        {['INR', 'English'].map((item) => (
           <div key={item} className="flex items-center space-x-1">
             <span>{item}</span>
-            <ChevronDown size={12} />
+            <ChevronDown size={12} />  
           </div>
         ))}
       </div>
@@ -26,7 +29,9 @@ const TopHeader = () => (
   </header>
 )
 
-const MainHeader = () => (
+const MainHeader = () => {
+  const user=useSelector(selectUser);
+  return (
   <header className="bg-white shadow-md py-2 px-4">
     <div className="container mx-auto flex justify-between items-center">
       <div className="flex items-center space-x-6">
@@ -46,18 +51,22 @@ const MainHeader = () => (
             <Icon size={20} />
           </button>
         ))}
-        <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
+        <img src={user?.profileImg || defProfile} alt="" className='w-8' />
       </div>
     </div>
   </header>
-)
+  )
+}
 
-const UserProfile = () => (
+const UserProfile = () => {
+  const user=useSelector(selectUser);
+
+  return(
   <div className="bg-rose-50 py-8">
     <div className="container mx-auto px-4">
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-4">
-          <div className="w-16 h-16 bg-gray-300 rounded-full"></div>
+     <img src={user?.profileImg || defProfile} alt="" className='w-20' />
           <h2 className="text-2xl font-semibold">Kevin Gilbert</h2>
         </div>
         <button className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition duration-300">
@@ -67,6 +76,7 @@ const UserProfile = () => (
     </div>
   </div>
 )
+}
 
 const Tabs = () => {
     const navigate=useNavigate()

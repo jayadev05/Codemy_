@@ -1,6 +1,7 @@
  const express = require("express");
 const User = require("../model/userModel");
-const Tutor = require("../model/tutorModel")
+const Tutor = require("../model/tutorModel");
+const Admin=require('../model/adminModel');
 const bcrypt = require('bcryptjs');
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
@@ -51,6 +52,9 @@ const sendOtp = async (req, res) => {
 };
 
 const signUp = async (req, res) => {
+
+  const securePassword = async (password) => bcrypt.hash(password, 10);
+
   try {
       const { userName, fullName, password, email, phone } = req.body;
       
@@ -65,7 +69,6 @@ const signUp = async (req, res) => {
           });
       }
       
-      const userId = await generateUniqueUserId();
       const passwordHash = await securePassword(password);
       
       const newUser = await User.create({
@@ -94,37 +97,64 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Existing user/tutor lookup
+    // Validate email and password input
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
+    // Find the account by email (User, Tutor, Admin)
     const user = await User.findOne({ email });
     const tutor = await Tutor.findOne({ email });
+    const admin = await Admin.findOne({ email });
 
-    let accountToAuthenticate = user || tutor;
+  
 
-    // Password check remains the same
+    // Determine the account type
+    const accountToAuthenticate = user || tutor || admin;
+
+   
+
+    // If no account is found
+    if (!accountToAuthenticate) {
+      return res.status(404).json({ message: "Account not found. Please check your credentials." });
+    }
+
+    // Verify the password
     const isPasswordCorrect = await bcrypt.compare(password, accountToAuthenticate.password);
 
-    if (isPasswordCorrect) {
-      // Add admin check
-      const isAdmin = accountToAuthenticate.isAdmin || false;
+    if (!isPasswordCorrect) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
 
-      // Generate tokens
-      genarateAccesTocken(res, accountToAuthenticate._id);
-      genarateRefreshTocken(res, accountToAuthenticate._id);
+    // Generate tokens
+    const userId = accountToAuthenticate._id;
+    const userType = admin ? "admin" : (user ? "user" : "tutor");
 
+    try {
+      genarateAccesTocken(res, userId);
+      genarateRefreshTocken(res, userId);
+
+      // Respond with success
       res.status(200).json({
         message: "Login successful",
         userData: accountToAuthenticate,
-        userType: user ? 'user' : 'tutor',
-        isAdmin: isAdmin,
-        redirectUrl: isAdmin ? '/admin/dashboard' : 
-                    (user ? '/' : '/tutor/dashboard')
+        userType: userType,
+        redirectUrl: admin
+          ? "/admin/dashboard"
+          : user
+          ? "/"
+          : "/tutor/dashboard",
       });
+    } catch (tokenError) {
+      console.error("Error generating tokens:", tokenError);
+      res.status(500).json({ message: "Error generating tokens. Please try again later." });
     }
   } catch (error) {
-      console.error("Error in login:", error);
-      res.status(500).json({ message: "Server error" });
+    console.error("Error in login:", error);
+    res.status(500).json({ message: "Server error. Please try again later." });
   }
 };
+
 
 const googleLogin = async (req, res, next) => {
     try {
@@ -254,13 +284,6 @@ const passwordResetTemplate = (resetURL) => {
             <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
         `
     };
-};
-
-const generateUniqueUserId = async (prefix = 'codemy') => {
-    const randomNumber = Math.floor(100000 + Math.random() * 900000);
-    const userId = `${prefix}${randomNumber}`;
-    const exists = await User.findOne({ user_id: userId });
-    return exists ? generateUniqueUserId(prefix) : userId;
 };
 
 const forgotPassword = async (req, res) => {

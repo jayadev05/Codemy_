@@ -5,6 +5,8 @@ import { useState } from 'react'
 import Sidebar from './partials/sidebar'
 import { useDispatch, useSelector } from 'react-redux'
 import { logoutAdmin, selectAdmin } from '../../../store/adminSlice'
+import { useNavigate } from 'react-router'
+import defProfile from "../../../assets/user-profile.png";
 
 export default function Dashboard() {
   const [courseFilter, setCourseFilter] = useState('all')
@@ -12,12 +14,16 @@ export default function Dashboard() {
   const coursesPerPage = 5
 
   const admin=useSelector(selectAdmin);
+
+
   const dispatch=useDispatch();
+
+  const navigate=useNavigate();
 
   const stats = [
     { title: 'Total Students', value: '1,234', icon: '👥' },
     { title: 'Active Courses', value: '12', icon: '📚' },
-    { title: 'Total Revenue', value: '$15,000', icon: '💰' },
+    { title: 'Total Revenue', value: '₹150,000', icon: '💰' },
     { title: 'Course Rating', value: '4.8', icon: '⭐' },
   ]
 
@@ -28,7 +34,8 @@ export default function Dashboard() {
       image: '/placeholder.svg?height=200&width=300',
       instructor: 'Sarah Johnson',
       students: 234,
-      price: '$99.99',
+      price: 1299,
+      enrollCount:27,
       status: 'Active'
     },
     {
@@ -37,7 +44,8 @@ export default function Dashboard() {
       image: '/placeholder.svg?height=200&width=300',
       instructor: 'Michael Chen',
       students: 189,
-      price: '$89.99',
+      price: 899,
+      enrollCount:17,
       status: 'Active'
     },
     {
@@ -46,7 +54,8 @@ export default function Dashboard() {
       image: '/placeholder.svg?height=200&width=300',
       instructor: 'Emma Wilson',
       students: 156,
-      price: '$79.99',
+      price: 1499,
+      enrollCount:12,
       status: 'Draft'
     },
   ]
@@ -59,17 +68,19 @@ export default function Dashboard() {
   const endIndex = startIndex + coursesPerPage;
   const paginatedCourses = filteredCourses.slice(startIndex, endIndex);
 
-  console.log(admin);
+ 
+
+
   return (
     
     <div className="flex min-h-screen bg-gray-50 ">
       {/* Sidebar */}
-      <Sidebar activeSection="Dashboard" onLogout={()=>dispatch(logoutAdmin(admin))} />
+      <Sidebar activeSection="Dashboard" />
 
       {/* Main Content */}
-      <main className="flex-1 ml-62 p-12">
+      <main className="flex-1 ml-62 pl-12">
         {/* Header */}
-        <header className="sticky top-0 z-10 bg-white px-6 py-4 shadow">
+        <header className="sticky top-0 z-10 bg-white px-6 mt-2">
           <div className="flex items-center justify-between">
             <div className="relative flex-grow max-w-md">
               <input
@@ -88,7 +99,7 @@ export default function Dashboard() {
 
               <div className="flex items-center gap-2">
                 <img
-                  src=''
+                  src={admin?.profileImg || defProfile}
                   alt="User avatar"
                   width={32}
                   height={32}
@@ -133,8 +144,8 @@ export default function Dashboard() {
                   className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm "
                 >
                   <option value="all">All Courses</option>
-                  <option value="active">Active Only</option>
-                  <option value="draft">Drafts Only</option>
+                  <option value="active">Latest</option>
+                  <option value="draft">Top Sellers</option>
                 </select>
               </div>
              
@@ -143,18 +154,18 @@ export default function Dashboard() {
               <table className="w-full table-auto">
                 <thead>
                   <tr className="border-b text-left text-sm font-medium text-gray-500 ">
-                    <th className="pb-3 pl-4">Course</th>
-                    <th className="pb-3">Instructor</th>
-                    <th className="pb-3">Students</th>
-                    <th className="pb-3">Price</th>
-                    <th className="pb-3">Status</th>
+                    <th className="pb-3 pl-4 w-1/4">Course</th>
+                    <th className="pb-3 w-1/6">Instructor</th>
+                    <th className="pb-3 w-1/6">Students</th>
+                    <th className="pb-3 w-1/6"> Price</th>
+                    <th className="pb-3 w-1/6">Revenue</th>
                     <th className="pb-3">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 ">
                   {paginatedCourses.map((course) => (
                     <tr key={course.id} className="text-sm">
-                      <td className="py-4 pl-4">
+                      <td className="py-4 pl-2">
                         <div className="flex items-center gap-3">
                           <img
                             src={course.image}
@@ -168,16 +179,9 @@ export default function Dashboard() {
                       </td>
                       <td className="py-4 text-gray-600 ">{course.instructor}</td>
                       <td className="py-4 text-gray-600 ">{course.students}</td>
-                      <td className="py-4 text-gray-900 ">{course.price}</td>
-                      <td className="py-4">
-                        <span className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                          course.status === 'Active'
-                            ? 'bg-green-100 text-green-700 '
-                            : 'bg-yellow-100 text-yellow-700 '
-                        }`}>
-                          {course.status}
-                        </span>
-                      </td>
+                      <td className="py-4 text-gray-900 ">₹{course.price}</td>
+                      <td className="py-4 text-gray-900">₹{course.students * course.price}</td>
+
                       <td className="py-4">
                         <div className="flex gap-2">
                           <button className="rounded-lg bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400">
@@ -192,25 +196,6 @@ export default function Dashboard() {
                   ))}
                 </tbody>
               </table>
-            </div>
-            <div className="mt-4 flex items-center justify-between border-t pt-4 ">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="rounded-lg border px-3 py-1 text-sm font-medium disabled:opacity-50"
-              >
-                Previous
-              </button>
-              <span className="text-sm text-gray-600 ">
-                Page {currentPage}
-              </span>
-              <button
-                onClick={() => setCurrentPage(p => p + 1)}
-                disabled={currentPage * coursesPerPage >= filteredCourses.length}
-                className="rounded-lg border px-3 py-1 text-sm font-medium disabled:opacity-50"
-              >
-                Next
-              </button>
             </div>
           </div>
         </div>

@@ -19,7 +19,7 @@ const tutorSlice = createSlice({
         bio = '',
         totalRevenue = 0,
         credentials = [],
-        status = 'active',
+        isActive,
       } = action.payload;
 
       state.currentTutor = {
@@ -31,7 +31,7 @@ const tutorSlice = createSlice({
         bio,
         totalRevenue,
         credentials,
-        status,
+        isActive
       };
     },
     logoutTutor: (state) => {

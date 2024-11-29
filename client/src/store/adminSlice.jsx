@@ -14,10 +14,10 @@ const adminSlice = createSlice({
         fullName: action.payload.fullName,
         userName: action.payload.userName,
         email: action.payload.email,
+        phone:action.payload.phone,
         password: action.payload.password,
         profileImg: action.payload.profileImg || '',
-        isVerified: action.payload.isVerified,
-        isActive: action.payload.isActive
+     
       };
     },
     logoutAdmin: (state) => {
@@ -32,7 +32,7 @@ const adminSlice = createSlice({
 export const { addAdmin, logoutAdmin } = adminSlice.actions;
 
 // Export selector
-export const selectAdmin = (state) => state.user.currentUser;
+export const selectAdmin = (state) => state.admin.currentUser;
 
 // Export reducer
 export default adminSlice.reducer;

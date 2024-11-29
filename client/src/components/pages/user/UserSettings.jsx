@@ -1,5 +1,9 @@
 import React from 'react'
 import { Bell, ChevronDown, Heart, Search, ShoppingCart, Eye, EyeOff } from 'lucide-react'
+import defProfile from '../../../assets/user-profile.png'
+import { useSelector } from 'react-redux'
+import { selectUser } from '../../../store/userSlice'
+
 
 const TopHeader = () => (
   <header className="bg-gray-800 text-white py-2 px-4">
@@ -22,7 +26,10 @@ const TopHeader = () => (
   </header>
 )
 
-const MainHeader = () => (
+const MainHeader = () => {
+  const user=useSelector(selectUser);
+  
+  return (
   <header className="bg-white shadow-md py-2 px-4">
     <div className="container mx-auto flex justify-between items-center">
       <div className="flex items-center space-x-6">
@@ -42,18 +49,24 @@ const MainHeader = () => (
             <Icon size={20} />
           </button>
         ))}
-        <div className="w-8 h-8 bg-gray-300 rounded-full"></div>
+       <img src={user?.profileImg || defProfile} alt="" className='w-8' />
       </div>
     </div>
   </header>
-)
+  )
+}
 
-const UserProfile = () => (
-  <div className="bg-rose-50 py-8">
+const UserProfile = () => {
+  
+  const user=useSelector(selectUser);
+  console.log(user)
+
+  return (
+    <div className="bg-rose-50 py-8">
     <div className="container mx-auto px-4">
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-4">
-          <div className="w-16 h-16 bg-gray-300 rounded-full"></div>
+          <img src={user?.profileImg || defProfile} className='w-20' alt="" />
           <h2 className="text-2xl font-semibold">Kevin Gilbert</h2>
         </div>
         <button className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition duration-300">
@@ -62,7 +75,9 @@ const UserProfile = () => (
       </div>
     </div>
   </div>
-)
+  )
+  
+}
 
 const Tabs = () => {
   const tabs = ['Courses', 'Message', 'Wishlist', 'Purchase History', 'Settings']
@@ -107,7 +122,7 @@ const SettingsForm = () => {
             <div className="mb-6">
               <div className="w-32 h-32 bg-gray-200 rounded-lg mx-auto mb-2">
                 <img
-                  src="/placeholder.svg?height=128&width=128"
+                  src={defProfile}
                   alt="Profile"
                   className="w-full h-full object-cover rounded-lg"
                 />
@@ -256,6 +271,9 @@ const Footer = () => {
 }
 
 export default function SettingsPage() {
+
+ 
+
   return (
     <div className="bg-gray-100 min-h-screen flex flex-col">
       <TopHeader />

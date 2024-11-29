@@ -1,61 +1,75 @@
-import React from 'react';
-import { 
+import React from "react";
+import {
   LayoutDashboard,
   Users,
   GraduationCap,
   CreditCard,
   Settings,
   Ticket,
-  LogOut
-} from 'lucide-react';
-import adminPfp from '../../../../assets/adminPfp.webp'
+  LogOut,
+} from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { logoutAdmin, selectAdmin } from "../../../../store/adminSlice";
+import defProfile from "../../../../assets/user-profile.png";
+import { useNavigate } from "react-router";
 
-const Sidebar = ({activeSection, onLogout}) => {
+const Sidebar = ({ activeSection }) => {
+  const dispatch=useDispatch()
+
+  const navigate=useNavigate()
+
+  const onLogout=()=>{
+     dispatch(logoutAdmin(admin));
+      navigate('/login');
+}
+
   const menuItems = [
     {
       title: "Dashboard",
       icon: LayoutDashboard,
       href: "/admin/dashboard",
-      isActive: activeSection === "Dashboard"
+      isActive: activeSection === "Dashboard",
     },
     {
       title: "Instructors",
       icon: Users,
-      href: "/admin/manage-tutor",
-      isActive: activeSection === "Instructors"
+      href: "/admin/manage-tutors",
+      isActive: activeSection === "Instructors",
     },
     {
       title: "Students",
       icon: GraduationCap,
-      href: "#",
-      isActive: activeSection === "Students"
+      href: "/admin/manage-students",
+      isActive: activeSection === "Students",
     },
     {
       title: "Billing",
       icon: CreditCard,
       href: "#",
-      isActive: activeSection === "Billing"
+      isActive: activeSection === "Billing",
     },
     {
       title: "Settings and profile",
       icon: Settings,
       href: "#",
-      isActive: activeSection === "Settings and profile"
+      isActive: activeSection === "Settings and profile",
     },
     {
       title: "Coupon management",
       icon: Ticket,
       href: "#",
-      isActive: activeSection === "Coupon management"
-    }
+      isActive: activeSection === "Coupon management",
+    },
   ];
+
+  const admin = useSelector(selectAdmin);
 
   return (
     <div className="flex h-screen w-64 flex-col bg-gray-900">
       <div className="flex flex-col items-center gap-2 p-6">
         <div className="h-16 w-16 overflow-hidden rounded-full bg-gray-800">
           <img
-            src={adminPfp}
+            src={admin?.profileImg || defProfile}
             alt="Admin avatar"
             className="h-full w-full object-cover"
           />

@@ -97,9 +97,15 @@ function PageNotFound() {
             </p>
             <button 
               onClick={() =>navigate(-1)}
-              className="bg-orange-500 text-white px-6 py-2 rounded-md hover:bg-orange-600 transition-colors"
+              className="bg-orange-500 text-white px-6 py-2 rounded-md hover:bg-orange-600 transition-colors me-5"
             >
               Go Back
+            </button>
+            <button 
+              onClick={() =>navigate('/login')}
+              className="bg-orange-500 text-white px-6 py-2 rounded-md hover:bg-orange-600 transition-colors"
+            >
+              Go to Login Page
             </button>
           </div>
           <div className="md:w-1/2">

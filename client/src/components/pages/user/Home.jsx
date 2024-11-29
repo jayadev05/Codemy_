@@ -140,6 +140,12 @@ export default function Login() {
     }
   }, [dispatch, user]);
 
+
+  const admin=useSelector((state)=>state.admin.currentUser);
+  const tutor=useSelector((state)=>state.tutor.currentTutor);
+
+  console.log(user,admin,tutor);
+  
   return (
     <>
       <header className="bg-[#1d2026] text-[#8c94a3]">

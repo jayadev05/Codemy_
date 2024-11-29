@@ -5,7 +5,7 @@ import illustration from '../../../assets/login_ill.png';
 import google_logo from '../../../assets/google_icon.png';
 import { useNavigate } from 'react-router';
 import { toast, ToastContainer } from 'react-toastify';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { addUser } from '../../../store/userSlice';
 import { useGoogleLogin } from '@react-oauth/google';
 import { setItem } from '../../../../../server/utils/localStorage';
@@ -21,45 +21,70 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false); // Added loading state
 
+  const user=useSelector((state)=>state.user.currentUser);
+  const admin=useSelector((state)=>state.admin.currentUser);
+  const tutor=useSelector((state)=>state.tutor.currentTutor);
+
+  console.log(user,admin,tutor)
+
   const handleLogin = async (e) => {
     e.preventDefault();
-    setIsLoading(true); // Start loading
+    setIsLoading(true);
     try {
         const response = await axios.post('http://localhost:3000/user/login', {
             email,
             password
         });
 
-        if (response.status === 200 ) {
-           if(response.userType==='user' && response.isAdmin){
-            dispatch(addAdmin(response.data.userData))
-          }
-          else if(response.userType==='user'){
-            dispatch(addUser(response.data.userData));
-          }
-          else if(response.userType==='tutor'){
-            dispatch(addTutor(response.data.userData))
-          }
-          
-            if (response.data.token) {
-                localStorage.setItem('token', response.data.token);
+        if (response.status === 200) {
+            const { userData, userType, token, redirectUrl } = response.data;
+
+ // Check if the user is active before proceeding
+ if (userData.isActive === false) {
+  toast.error('Your account is blocked. Please contact support.');
+  setIsLoading(false);
+  return;
+}
+            // Dispatch based on user type
+            switch (userType) {
+                case 'admin':
+                    dispatch(addAdmin(userData));
+                    
+                    console.log('dispatched admin',userData);
+                    break;
+                case 'user':
+                    dispatch(addUser(userData));
+                    console.log('dispatched user');
+                    break;
+                case 'tutor':
+                    // Ensure you have a tutorSlice with addTutor action
+                    dispatch(addTutor(userData));
+                    console.log('dispatched tutor');
+                    break;
+                default:
+                    console.warn('Unknown user type:', userType);
+            }
+
+            // Store token in localStorage
+            if (token) {
+                localStorage.setItem('token', token);
             }
 
             toast.success('Logged In Successfully!');
 
+            // Navigate after a short delay
             setTimeout(() => {
-                // Use the redirectUrl from the backend response
-                navigate(response.data.redirectUrl);
+                navigate(redirectUrl || '/dashboard');
             }, 1000);
         }
     } catch (error) {
         console.error('Login error:', error);
         toast.error(error.response?.data?.message || 'Login failed. Please try again.');
     } finally {
-        setIsLoading(false); // End loading
+        setIsLoading(false);
     }
 };
- 
+
   const handleGoogleResponse = async (authResult) => {
     try {
       setIsLoading(true);

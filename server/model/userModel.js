@@ -21,6 +21,7 @@ const userSchema=new mongoose.Schema({
   },
   phone: {
     type: Number,
+    default:null
     
   },
   password: {
@@ -39,10 +40,7 @@ const userSchema=new mongoose.Schema({
     type:Boolean,
     default:true
   },
-  isAdmin: { 
-    type: Boolean, 
-    default: false 
-  },
+  
   createdAt: {
     type: Date,
     default: Date.now

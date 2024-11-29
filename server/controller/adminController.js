@@ -15,45 +15,10 @@ const { mailSender,tutorApprovedEmailTemplate } = require('../utils/nodeMailer')
 const generateAccessToken = require('../utils/genarateAccesTocken');
 const generateRefreshToken = require("../utils/genarateRefreshTocken");
 const tutorModel = require("../model/tutorModel");
+const generateDefaultPassword=require('../utils/generateDefaultPasswordd');
+const generateUniqueUsername=require("../utils/generateUniqueUserName");
 require("dotenv").config();
 
-
-
-
-
-
-// randomGenerator functions
-const generateDefaultPassword = (email) => {
-  // Extract some unique elements from the email to create a somewhat personalized default password
-  const emailPrefix = email.split('@')[0];
-  const currentYear = new Date().getFullYear();
-  
-  // Use a combination of email prefix, current year, and a fixed suffix
-  // This creates a somewhat predictable but not entirely fixed password
-  return `Welcome${emailPrefix.slice(0,3)}${currentYear}!`;
-};
-const generateUniqueUsername = async (email) => {
-  // Extract email prefix and remove any non-alphanumeric characters
-  const emailPrefix = email.split('@')[0]
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '');
-  
-  // Base username
-  let baseUsername = emailPrefix;
-  
-  // Counter to append if username exists
-  let counter = 0;
-  let uniqueUsername = baseUsername;
-  
-  // Check for existing usernames
-  while (await Tutor.findOne({ userName: uniqueUsername })) {
-    counter++;
-    uniqueUsername = `${baseUsername}${counter}`;
-  }
-  
-  return uniqueUsername;
-};
-const securePassword = async (password) => bcrypt.hash(password, 10);
 
 
 // Controllers
@@ -130,36 +95,11 @@ const resetPassword = async (req, res) => {
   }
 };
 
-const adminLogin = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const adminInfo = await User.findOne({ email });
-
-    if (adminInfo?.role === "admin") {
-      if (await bcrypt.compare(password, adminInfo.password)) {
-        generateAccessToken(res, adminInfo._id);
-        generateRefreshToken(res, adminInfo._id);
-
-        return res.status(200).json({
-          message: "Login successful",
-          adminData: adminInfo,
-        });
-      } else {
-        res.status(401).json({ message: "Invalid password" });
-      }
-    } else {
-      res.status(401).json({ message: "No access" });
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
 
 const users = async(req, res) => {
   
   try {
-    const students = await User.find({});
+    const students = await User.find();
     console.log(students);
     if(!students) {
       return res.status(404).json({message: "No students found"});
@@ -434,104 +374,121 @@ const getCertificates = async (req, res) => {
 
 const reviewInstructorApplication = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { status } = req.body;
+      const { id } = req.params;
+      const { status } = req.body;
 
-    // Find application
-    const application = await InstructorApplication.findById(id);
-    if (!application) {
-      return res.status(404).json({
-        success: false,
-        message: 'Application not found'
-      });
-    }
+      // Secure password hashing function
+      const securePassword = async (password) => bcrypt.hash(password, 10);
 
-    if (status === 'approved') {
-      // First, check if user already exists
-      let existingUser = await User.findOne({ email: application.email });
-      
-      if (existingUser) {
-        // Convert existing user to tutor
-        const newTutor = new Tutor({
-          ...existingUser.toObject(), // Spread existing user details
-          credentials: application.credentials.map(cred => ({
-            certificate: cred.certificate,
-            experience: cred.description
-          })),
-          status: 'active',
+      // Find application
+      const application = await InstructorApplication.findById(id);
+      if (!application) {
+          return res.status(404).json({
+              success: false,
+              message: 'Application not found'
+          });
+      }
+
+      // Handle approved status
+      if (status === 'approved') {
+          // Check if user already exists
+          let existingUser = await User.findOne({ email: application.email });
+
+          if (existingUser) {
+              // Convert existing user to tutor if user exists
+              const newTutor = new Tutor({
+                  ...existingUser.toObject(),
+                  credentials: application.credentials.map(cred => ({
+                      certificate: cred.certificate,
+                      experience: cred.description
+                  }))
+              });
+
+              await newTutor.save();
+              await User.findByIdAndDelete(existingUser._id);
+
+              return res.status(200).json({
+                  success: true,
+                  message: 'Tutor approved successfully',
+                  tutor: newTutor
+              });
+          } else {
+              // Create new tutor if user doesn't exist
+              const uniqueUserName = await generateUniqueUsername(application.email);
+              const defaultPassword = generateDefaultPassword(application.email);
+              const hashedPassword = await securePassword(defaultPassword);
+
+              const newTutor = new Tutor({
+                  fullName: application.fullName,
+                  email: application.email,
+                  userName: uniqueUserName,
+                  password: hashedPassword,
+                  credentials: application.credentials.map(cred => ({
+                      certificate: cred.certificate,
+                      experience: cred.description
+                  })),
+                  isActive: true,
+              });
+
+              await newTutor.save();
+
+              // Send approval email
+              const { email, fullName } = newTutor;
+              const { subject, htmlContent } = tutorApprovedEmailTemplate(fullName, defaultPassword);
+              
+              try {
+                  await mailSender(email, subject, htmlContent);
+              } catch (error) {
+                  console.log("Error sending mail:", error);
+              }
+
+              // Delete the application
+              const deleteResult = await InstructorApplication.findByIdAndDelete(id);
+              
+              // Debugging logs
+              console.log('Application Deletion Result:', deleteResult);
+              if (!deleteResult) {
+                  console.log('Application ID that failed to delete:', id);
+              }
+
+              return res.status(200).json({
+                  success: true,
+                  message: 'Tutor approved successfully',
+                  tutor: newTutor
+              });
+          }
+      } 
+      // Handle rejected status
+      else if (status === 'rejected') {
+          // Delete the application if rejected
+          const deleteResult = await InstructorApplication.findByIdAndDelete(id);
           
-        });
+          // Debugging logs
+          console.log('Rejected Application Deletion Result:', deleteResult);
+          if (!deleteResult) {
+              console.log('Rejected Application ID that failed to delete:', id);
+          }
 
-        // Save new tutor
-        await newTutor.save();
-
-        // Optionally, remove the user from User collection
-        await User.findByIdAndDelete(existingUser._id);
-
-      } else {
-
-        const uniqueUserName=await generateUniqueUsername(application.email)
-        const defaultPassword=generateDefaultPassword(application.email)
-        const hashedPassword =await securePassword(defaultPassword)
-
-        // Create new tutor if no existing user
-        const newTutor = new Tutor({
-          fullName: application.fullName,
-          email: application.email,
-          userName:uniqueUserName ,
-          password: hashedPassword,
-          credentials: application.credentials.map(cred => ({
-            certificate: cred.certificate,
-            experience: cred.description
-          })),
-          status: 'active',
-        
-        });
-
-        await newTutor.save();
-
-        const { email, fullName } = newTutor;
-        const { subject, htmlContent } = tutorApprovedEmailTemplate(fullName, defaultPassword);
-
-      try {
-        const mail = await mailSender(email, subject, htmlContent);
-      } catch (error) {
-        console.log("Error sending mail:", error);
+          return res.status(200).json({
+              success: true,
+              message: 'Application rejected'
+          });
       }
 
-      // Delete the application after creating tutor
-      const deleteResult = await InstructorApplication.findByIdAndDelete(id);
-      
-      // Add debugging logs
-      console.log('Application Deletion Result:', deleteResult);
-      if (!deleteResult) {
-        console.log('Application ID that failed to delete:', id);
-      }
-      }
-    }
-    
-    
-    else if (status === 'rejected') {
-      // Delete the application if rejected
-      const deleteResult = await InstructorApplication.findByIdAndDelete(id);
-      
-      // Add debugging logs
-      console.log('Rejected Application Deletion Result:', deleteResult);
-      if (!deleteResult) {
-        console.log('Rejected Application ID that failed to delete:', id);
-      }
-    }
+      // If status is neither approved nor rejected
+      return res.status(400).json({
+          success: false,
+          message: 'Invalid status'
+      });
 
-    
-    
   } catch (error) {
-    // Error handling...
-    console.error('Review Application Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error reviewing application',
-      error: error.message
-    });
+      // Error handling
+      console.error('Review Application Error:', error);
+      res.status(500).json({
+          success: false,
+          message: 'Error reviewing application',
+          error: error.message
+      });
   }
 };
 
@@ -553,10 +510,10 @@ const checkMailExists= async (req, res) => {
   }
 };
 
-const approveTutor= async(req,res)=>{
+const approveTutor = async (req, res) => {
   try {
     const { applicationId } = req.params;
-    const {status} = req.body
+    const { status } = req.body;
 
     // Find the application by ID and update its status
     const updatedApplication = await InstructorApplication.findByIdAndUpdate(
@@ -576,23 +533,28 @@ const approveTutor= async(req,res)=>{
       });
     }
 
+    // Call the review endpoint
     try {
       const result = await axios.put(
         `http://localhost:3000/admin/instructor-applications/${applicationId}/review`, 
         { status } // Send status in request body
       );
-    } catch(err) {
+
+      // If review is successful, return the newly created tutor (if any)
+      if (result.data.tutor) {
+        return res.status(200).json({
+          success: true,
+          message: 'Tutor application approved successfully',
+          tutor: result.data.tutor
+        });
+      }
+    } catch (err) {
       console.log("Error in application review", err.response?.data || err.message);
     }
 
-
-    
-
-    // Respond with success message and updated application
     res.status(200).json({
       success: true,
-      message: 'Tutor application approved successfully',
-      data: updatedApplication
+      message: 'Tutor application processed'
     });
   } catch (error) {
     console.error('Error approving tutor application:', error);
@@ -602,7 +564,7 @@ const approveTutor= async(req,res)=>{
       error: error.message
     });
   }
-}
+};
 
 const listUser = async(req, res) => {
   try {
@@ -638,7 +600,7 @@ const unlistUser = async(req, res) => {
 const lisTtutor = async(req, res) => {
   try {
     const id = req.params.id;
-    console.log(id);
+   
     const user = await Tutor.findByIdAndUpdate({_id: id}, {isActive: true}, {new: true});
     if(!user) {
       res.status(404).json({success: false, message: "Tutor not found"});
@@ -654,7 +616,7 @@ const lisTtutor = async(req, res) => {
 const unlisTtutor = async(req, res) => {
   try {
     const id = req.params.id;
-    const user = await Tutor.findByIdAndUpdate({_id: id}, {status: "Blocked"}, {new: true});
+    const user = await Tutor.findByIdAndUpdate({_id: id}, {isActive:false}, {new: true});
     if(!user) {
       res.status(404).json({success: false, message: "Tutor not found"});
     } else {
@@ -669,7 +631,6 @@ const unlisTtutor = async(req, res) => {
 
 
 module.exports = {
-  adminLogin,
   forgotPassword,
   resetPassword,
   logoutAdmin,

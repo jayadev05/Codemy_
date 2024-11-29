@@ -19,6 +19,10 @@ const tutorSchema = new mongoose.Schema({
     lowercase: true,
     trim: true
   },
+  phone: {
+    type: Number,
+    default:null
+  },
   password:{
     type:String,
     required:true,
@@ -49,10 +53,9 @@ const tutorSchema = new mongoose.Schema({
       default: ''
     }
   }],
-  status: {
-    type: String,
-    enum: ['active', 'inactive'],
-    default: 'active'
+  isActive:{
+    type:Boolean,
+    default:true
   }
 }, { 
   timestamps: true 

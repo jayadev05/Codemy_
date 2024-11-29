@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
 export default function EmailVerify({ formData, setIsModalVisible }) {
@@ -100,6 +100,7 @@ export default function EmailVerify({ formData, setIsModalVisible }) {
   
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-gray-200 bg-opacity-50 backdrop-blur-sm">
+        <ToastContainer/>
         <div className="bg-white p-8 rounded-lg shadow-lg max-w-sm w-full">
           <h2 className="text-2xl font-bold text-center mb-4">OTP Verification</h2>
           <p className="text-center text-gray-600 mb-6">
