@@ -6,7 +6,7 @@ import Signup from "./components/pages/signup/Signup";
 import Login from "./components/pages/login/Login";
 import Home from "./components/pages/user/Home";
 import store from "../src/store/store";
-import Dashboard from "./components/pages/admin/dashboard";
+import Dashboard from "./components/pages/admin/AdminDashboard";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import TutorManagement from "./components/pages/admin/tutorManage";
 import UserProfile from "./components/pages/user/UserProfile";
@@ -16,6 +16,7 @@ import TutorDashboard from "./components/pages/tutor/TutorDashboard";
 import PageNotFound from "./components/pages/404";
 
 function App() {
+ 
   return (
     <Provider store={store}>
       <BrowserRouter>

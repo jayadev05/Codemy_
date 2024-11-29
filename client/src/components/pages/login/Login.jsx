@@ -10,6 +10,7 @@ import { addUser } from '../../../store/userSlice';
 import { useGoogleLogin } from '@react-oauth/google';
 import { setItem } from '../../../../../server/utils/localStorage';
 import { addTutor } from '../../../store/tutorSlice';
+import { addAdmin } from '../../../store/adminSlice';
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -30,14 +31,16 @@ const Login = () => {
         });
 
         if (response.status === 200 ) {
-          if(response.userType==='user'){
+           if(response.userType==='user' && response.isAdmin){
+            dispatch(addAdmin(response.data.userData))
+          }
+          else if(response.userType==='user'){
             dispatch(addUser(response.data.userData));
           }
           else if(response.userType==='tutor'){
             dispatch(addTutor(response.data.userData))
           }
-            
-
+          
             if (response.data.token) {
                 localStorage.setItem('token', response.data.token);
             }

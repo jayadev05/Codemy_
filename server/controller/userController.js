@@ -92,49 +92,34 @@ const signUp = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-      const { email, password } = req.body;
+    const { email, password } = req.body;
 
-      // Find user or tutor
-      const user = await User.findOne({ email });
-      const tutor = await Tutor.findOne({ email });
+    // Existing user/tutor lookup
+    const user = await User.findOne({ email });
+    const tutor = await Tutor.findOne({ email });
 
-      console.log("user", user);
-      console.log("tutor", tutor);
+    let accountToAuthenticate = user || tutor;
 
-      // Check if user or tutor exists
-      if (!user && !tutor) {
-          return res.status(401).json({ message: "Invalid email or password" });
-      }
+    // Password check remains the same
+    const isPasswordCorrect = await bcrypt.compare(password, accountToAuthenticate.password);
 
-      // Determine which account to authenticate
-      let accountToAuthenticate = user || tutor;
+    if (isPasswordCorrect) {
+      // Add admin check
+      const isAdmin = accountToAuthenticate.isAdmin || false;
 
-      // Check if account is blocked
-      if (accountToAuthenticate.isActive === false) {
-          return res.status(403).json({ message: "Your account is blocked. Contact support." });
-      }
+      // Generate tokens
+      genarateAccesTocken(res, accountToAuthenticate._id);
+      genarateRefreshTocken(res, accountToAuthenticate._id);
 
-      // Compare passwords
-      const isPasswordCorrect = await bcrypt.compare(password, accountToAuthenticate.password);
-
-      if (isPasswordCorrect) {
-          // Determine user type
-          const userType = user ? 'user' : 'tutor';
-
-          // Generate tokens
-          genarateAccesTocken(res, accountToAuthenticate._id);
-          genarateRefreshTocken(res, accountToAuthenticate._id);
-
-          // Send response with user data and type
-          res.status(200).json({
-              message: "Login successful",
-              userData: accountToAuthenticate,
-              userType: userType,
-              redirectUrl: userType === 'user' ? '/' : '/tutor/dashboard'
-          });
-      } else {
-          res.status(401).json({ message: "Invalid email or password" });
-      }
+      res.status(200).json({
+        message: "Login successful",
+        userData: accountToAuthenticate,
+        userType: user ? 'user' : 'tutor',
+        isAdmin: isAdmin,
+        redirectUrl: isAdmin ? '/admin/dashboard' : 
+                    (user ? '/' : '/tutor/dashboard')
+      });
+    }
   } catch (error) {
       console.error("Error in login:", error);
       res.status(500).json({ message: "Server error" });
