@@ -1,6 +1,7 @@
 const express = require("express");
 const User = require("../model/userModel");
 const Tutor = require("../model/tutorModel");
+const Admin = require("../model/adminModel");
 const InstructorApplication = require("../model/tutorApplication");
 const mongoose = require('mongoose');
 const Category = require('../model/categoryModel');
@@ -25,55 +26,94 @@ require("dotenv").config();
 
 const forgotPassword = async (req, res) => {
   const { email } = req.body;
-  
+
+  // Input validation
+  if (!email) {
+    return res.status(400).json({ 
+      message: 'Email is required',
+      type: 'error'
+    });
+  }
+
+  // Email format validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ 
+      message: 'Invalid email format',
+      type: 'error'
+    });
+  }
+
   try {
+    // Normalize email for consistent searching
     const normalizedEmail = email.trim().toLowerCase();
 
-    const user = await User.findOne({ email: normalizedEmail });
-    const tutor = await Tutor.findOne({ email: normalizedEmail });
+    const [user,admin,tutor]= await Promise.all([
+      User.findOne({email:normalizedEmail}),
+       Admin.findOne({email:normalizedEmail}),
+      Tutor.findOne({email:normalizedEmail}),
+    ])
+   
 
-    const currentUser= user || tutor;
+    const currentUser = user || tutor || admin;
 
-    if (!currentUser) return res.status(404).json({ message: "If an account exists, a reset link will be sent" });
+    // If no user found, return a generic success-like response
+    if (!currentUser) {
+      return res.status(200).json({ 
+        message: 'If an account exists, a reset link will be sent',
+        type: 'success'
+      });
+    }
 
-    else{
-      const resetToken = crypto.randomBytes(20).toString('hex');
+    // Generate reset token
+    const resetToken = crypto.randomBytes(20).toString('hex');
 
-      currentUser.resetPasswordToken = resetToken;
-      currentUser.resetPasswordExpires = Date.now() + 3600000; 
+    // Update user with reset token and expiration
+    currentUser.resetPasswordToken = resetToken;
+    currentUser.resetPasswordExpires = Date.now() + 3600000; // 1 hour
 
-      await currentUser.save();
+    await currentUser.save();
 
-      const resetURL = `http://localhost:5173/admin/reset-password/${resetToken}`;
+    // Create reset URL
+    const resetURL = `http://localhost:5173/reset-password/${resetToken}`;
 
+    try {
+      // Attempt to send reset email
       const { subject, htmlContent } = passwordResetTemplate(resetURL);
-
-      try {
-
-        await mailSender(email, subject, htmlContent);
-        res.status(200).json({ message: 'Password reset link sent' });
-      }
-       catch (Emailerror) {
-         // Handle email sending failure
-      console.error('Email sending failed:', emailError);
       
-      // Optionally, remove the reset token if email fails
+      await mailSender(normalizedEmail, subject, htmlContent);
+
+      // Successful email send
+      return res.status(200).json({ 
+        message: 'Password reset link has been sent to your email',
+        type: 'success'
+      });
+    } catch (emailError) {
+      // Comprehensive email sending error handling
+      console.error('Email sending failed:', emailError);
+
+      // Clear reset token on email failure
       currentUser.resetPasswordToken = undefined;
       currentUser.resetPasswordExpires = undefined;
       await currentUser.save();
 
-      return res.status(500).json({ message: 'Failed to send reset email' });
-      }
-    
-
-   
-    } 
-    
+      return res.status(500).json({ 
+        message: 'Unable to send password reset email. Please try again later.',
+        type: 'error',
+        details: process.env.NODE_ENV === 'development' ? emailError.message : undefined
+      });
+    }
   } catch (error) {
-    console.error('Forgot password error:', error.message);
-    res.status(500).json({ message: 'Server error during password reset process' });
+    // Comprehensive server-side error handling
+    console.error('Forgot password error:', error);
+
+    return res.status(500).json({ 
+      message: 'An unexpected error occurred. Please try again.',
+      type: 'error',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
-}; 
+};
 
 const resetPassword = async (req, res) => {
   const { token } = req.params;
@@ -84,17 +124,29 @@ const resetPassword = async (req, res) => {
       resetPasswordToken: token,
       resetPasswordExpires: { $gt: Date.now() }
     });
+    const tutor = await Tutor.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+    const admin = await Admin.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
 
-    if (!user) {
+    const currentUser= user || tutor || admin;
+
+
+
+    if (!currentUser) {
       return res.status(400).json({ message: "Password reset token is invalid or has expired" });
     }
 
     const encryptedPassword = await bcrypt.hash(password, 10);
-    user.password = encryptedPassword;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
+    currentUser.password = encryptedPassword;
+    currentUser.resetPasswordToken = undefined;
+    currentUser.resetPasswordExpires = undefined;
 
-    await user.save();
+    await currentUser.save();
 
     res.status(200).json({ message: 'Password has been reset' });
   } catch (error) {
@@ -499,21 +551,34 @@ const reviewInstructorApplication = async (req, res) => {
   }
 };
 
-const checkMailExists= async (req, res) => {
+const checkMailExists = async (req, res) => {
   try {
     const { email } = req.body;
-    
-    // Check if user exists in either User or Tutor collection
-    const existingUser = await User.findOne({ email });
-    const existingTutor = await Tutor.findOne({ email });
-    
-    res.json({ 
-      exists: !!(existingUser || existingTutor),
-      message: existingUser ? 'User already exists' : 'Tutor already exists'
+
+    // Validate email input
+    if (!email) {
+      return res.status(400).json({ message: "Enter a valid email" });
+    }
+
+    // Use Promise.all for concurrent database queries
+    const [existingUser, existingTutor, existingAdmin] = await Promise.all([
+      User.findOne({ email }),
+      Tutor.findOne({ email }),
+      Admin.findOne({ email })
+    ]);
+
+    // Determine if user exists in any collection
+    const currentUser = existingAdmin || existingTutor || existingUser;
+
+    // Return response
+    return res.json({
+      exists: !!currentUser,
+      message: currentUser ? 'User already exists' : 'User does not exist'
     });
+
   } catch (error) {
     console.error('Email check error:', error);
-    res.status(500).json({ message: 'Server error checking email' });
+    return res.status(500).json({ message: 'Server error checking email' });
   }
 };
 

@@ -19,7 +19,7 @@ import { addUser, selectUser, logoutUser } from "../../../store/userSlice";
 import defProfile from "../../../assets/user-profile.png";
 import { getItem, setItem } from "../../../../../server/utils/localStorage";
 import Footer from "../../layout/Footer";
-import { InstructorModal } from "../signup/InstructorSignUp";
+import { InstructorModal } from "../general/signup/InstructorSignUp";
 import {  BookOpen, Users } from 'lucide-react';
 
 const categories = [
@@ -116,7 +116,7 @@ const courses = [
 ];
 
 
-export default function Login() {
+export default function Home() {
   const steps = [
     { number: 1, title: "Apply to become instructor" },
     { number: 2, title: "Build & edit your profile" },
@@ -141,10 +141,7 @@ export default function Login() {
   }, [dispatch, user]);
 
 
-  const admin=useSelector((state)=>state.admin.currentUser);
-  const tutor=useSelector((state)=>state.tutor.currentTutor);
 
-  console.log(user,admin,tutor);
   
   return (
     <>

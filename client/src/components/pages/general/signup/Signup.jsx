@@ -1,22 +1,19 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import logo from "../../../assets/logo_cap.png";
-import signUpBG from "../../../assets/signup_illustration.png";
-import google_logo from '../../../assets/google_icon.png';
+import logo from "../../../../assets/logo_cap.png";
+import signUpBG from "../../../../assets/signup_illustration.png";
+import google_logo from '../../../../assets/google_icon.png';
 import { useGoogleLogin } from '@react-oauth/google';
-import { toast, ToastContainer } from 'react-toastify';
+import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import EmailVerify from "./emailVerify";
 import { useDispatch } from 'react-redux';
-import{addUser} from '../../../store/userSlice'
-
+import { addUser } from '../../../../store/userSlice'
 
 export default function Signup() {
-
   const navigate = useNavigate();
-
-  const dispatch=useDispatch()
+  const dispatch = useDispatch();
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -33,7 +30,6 @@ export default function Signup() {
   const [isLoading, setIsLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState('');
 
   // Form validation state
   const [errors, setErrors] = useState({});
@@ -71,18 +67,17 @@ export default function Signup() {
     try {
       setIsLoading(true);
 
-       // First, check if email already exists
-    const checkEmailResponse = await axios.post('http://localhost:3000/admin/check-mail', {
-      email: formData.email
-    });
+      // First, check if email already exists
+      const checkEmailResponse = await axios.post('http://localhost:3000/admin/check-mail', {
+        email: formData.email
+      });
 
-    // If email exists, show error and stop further process
-    if (checkEmailResponse.data.exists) {
-      toast.error('Email already in use. Please use a different email.');
-      setErrors(prev => ({ ...prev, email: 'Email is already registered' }));
-      return;
-    }
-
+      // If email exists, show error and stop further process
+      if (checkEmailResponse.data.exists) {
+        toast.error('Email already in use. Please use a different email.');
+        setErrors(prev => ({ ...prev, email: 'Email is already registered' }));
+        return;
+      }
 
       const response = await axios.post('http://localhost:3000/user/sendotp', {
         email: formData.email
@@ -146,7 +141,7 @@ export default function Signup() {
     onError: (error) => {
       console.error('Google Login Error:', error);
       toast.error('Failed to connect with Google. Please try again.');
-      setIsLoading(false); // Make sure to handle loading state on error
+      setIsLoading(false);
     },
     flow: 'auth-code'
   });
@@ -154,7 +149,7 @@ export default function Signup() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F8F7FF]">
-     <ToastContainer/>
+     
      {isLoading && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>

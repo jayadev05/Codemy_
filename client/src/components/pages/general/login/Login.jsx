@@ -1,16 +1,16 @@
 import React, { useState } from "react";
 import axios from "axios";
-import logo from "../../../assets/logo_cap.png";
-import illustration from "../../../assets/login_ill.png";
-import google_logo from "../../../assets/google_icon.png";
+import logo from "../../../../assets/logo_cap.png";
+import illustration from "../../../../assets/login_ill.png";
+import google_logo from "../../../../assets/google_icon.png";
 import { useNavigate } from "react-router";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import { useDispatch, useSelector } from "react-redux";
-import { addUser } from "../../../store/userSlice";
+import { addUser } from "../../../../store/userSlice";
 import { useGoogleLogin } from "@react-oauth/google";
-import { setItem } from "../../../../../server/utils/localStorage";
-import { addTutor } from "../../../store/tutorSlice";
-import { addAdmin } from "../../../store/adminSlice";
+import { setItem } from "../../../../../../server/utils/localStorage";
+import { addTutor } from "../../../../store/tutorSlice";
+import { addAdmin } from "../../../../store/adminSlice";
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -122,24 +122,11 @@ const Login = () => {
     flow: "auth-code",
   });
 
-  const handleForgotPassword = async () => {
-    try {
-      const response = await axios.post("http://localhost:3000/admin/forgot", {
-        email,
-      });
 
-      if(response.status===200){
-        toast.success("A Password reset link has been sent to your Email")
-      }
-    } catch (error) {
-      console.log("error in forgot password");
-      toast.error(error.response?.data?.message || "Error Resetting Password");
-    }
-  };
 
   return (
     <>
-      <ToastContainer />
+   
       {isLoading && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
@@ -205,8 +192,8 @@ const Login = () => {
                 </div>
                 <div className="flex justify-end">
                   <a
-                    onClick={handleForgotPassword}
-                    className="text-sm text-orange-500 hover:underline"
+                    onClick={()=>navigate("/forgot-password")}
+                    className="text-sm text-orange-500 hover:underline cursor-pointer"
                   >
                     Forgot password?
                   </a>

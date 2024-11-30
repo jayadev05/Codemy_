@@ -6,7 +6,7 @@ const handleTutorUpload = require('../../middleware/multer');
 const handleMulterError =require('../../middleware/mulerErrorHandler')
 
 
-adminRoute.post('/forgot', forgotPassword);
+adminRoute.post('/forgot-password', forgotPassword);
 adminRoute.post('/reset/:token', resetPassword);
 adminRoute.get('/get-students',users)
 adminRoute.post('/check-mail',checkMailExists);

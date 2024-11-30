@@ -67,7 +67,7 @@ const UserProfile = () => {
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-4">
      <img src={user?.profileImg || defProfile} alt="" className='w-20' />
-          <h2 className="text-2xl font-semibold">Kevin Gilbert</h2>
+          <h2 className="text-2xl font-semibold">{user?.fullName}</h2>
         </div>
         <button className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition duration-300">
           Become Instructor →

@@ -1,7 +1,7 @@
 import React from 'react'
 import {useNavigate} from 'react-router-dom'
-import logo from '../../assets/logo_cap.png'
-import ErrorImg from '../../assets/404.png'
+import logo from '../../../assets/logo_cap.png'
+import ErrorImg from '../../../assets/404.png'
 
 function PageNotFound() {
 
@@ -90,7 +90,7 @@ function PageNotFound() {
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between">
           <div className="md:w-1/2 text-center md:text-left mb-8 md:mb-0">
-            <h1 className="text-7xl font-light text-gray-200 mb-4">Error 404</h1>
+            <h1 className="text-7xl font-light text-gray-600 mb-4">Error 404</h1>
             <h2 className="text-3xl font-bold mb-4">Oops! page not found</h2>
             <p className="text-gray-600 mb-8 max-w-md">
               Something went wrong. It's look that your requested could not be found. It's look like the link is broken or the page is removed.

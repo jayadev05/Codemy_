@@ -13,7 +13,7 @@ const genarateAccesTocken = require("../utils/genarateAccesTocken");
 const genarateRefreshTocken = require("../utils/genarateRefreshTocken");
 const { oauth2client } = require("../config/googleConfig");
 const axios =require('axios');
-const createError = require('http-errors');
+
 
 
 
@@ -273,64 +273,6 @@ const googleLogin = async (req, res, next) => {
     }
   };
 
-const passwordResetTemplate = (resetURL) => {
-    return {
-        subject: "Password Reset Request",
-        htmlContent: `
-            <h1>Password Reset Request</h1>
-            <p>You are receiving this because you (or someone else) have requested the reset of the password for your account.</p>
-            <p>Please click on the following link, or paste this into your browser to complete the process:</p>
-            <a href="${resetURL}">${resetURL}</a>
-            <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
-        `
-    };
-};
-
-const forgotPassword = async (req, res) => {
-    const { email } = req.body;
-    try {
-        const user = await User.findOne({ email });
-        if (!user) return res.status(404).json({ message: "User doesn't exist" });
-
-        const resetToken = crypto.randomBytes(20).toString('hex');
-        user.resetPasswordToken = resetToken;
-        user.resetPasswordExpires = Date.now() + 3600000;
-        await user.save();
-
-        const resetURL = `http://localhost:5173/reset-password/${resetToken}?role=${user.role}`;
-        const { subject, htmlContent } = passwordResetTemplate(resetURL);
-        await mailSender(email, subject, htmlContent);
-
-        res.status(200).json({ message: 'Password reset link sent' });
-    } catch (error) {
-        console.error("Error in forgotPassword:", error);
-        res.status(500).json({ message: 'Something went wrong' });
-    }
-};
-
-const resetPassword = async (req, res) => {
-    const { token } = req.params;
-    const { password } = req.body;
-
-    try {
-        const user = await User.findOne({
-            resetPasswordToken: token,
-            resetPasswordExpires: { $gt: Date.now() }
-        });
-
-        if (!user) return res.status(400).json({ message: "Password reset token is invalid or has expired" });
-
-        user.password = await bcrypt.hash(password, 10);
-        user.resetPasswordToken = undefined;
-        user.resetPasswordExpires = undefined;
-        await user.save();
-
-        res.status(200).json({ message: 'Password has been reset' });
-    } catch (error) {
-        console.error("Error in resetPassword:", error);
-        res.status(500).json({ message: 'Something went wrong' });
-    }
-};
 
 
 const updateUser = async (req, res) => {
@@ -368,4 +310,4 @@ const logoutUser = (req, res) => {
     res.status(200).json({ message: 'Logged out successfully' });
 };
 
-module.exports = { googleLogin, signUp, login, updateUser, logoutUser, forgotPassword, resetPassword, sendOtp };
+module.exports = { googleLogin, signUp, login, updateUser, logoutUser,  sendOtp };

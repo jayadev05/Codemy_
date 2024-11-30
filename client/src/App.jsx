@@ -2,8 +2,6 @@
 import { Provider } from "react-redux";
 import { Route, Routes } from "react-router";
 import { BrowserRouter } from "react-router-dom";
-import Signup from "./components/pages/signup/Signup";
-import Login from "./components/pages/login/Login";
 import Home from "./components/pages/user/Home";
 import { store, persistor } from "../src/store/store";
 import Dashboard from "./components/pages/admin/AdminDashboard";
@@ -14,19 +12,36 @@ import UserProfile from "./components/pages/user/UserProfile";
 import SettingsPage from "./components/pages/user/UserSettings";
 import TutorSettings from "./components/pages/tutor/TutorSettings";
 import TutorDashboard from "./components/pages/tutor/TutorDashboard";
-import PageNotFound from "./components/pages/404";
+import PageNotFound from "./components/pages/general/404";
 import StudentManagement from "./components/pages/admin/studentManage";
+import SignUp from './components/pages/general/signup/Signup'
+import Login from './components/pages/general/login/Login'
+import ResetPassword from "./components/pages/general/PasswordReset";
+import ForgotPassword from "./components/pages/general/ForgotPassword";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 
 function App() {
   return (
+    
+
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <GoogleOAuthProvider clientId="532055856231-5bvv6o4cog4srbvvghv969kfenmd33cl.apps.googleusercontent.com">
+          <ToastContainer/>
           <BrowserRouter>
             <Routes>
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/" element={<Home />} />
+
+              {/* generic routes */}
+              <Route path="/signup" element={<SignUp/>} />
+              <Route path="/login" element={<Login/>} />
+              <Route path="/" element={<Home/>} />
+              <Route path="/reset-password/:token" element={<ResetPassword/>} />
+              <Route path="/forgot-password" element={<ForgotPassword/>} />
+
+
+              {/* admin routes */}
               <Route path="/admin/dashboard" element={<Dashboard />} />
               <Route path="/admin/manage-tutors" element={<TutorManagement />} />
               <Route path="/admin/manage-students" element={<StudentManagement/>} />
@@ -46,6 +61,8 @@ function App() {
         </GoogleOAuthProvider>
       </PersistGate>
     </Provider>
+    
+  
   );
 }
 
