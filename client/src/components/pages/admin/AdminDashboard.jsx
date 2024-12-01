@@ -78,41 +78,68 @@ export default function Dashboard() {
       <Sidebar activeSection="Dashboard" />
 
       {/* Main Content */}
-      <main className="flex-1 ml-62 pl-12">
+      <main className="flex-1 ">
         {/* Header */}
-        <header className="sticky top-0 z-10 bg-white px-6 mt-2">
-          <div className="flex items-center justify-between">
-            <div className="relative flex-grow max-w-md">
-              <input
-                type="text"
-                placeholder="Search..."
-                className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-2 pl-10 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 "
-              />
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+        <header className="flex items-center justify-between border-b bg-white px-6 py-4 ">
+          <div>
+            <h1 className="text-xl font-semibold">Dashboard</h1>
+            <p className="text-sm text-gray-500">Good Morning</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input className="w-64 pl-9 pr-3 py-2 rounded-md border border-gray-300" placeholder="Search" />
             </div>
-
-            <div className="flex items-center space-x-4">
-              <button className="relative rounded-full p-2 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <Bell className="h-6 w-6" />
-                <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500"></span>
-              </button>
-
-              <div className="flex items-center gap-2">
+            <button className="p-2 rounded-full hover:bg-gray-100">
+              <Bell className="h-5 w-5" />
+            </button>
+           
+           {/* Dropdown container */}
+           <div className="relative group">
                 <img
+                  referrerPolicy="no-referrer"
+                  crossOrigin="anonymous"
+                  className="h-10 w-10 rounded-full cursor-pointer hover:ring-2 hover:ring-orange-500"
                   src={admin?.profileImg || defProfile}
-                  alt="User avatar"
-                  width={32}
-                  height={32}
-                  className="rounded-full"
+                  alt=""
                 />
-                <ChevronDown className="h-4 w-4 text-gray-400" />
+
+                {/* Dropdown menu */}
+                <div className="absolute right-0  w-48 bg-white rounded-md shadow-lg py-1 border hidden group-hover:block">
+                  <div className="px-4 py-2 border-b">
+                    <p className="text-sm font-medium text-gray-900">
+                      {admin?.userName}
+                    </p>
+                    <p className="text-sm text-gray-500 truncate">
+                      {admin?.email}
+                    </p>
+                  </div>
+
+                  <a
+                    href="/user/profile"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Profile
+                  </a>
+                  <a
+                    href="/user/settings"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Settings
+                  </a>
+                  <button
+                   
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                  >
+                    Logout
+                  </button>
+                </div>
               </div>
-            </div>
           </div>
         </header>
 
         {/* Dashboard Content */}
-        <div className="space-y-8 mt-6">
+        <div className="space-y-8 mt-6 px-8">
           <h1 className="text-2xl font-bold text-gray-900 ">Dashboard Overview</h1>
 
           {/* Stats Grid */}

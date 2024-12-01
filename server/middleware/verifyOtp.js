@@ -4,10 +4,10 @@ const otpSchema =require('../model/otpStore')
 const verifyOtp = async (req, res, next) => {
   try {
     const { otp, email } = req.body;
-    console.log('Received OTP request:', { otp, email }); // Add this
+    console.log('Received OTP request:', { otp, email }); 
 
     const otpData = await otpSchema.findOne({ email });
-    console.log('OTP data from DB:', otpData); // Add this
+    console.log('OTP data from DB:', otpData); 
 
     if (!otpData) {
       return res
@@ -16,9 +16,13 @@ const verifyOtp = async (req, res, next) => {
     }
 
     if (otp === otpData.otp) {
+
+      // Delete OTP after successful verification
+      await otpSchema.deleteOne({ email });
       next(); 
+      
     } else {
-      console.log("Invalid OTP. Received:", otp, "Expected:", otpData.otp); // Add this
+      console.log("Invalid OTP. Received:", otp, "Expected:", otpData.otp); 
       return res.status(401).json({ success: false, message: "Invalid OTP." });
     }
   } catch (error) {

@@ -1,20 +1,16 @@
-const express = require("express");
+
 const User = require("../model/userModel");
 const Tutor = require("../model/tutorModel");
 const Admin = require("../model/adminModel");
 const InstructorApplication = require("../model/tutorApplication");
 const mongoose = require('mongoose');
-const Category = require('../model/categoryModel');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
 const axios = require('axios');
 const fsp = fs.promises; // For promise-based methods
 const { mailSender,tutorApprovedEmailTemplate, passwordResetTemplate } = require('../utils/nodeMailer');
-const generateAccessToken = require('../utils/genarateAccesTocken');
-const generateRefreshToken = require("../utils/genarateRefreshTocken");
 const generateDefaultPassword=require('../utils/generateDefaultPasswordd');
 const generateUniqueUsername=require("../utils/generateUniqueUserName");
 require("dotenv").config();
@@ -70,7 +66,7 @@ const forgotPassword = async (req, res) => {
 
     // Update user with reset token and expiration
     currentUser.resetPasswordToken = resetToken;
-    currentUser.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+    currentUser.resetPasswordExpires = Date.now() + 900000; // 15 mins
 
     await currentUser.save();
 
@@ -120,19 +116,22 @@ const resetPassword = async (req, res) => {
   const { password } = req.body;
 
   try {
-    const user = await User.findOne({
-      resetPasswordToken: token,
-      resetPasswordExpires: { $gt: Date.now() }
-    });
-    const tutor = await Tutor.findOne({
-      resetPasswordToken: token,
-      resetPasswordExpires: { $gt: Date.now() }
-    });
-    const admin = await Admin.findOne({
-      resetPasswordToken: token,
-      resetPasswordExpires: { $gt: Date.now() }
-    });
 
+    const [user,tutor,admin]=await Promise.all([
+      User.findOne({
+        resetPasswordToken: token,
+        resetPasswordExpires: { $gt: Date.now() }
+      }),
+      Tutor.findOne({
+        resetPasswordToken: token,
+        resetPasswordExpires: { $gt: Date.now() }
+      }),
+      Admin.findOne({
+        resetPasswordToken: token,
+        resetPasswordExpires: { $gt: Date.now() }
+      })
+    ])
+   
     const currentUser= user || tutor || admin;
 
 
@@ -155,7 +154,7 @@ const resetPassword = async (req, res) => {
   }
 };
 
-const users = async(req, res) => {
+const getUsers = async(req, res) => {
   
   try {
     const students = await User.find();
@@ -246,27 +245,7 @@ const submitInstructorApplication = async (req, res) => {
       experience
     } = req.body;
 
-    // Validate required fields
-    if (!fullName) {
-      return res.status(400).json({
-        success: false,
-        message: 'Full name is required'
-      });
-    }
-
-    if (!email) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email is required'
-      });
-    }
-
-    if (!phone) {
-      return res.status(400).json({
-        success: false,
-        message: 'Phone number is required'
-      });
-    }
+    
 
     // Check if application already exists
     const existingApplication = await InstructorApplication.findOne({ email });
@@ -457,6 +436,7 @@ const reviewInstructorApplication = async (req, res) => {
               // Convert existing user to tutor if user exists
               const newTutor = new Tutor({
                   ...existingUser.toObject(),
+                  phone:application.phone,
                   credentials: application.credentials.map(cred => ({
                       certificate: cred.certificate,
                       experience: cred.description
@@ -464,7 +444,12 @@ const reviewInstructorApplication = async (req, res) => {
               });
 
               await newTutor.save();
+
+              //Delete data from user collection
               await User.findByIdAndDelete(existingUser._id);
+
+              // Delete the application
+              const deleteResult = await InstructorApplication.findByIdAndDelete(id);
 
               return res.status(200).json({
                   success: true,
@@ -482,6 +467,7 @@ const reviewInstructorApplication = async (req, res) => {
                   email: application.email,
                   userName: uniqueUserName,
                   password: hashedPassword,
+                  phone:application.phone,
                   credentials: application.credentials.map(cred => ({
                       certificate: cred.certificate,
                       experience: cred.description
@@ -504,11 +490,6 @@ const reviewInstructorApplication = async (req, res) => {
               // Delete the application
               const deleteResult = await InstructorApplication.findByIdAndDelete(id);
               
-              // Debugging logs
-              console.log('Application Deletion Result:', deleteResult);
-              if (!deleteResult) {
-                  console.log('Application ID that failed to delete:', id);
-              }
 
               return res.status(200).json({
                   success: true,
@@ -522,11 +503,6 @@ const reviewInstructorApplication = async (req, res) => {
           // Delete the application if rejected
           const deleteResult = await InstructorApplication.findByIdAndDelete(id);
           
-          // Debugging logs
-          console.log('Rejected Application Deletion Result:', deleteResult);
-          if (!deleteResult) {
-              console.log('Rejected Application ID that failed to delete:', id);
-          }
 
           return res.status(200).json({
               success: true,
@@ -706,7 +682,7 @@ module.exports = {
   forgotPassword,
   resetPassword,
   logoutAdmin,
-  users,
+  getUsers,
   listUser,
   unlistUser,
   lisTtutor,

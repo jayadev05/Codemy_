@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 
-function genarateAccesTocken(res, admin) {
+function genarateAccesToken(res, admin) {
+
   const token = jwt.sign({ admin }, process.env.ACCESS_TOKEN_SECRET, {
     expiresIn: "1m",
   });
@@ -16,5 +17,4 @@ function genarateAccesTocken(res, admin) {
 }
 
 
-
-module.exports = genarateAccesTocken;
+module.exports = genarateAccesToken;

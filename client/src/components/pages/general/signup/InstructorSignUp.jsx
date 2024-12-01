@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { X, Upload } from 'lucide-react';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
 import axios from 'axios';
 
 export function InstructorModal({ onClose }) {
@@ -18,88 +17,95 @@ export function InstructorModal({ onClose }) {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Validation functions
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Full Name Validation
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Full name is required';
+    }
+    
+    // Email Validation
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else {
+       
+      if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(String(formData.email).toLowerCase())) {
+        newErrors.email = 'Please enter a valid email address';
+      }
+    }
+    
+    // Phone Validation
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Phone number is required';
+    }
+    else if(!/^(?!0{10}$)\d{10}$/.test(formData.phone)) newErrors.phone="Enter a valid mobile number"
+
+    return newErrors;
+  };
+
   // Handle input changes
   const handleInputChange = (e) => {
     const { name, value, type, files } = e.target;
     
-    if (type === 'file' && files) {
-      setFormData(prev => ({ ...prev, certificates: files }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      [type === 'file' ? name : name]: type === 'file' ? files : value
+    }));
   };
 
-  // Email validation function
-  const validateEmail = (email) => {
-    const re = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    return re.test(String(email).toLowerCase());
+  // Check if application exists
+  const checkTutorExists = async (email) => {
+    try {
+      const response = await axios.get('http://localhost:3000/admin/get-tutors', {params: { search: email }});
+      // Check if any tutors were returned with this email
+    return response.data.tutors.length > 0;
+
+    } catch (error) {
+      console.error('Check application error:', error);
+      toast.error('Unable to verify application. Please try again.');
+      return true;
+    }
   };
 
   // Submit application handler
   const submitInstructorApplication = async (e) => {
     e.preventDefault();
     
-    // Validation
-    const newErrors = {};
+    // Validate form
+    const validationErrors = validateForm();
     
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = 'Full name is required';
-    }
-    
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-    
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone number is required';
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
     }
   
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    // Check for existing application
+    const tutorExists = await checkTutorExists(formData.email);
+    if (tutorExists) {
+      toast.error('Email already exists. Please use a different email.');
       return;
     }
   
     setIsSubmitting(true);
   
     try {
-      // Check existing applications
-      const [emailCheckResult, tutorCheckResult] = await Promise.all([
-        axios.get('http://localhost:3000/admin/instructor-applications').catch(() => ({ data: { applications: [] } })),
-        axios.get('http://localhost:3000/admin/get-tutors').catch(() => ({ data: { applications: [] } }))
-      ]);
-      
-      // Check if email already exists
-      const emailExists = [
-        ...(emailCheckResult.data.applications || []),
-        ...(tutorCheckResult.data.applications || [])
-      ].some(
-        app => app.email.toLowerCase() === formData.email.toLowerCase()
-      );
-  
-      if (emailExists) {
-        toast.error('An application with this email already exists. Please use a different email.');
-        setIsSubmitting(false);
-        return;
-      }
-  
       // Prepare form data
       const formSubmission = new FormData();
       
-      // Append form fields
-      Object.keys(formData).forEach(key => {
-        if (key === 'certificates' && formData[key]) {
-          Array.from(formData[key]).forEach(file => {
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key === 'certificates' && value) {
+          Array.from(value).forEach(file => {
             formSubmission.append('certificates', file);
           });
         } else if (key !== 'certificates') {
-          formSubmission.append(key, formData[key] || '');
+          formSubmission.append(key, value || '');
         }
       });
   
       // Submit application
-      const response = await axios.post(
+      await axios.post(
         'http://localhost:3000/admin/instructor-applications', 
         formSubmission,
         {
@@ -109,185 +115,175 @@ export function InstructorModal({ onClose }) {
         }
       );
   
-      // Success handling
-      alert('Application submitted successfully!');
-      onClose(); // Close modal on successful submission
+      toast.success('Application submitted successfully!');
+      onClose();
     } catch (error) {
       // Comprehensive error handling
-      console.error('Submission error:', error);
+      const errorMessage = error.response?.data?.message || 
+                           error.response?.data?.errors || 
+                           'Application submission failed';
       
-      if (error.response) {
-        const errorMessage = error.response.data.message || 
-                             error.response.data.errors || 
-                             'Application submission failed';
-        toast.error(errorMessage);
-      } else if (error.request) {
-        toast.error('No response received from server. Please check your connection.');
-      } else {
-        alert(`Error: ${error.message}`);
-      }
+      toast.error(errorMessage);
+      console.error('Submission error:', error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <>
-      <ToastContainer/>
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-xl w-full max-w-md relative">
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-            aria-label="Close"
-          >
-            <X className="w-6 h-6" />
-          </button>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md relative">
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+          aria-label="Close"
+        >
+          <X className="w-6 h-6" />
+        </button>
 
-          {/* Modal Content */}
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-6 text-center">
-              Become A Codemy Instructor
-            </h2>
+        {/* Modal Content */}
+        <div className="p-6">
+          <h2 className="text-2xl font-bold mb-6 text-center">
+            Become A Codemy Instructor
+          </h2>
 
-            {/* Form */}
-            <form onSubmit={submitInstructorApplication} className="space-y-4">
-              {/* Full Name Input */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name
+          {/* Form */}
+          <form onSubmit={submitInstructorApplication} className="space-y-4">
+            {/* Full Name Input */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Full Name
+              </label>
+              <input
+                type="text"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleInputChange}
+                placeholder="Enter full name"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {errors.fullName && (
+                <span className="text-red-500 text-sm">
+                  {errors.fullName}
+                </span>
+              )}
+            </div>
+            
+            {/* Email Input */}
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                placeholder="Email address"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {errors.email && (
+                <span className="text-red-500 text-sm">
+                  {errors.email}
+                </span>
+              )}
+            </div>
+
+            {/* Phone Input */}
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                placeholder="Enter phone number"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {errors.phone && (
+                <span className="text-red-500 text-sm">
+                  {errors.phone}
+                </span>
+              )}
+            </div>
+
+            {/* Experience Textarea */}
+            <div>
+              <label htmlFor="experience" className="block text-sm font-medium text-gray-700 mb-1">
+                Experience
+              </label>
+              <textarea
+                id="experience"
+                name="experience"
+                value={formData.experience}
+                onChange={handleInputChange}
+                placeholder="Enter your teaching or professional experience (optional)"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows="3"
+              />
+            </div>
+
+            {/* Certificates Upload */}
+            <div>
+              <label htmlFor="certificates" className="block text-sm font-medium text-gray-700 mb-1">
+                Certificates
+              </label>
+              <div className="mt-1 flex justify-between items-center px-3 py-2 border border-gray-300 rounded-md">
+                <span className="text-sm text-gray-500">
+                  {formData.certificates 
+                    ? `${formData.certificates.length} file(s) selected` 
+                    : 'Upload relevant certificates'}
+                </span>
+                <label htmlFor="file-upload" className="cursor-pointer">
+                  <Upload className="h-5 w-5 text-gray-400" />
                 </label>
-                <input
-                  type="text"
-                  name="fullName"
-                  value={formData.fullName}
+                <input 
+                  id="file-upload" 
+                  name="certificates" 
+                  type="file" 
+                  className="sr-only" 
                   onChange={handleInputChange}
-                  placeholder="Enter full name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  multiple
                 />
-                {errors.fullName && (
-                  <span className="text-red-500 text-sm">
-                    {errors.fullName}
-                  </span>
-                )}
               </div>
-              
-              {/* Email Input */}
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder="Email address"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {errors.email && (
-                  <span className="text-red-500 text-sm">
-                    {errors.email}
-                  </span>
-                )}
-              </div>
+            </div>
 
-              {/* Phone Input */}
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  placeholder="Enter phone number"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                {errors.phone && (
-                  <span className="text-red-500 text-sm">
-                    {errors.phone}
-                  </span>
-                )}
-              </div>
-
-              {/* Experience Textarea */}
-              <div>
-                <label htmlFor="experience" className="block text-sm font-medium text-gray-700 mb-1">
-                  Experience
-                </label>
-                <textarea
-                  id="experience"
-                  name="experience"
-                  value={formData.experience}
-                  onChange={handleInputChange}
-                  placeholder="Enter your teaching or professional experience (optional)"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows="3"
-                />
-              </div>
-
-              {/* Certificates Upload */}
-              <div>
-                <label htmlFor="certificates" className="block text-sm font-medium text-gray-700 mb-1">
-                  Certificates
-                </label>
-                <div className="mt-1 flex justify-between items-center px-3 py-2 border border-gray-300 rounded-md">
-                  <span className="text-sm text-gray-500">
-                    {formData.certificates 
-                      ? `${formData.certificates.length} file(s) selected` 
-                      : 'Upload relevant certificates'}
-                  </span>
-                  <label htmlFor="file-upload" className="cursor-pointer">
-                    <Upload className="h-5 w-5 text-gray-400" />
-                  </label>
-                  <input 
-                    id="file-upload" 
-                    name="certificates" 
-                    type="file" 
-                    className="sr-only" 
-                    onChange={handleInputChange}
-                    multiple
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className={`w-full text-white py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center justify-center ${
+                isSubmitting 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-orange-500 hover:bg-orange-600 focus:ring-orange-500'
+              }`}
+            >
+              {isSubmitting ? 'Submitting...' : 'Submit Application'}
+              {!isSubmitting && (
+                <svg 
+                  className="w-4 h-4 ml-2" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24" 
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={2} 
+                    d="M9 5l7 7-7 7" 
                   />
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className={`w-full text-white py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center justify-center ${
-                  isSubmitting 
-                    ? 'bg-gray-400 cursor-not-allowed' 
-                    : 'bg-orange-500 hover:bg-orange-600 focus:ring-orange-500'
-                }`}
-              >
-                {isSubmitting ? 'Submitting...' : 'Submit Application'}
-                {!isSubmitting && (
-                  <svg 
-                    className="w-4 h-4 ml-2" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24" 
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                      strokeWidth={2} 
-                      d="M9 5l7 7-7 7" 
-                    />
-                  </svg>
-                )}
-              </button>
-            </form>
-          </div>
+                </svg>
+              )}
+            </button>
+          </form>
         </div>
       </div>
-    </>
+    </div>
   );
 }

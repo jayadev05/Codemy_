@@ -17,12 +17,15 @@ import { useNavigate } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { addUser, selectUser, logoutUser } from "../../../store/userSlice";
 import defProfile from "../../../assets/user-profile.png";
-import { getItem, setItem } from "../../../../../server/utils/localStorage";
 import Footer from "../../layout/Footer";
 import { InstructorModal } from "../general/signup/InstructorSignUp";
 import {  BookOpen, Users } from 'lucide-react';
+import { toast } from "react-toastify";
+import axios from "axios";
+
 
 const categories = [
+  
   { name: "Label", courses: "21,245", bgColor: "bg-blue-100", img: cat1 },
   { name: "Business", courses: "12,245", bgColor: "bg-green-100", img: cat2 },
   {
@@ -132,20 +135,27 @@ export default function Home() {
 
   const user = useSelector(selectUser);
 
-  // Check localStorage when component mounts
-  useEffect(() => {
-    const storedUser = getItem("user");
-    if (storedUser && !user) {
-      dispatch(addUser(storedUser));
-    }
-  }, [dispatch, user]);
+  const handleLogout=async()=>{
+    try {
+      const response = axios.post("http://localhost:3000/user/logout");
+      dispatch(logoutUser(user));
 
+      toast.success("Logged out successfully");
+
+    } catch (error) {
+      console.log(error.message);
+      toast.error(error.message || "Error logging out user")
+    }
+  }
+
+  {console.log(user)}
 
 
   
   return (
     <>
       <header className="bg-[#1d2026] text-[#8c94a3]">
+       
         <div className="container mx-auto px-4">
           <nav className="flex items-center justify-between h-14">
             <div className="flex items-center space-x-6">
@@ -289,10 +299,7 @@ export default function Home() {
                     Settings
                   </a>
                   <button
-                    onClick={() => {
-                      dispatch(logoutUser(user));
-                      setItem("user", null);
-                    }}
+                    onClick={handleLogout}
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                   >
                     Logout

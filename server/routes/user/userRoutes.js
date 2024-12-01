@@ -1,7 +1,6 @@
 const express = require("express");
 const userRoute = express.Router();
 const { signUp, login, logoutUser, updateUser, sendOtp, googleLogin } = require('../../controller/userController');
-const verifyUser = require('../../middleware/authMiddleware')
 const { verifyOtp}  = require('../../middleware/verifyOtp')
 
 userRoute.post('/sendotp', sendOtp);

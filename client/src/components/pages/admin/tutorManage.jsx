@@ -1,19 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Search,
-  Eye,
   UserCheck,
   UserX,
   FileText,
   X,
-  ChevronDown,
 } from "lucide-react";
 import Sidebar from "./partials/sidebar";
 import axios from "axios";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import defProfile from "../../../assets/user-profile.png";
+import Pagination from "../../utils/Pagination";
 
 const TutorManagement = () => {
   const [activeTab, setActiveTab] = useState("tutors");
@@ -28,6 +27,248 @@ const TutorManagement = () => {
   const [selectedCertificate, setSelectedCertificate] = useState(null);
   const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false);
 
+  //pagination
+  const dummy=[
+    {
+      "_id": "674c1459d07cf3c169773832",
+      "fullName": "John Doe",
+      "userName": "johndoe",
+      "email": "johndoe@gmail.com",
+      "phone": 1234567890,
+      "password": "$2a$10$eK9rP8hXZP8lwJQZwVZvTuIvK1pz9jzH/2vAKybP3FyOx0FI9KtwC",
+      "profileImg": "https://example.com/profile/johndoe.jpg",
+      "jobTitle": "Software Engineer",
+      "bio": "Passionate developer with a love for learning new technologies.",
+      "totalRevenue": 12000.50,
+      "credentials": ["BSc Computer Science", "AWS Certified Developer"],
+      "isActive": true,
+      "isVerified": true,
+      "createdAt": "2024-12-01T07:46:33.879Z",
+      "updatedAt": "2024-12-01T07:46:33.879Z"
+    },
+    {
+      "_id": "674c1459d07cf3c169773833",
+      "fullName": "Jane Smith",
+      "userName": "janesmith",
+      "email": "janesmith@yahoo.com",
+      "phone": 9876543210,
+      "password": "$2a$10$dZJ1vXlb1ePL3uXZNqlv6.2Rf8Bn6kSYH4D6H/bkUiEeq7r5sH6Ie",
+      "profileImg": "https://example.com/profile/janesmith.jpg",
+      "jobTitle": "Graphic Designer",
+      "bio": "Creative designer specializing in modern and minimalist designs.",
+      "totalRevenue": 8500.75,
+      "credentials": ["BA Graphic Design", "Certified UX Designer"],
+      "isActive": true,
+      "isVerified": false,
+      "createdAt": "2024-11-28T09:15:21.567Z",
+      "updatedAt": "2024-11-30T15:22:19.123Z"
+    },
+    {
+      "_id": "674c1459d07cf3c169773834",
+      "fullName": "Alice Brown",
+      "userName": "alicebrown",
+      "email": "alice.brown@outlook.com",
+      "phone": 4561237890,
+      "password": "$2a$10$f3Lv2KU.BWZ7PG6jMWTfuuyE2fDdL8H5xNvIhGQe82nXbg4qFNu2a",
+      "profileImg": "https://example.com/profile/alicebrown.jpg",
+      "jobTitle": "Data Scientist",
+      "bio": "Data enthusiast who loves turning data into actionable insights.",
+      "totalRevenue": 15230.90,
+      "credentials": ["MSc Data Science", "Certified Machine Learning Expert"],
+      "isActive": false,
+      "isVerified": true,
+      "createdAt": "2024-11-20T10:30:45.789Z",
+      "updatedAt": "2024-11-29T12:45:30.789Z"
+    },
+    {
+      "_id": "674c1459d07cf3c169773834",
+      "fullName": "Alice Brown",
+      "userName": "alicebrown",
+      "email": "alice.brown@outlook.com",
+      "phone": 4561237890,
+      "password": "$2a$10$f3Lv2KU.BWZ7PG6jMWTfuuyE2fDdL8H5xNvIhGQe82nXbg4qFNu2a",
+      "profileImg": "https://example.com/profile/alicebrown.jpg",
+      "jobTitle": "Data Scientist",
+      "bio": "Data enthusiast who loves turning data into actionable insights.",
+      "totalRevenue": 15230.90,
+      "credentials": ["MSc Data Science", "Certified Machine Learning Expert"],
+      "isActive": false,
+      "isVerified": true,
+      "createdAt": "2024-11-20T10:30:45.789Z",
+      "updatedAt": "2024-11-29T12:45:30.789Z"
+    },
+    {
+      "_id": "674c1459d07cf3c169773834",
+      "fullName": "Alice Brown",
+      "userName": "alicebrown",
+      "email": "alice.brown@outlook.com",
+      "phone": 4561237890,
+      "password": "$2a$10$f3Lv2KU.BWZ7PG6jMWTfuuyE2fDdL8H5xNvIhGQe82nXbg4qFNu2a",
+      "profileImg": "https://example.com/profile/alicebrown.jpg",
+      "jobTitle": "Data Scientist",
+      "bio": "Data enthusiast who loves turning data into actionable insights.",
+      "totalRevenue": 15230.90,
+      "credentials": ["MSc Data Science", "Certified Machine Learning Expert"],
+      "isActive": false,
+      "isVerified": true,
+      "createdAt": "2024-11-20T10:30:45.789Z",
+      "updatedAt": "2024-11-29T12:45:30.789Z"
+    },
+    {
+      "_id": "674c1459d07cf3c169773834",
+      "fullName": "Alice Brown",
+      "userName": "alicebrown",
+      "email": "alice.brown@outlook.com",
+      "phone": 4561237890,
+      "password": "$2a$10$f3Lv2KU.BWZ7PG6jMWTfuuyE2fDdL8H5xNvIhGQe82nXbg4qFNu2a",
+      "profileImg": "https://example.com/profile/alicebrown.jpg",
+      "jobTitle": "Data Scientist",
+      "bio": "Data enthusiast who loves turning data into actionable insights.",
+      "totalRevenue": 15230.90,
+      "credentials": ["MSc Data Science", "Certified Machine Learning Expert"],
+      "isActive": false,
+      "isVerified": true,
+      "createdAt": "2024-11-20T10:30:45.789Z",
+      "updatedAt": "2024-11-29T12:45:30.789Z"
+    },
+    {
+      "_id": "674c1459d07cf3c169773834",
+      "fullName": "Alice Brown",
+      "userName": "alicebrown",
+      "email": "alice.brown@outlook.com",
+      "phone": 4561237890,
+      "password": "$2a$10$f3Lv2KU.BWZ7PG6jMWTfuuyE2fDdL8H5xNvIhGQe82nXbg4qFNu2a",
+      "profileImg": "https://example.com/profile/alicebrown.jpg",
+      "jobTitle": "Data Scientist",
+      "bio": "Data enthusiast who loves turning data into actionable insights.",
+      "totalRevenue": 15230.90,
+      "credentials": ["MSc Data Science", "Certified Machine Learning Expert"],
+      "isActive": false,
+      "isVerified": true,
+      "createdAt": "2024-11-20T10:30:45.789Z",
+      "updatedAt": "2024-11-29T12:45:30.789Z"
+    },
+    {
+      "_id": "674c1459d07cf3c169773834",
+      "fullName": "Alice Brown",
+      "userName": "alicebrown",
+      "email": "alice.brown@outlook.com",
+      "phone": 4561237890,
+      "password": "$2a$10$f3Lv2KU.BWZ7PG6jMWTfuuyE2fDdL8H5xNvIhGQe82nXbg4qFNu2a",
+      "profileImg": "https://example.com/profile/alicebrown.jpg",
+      "jobTitle": "Data Scientist",
+      "bio": "Data enthusiast who loves turning data into actionable insights.",
+      "totalRevenue": 15230.90,
+      "credentials": ["MSc Data Science", "Certified Machine Learning Expert"],
+      "isActive": false,
+      "isVerified": true,
+      "createdAt": "2024-11-20T10:30:45.789Z",
+      "updatedAt": "2024-11-29T12:45:30.789Z"
+    },
+    {
+      "_id": "674c1459d07cf3c169773834",
+      "fullName": "Shaantan Brown",
+      "userName": "alicebrown",
+      "email": "alice.brown@outlook.com",
+      "phone": 4561237890,
+      "password": "$2a$10$f3Lv2KU.BWZ7PG6jMWTfuuyE2fDdL8H5xNvIhGQe82nXbg4qFNu2a",
+      "profileImg": "https://example.com/profile/alicebrown.jpg",
+      "jobTitle": "Data Scientist",
+      "bio": "Data enthusiast who loves turning data into actionable insights.",
+      "totalRevenue": 15230.90,
+      "credentials": ["MSc Data Science", "Certified Machine Learning Expert"],
+      "isActive": false,
+      "isVerified": true,
+      "createdAt": "2024-11-20T10:30:45.789Z",
+      "updatedAt": "2024-11-29T12:45:30.789Z"
+    },
+    {
+      "_id": "674c1459d07cf3c169773834",
+      "fullName": "Kunjappan Brown",
+      "userName": "alicebrown",
+      "email": "alice.brown@outlook.com",
+      "phone": 4561237890,
+      "password": "$2a$10$f3Lv2KU.BWZ7PG6jMWTfuuyE2fDdL8H5xNvIhGQe82nXbg4qFNu2a",
+      "profileImg": "https://example.com/profile/alicebrown.jpg",
+      "jobTitle": "Data Scientist",
+      "bio": "Data enthusiast who loves turning data into actionable insights.",
+      "totalRevenue": 15230.90,
+      "credentials": ["MSc Data Science", "Certified Machine Learning Expert"],
+      "isActive": false,
+      "isVerified": true,
+      "createdAt": "2024-11-20T10:30:45.789Z",
+      "updatedAt": "2024-11-29T12:45:30.789Z"
+    },
+    {
+      "_id": "674c1459d07cf3c169773834",
+      "fullName": "Alice Brown",
+      "userName": "alicebrown",
+      "email": "alice.brown@outlook.com",
+      "phone": 4561237890,
+      "password": "$2a$10$f3Lv2KU.BWZ7PG6jMWTfuuyE2fDdL8H5xNvIhGQe82nXbg4qFNu2a",
+      "profileImg": "https://example.com/profile/alicebrown.jpg",
+      "jobTitle": "Data Scientist",
+      "bio": "Data enthusiast who loves turning data into actionable insights.",
+      "totalRevenue": 15230.90,
+      "credentials": ["MSc Data Science", "Certified Machine Learning Expert"],
+      "isActive": false,
+      "isVerified": true,
+      "createdAt": "2024-11-20T10:30:45.789Z",
+      "updatedAt": "2024-11-29T12:45:30.789Z"
+    },
+    {
+      "_id": "674c1459d07cf3c169773834",
+      "fullName": "Chandran Brown",
+      "userName": "alicebrown",
+      "email": "alice.brown@outlook.com",
+      "phone": 4561237890,
+      "password": "$2a$10$f3Lv2KU.BWZ7PG6jMWTfuuyE2fDdL8H5xNvIhGQe82nXbg4qFNu2a",
+      "profileImg": "https://example.com/profile/alicebrown.jpg",
+      "jobTitle": "Data Scientist",
+      "bio": "Data enthusiast who loves turning data into actionable insights.",
+      "totalRevenue": 15230.90,
+      "credentials": ["MSc Data Science", "Certified Machine Learning Expert"],
+      "isActive": false,
+      "isVerified": true,
+      "createdAt": "2024-11-20T10:30:45.789Z",
+      "updatedAt": "2024-11-29T12:45:30.789Z"
+    },
+    {
+      "_id": "674c1459d07cf3c169773834",
+      "fullName": "Rajappan Brown",
+      "userName": "alicebrown",
+      "email": "alice.brown@outlook.com",
+      "phone": 4561237890,
+      "password": "$2a$10$f3Lv2KU.BWZ7PG6jMWTfuuyE2fDdL8H5xNvIhGQe82nXbg4qFNu2a",
+      "profileImg": "https://example.com/profile/alicebrown.jpg",
+      "jobTitle": "Data Scientist",
+      "bio": "Data enthusiast who loves turning data into actionable insights.",
+      "totalRevenue": 15230.90,
+      "credentials": ["MSc Data Science", "Certified Machine Learning Expert"],
+      "isActive": false,
+      "isVerified": true,
+      "createdAt": "2024-11-20T10:30:45.789Z",
+      "updatedAt": "2024-11-29T12:45:30.789Z"
+    },
+  ]
+  const [currentPage,setCurrentpage]=useState(1);
+  const dataPerPage=4;
+
+  const lastDataIndex= currentPage * dataPerPage;
+  const firstDataIndex= (currentPage - 1) * dataPerPage;
+
+  const currentPageData = useMemo(() => {
+    return dummy.slice(firstDataIndex, lastDataIndex);
+  }, [currentPage, dataPerPage, dummy]);
+
+ 
+  const totalData=dummy.length;
+
+  
+  
+
+ 
+
   useEffect(() => {
     fetchTutorsAndApplications();
   }, []);
@@ -40,14 +281,20 @@ const TutorManagement = () => {
         axios.get("http://localhost:3000/admin/instructor-applications"),
       ]);
 
+      console.log("response data length ",tutorsResponse.data.tutors.length);
+
       // Ensure we have a clean list of tutors and applications
       setTutors(tutorsResponse.data.tutors || []);
       setApplications(applicationsResponse.data.applications || []);
       setLoading(false);
     } catch (err) {
+
       setError("Failed to fetch tutors and applications");
+
       setLoading(false);
+
       console.error(err);
+
       toast.error("Failed to load tutors and applications");
     }
   };
@@ -176,7 +423,7 @@ const TutorManagement = () => {
 
   const filteredItems =
     activeTab === "tutors"
-      ? tutors.filter(
+      ? currentPageData.filter(
           (tutor) =>
             tutor.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
             tutor.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -207,7 +454,7 @@ const TutorManagement = () => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-white">
-      <ToastContainer />
+     
       <Sidebar activeSection={"Instructors"} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-white border-b border-gray-200 p-6">
@@ -347,6 +594,7 @@ const TutorManagement = () => {
                     ))}
                   </tbody>
                 </table>
+               
               </div>
               ) : (
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -432,6 +680,7 @@ const TutorManagement = () => {
                   ))}
                 </div>
               )}
+               <Pagination totalData={totalData} dataPerPage={dataPerPage} currentPage={currentPage} setCurrentPage={setCurrentpage}/>
             </div>
           </div>
         </main>

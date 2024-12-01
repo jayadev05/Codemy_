@@ -34,16 +34,29 @@ export default function Signup() {
   // Form validation state
   const [errors, setErrors] = useState({});
 
+  // Validation Regex Patterns
+  const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const PASSWORD_REGEX = /^(?!.*(.)\1{3,})(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  const USERNAME_REGEX = /^[a-zA-Z0-9_]{5,16}$/;
+  
+
   const validateForm = () => {
     const newErrors = {};
     if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
+
     if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
+
     if (!formData.username.trim()) newErrors.username = 'Username is required';
+    else if(!USERNAME_REGEX.test(formData.username)) newErrors.username="Username must be 5-16 characters, alphanumeric or underscore "
+
     if (!formData.email.trim()) newErrors.email = 'Email is required';
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid';
+    else if (!EMAIL_REGEX.test(formData.email)) newErrors.email = 'Enter a valid Email';
+
     if (!formData.password) newErrors.password = 'Password is required';
-    else if (formData.password.length < 6) newErrors.password = 'Password must be at least 6 characters';
+    else if (!PASSWORD_REGEX.test(formData.password)) newErrors.password = "Enter a valid Password"
+
     if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
+
     if (!formData.termsAccepted) newErrors.terms = 'You must accept the terms and conditions';
     
     setErrors(newErrors);
@@ -119,7 +132,7 @@ export default function Signup() {
         });
 
         if (response.data.success) {
-          localStorage.setItem('token', response.data.data.token);
+          
           dispatch(addUser(response.data.data.user));
           toast.success('Google Sign-in Successful!');
           

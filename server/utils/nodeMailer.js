@@ -121,16 +121,41 @@ const tutorApprovedEmailTemplate = (tutorName,randomPassword) => {
   
   const passwordResetTemplate = (resetURL) => {
     return {
-      subject: "Password Reset Request",
+      subject: "Password Reset Request from Codemy",
       htmlContent: `
-        <h1>Password Reset Request</h1>
-        <p>You are receiving this because you (or someone else) have requested the reset of the password for your account.</p>
-        <p>Please click on the following link, or paste this into your browser to complete the process:</p>
-        <a href="${resetURL}">${resetURL}</a>
-        <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Password Reset Request</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background-color: #fff; border-radius: 8px; padding: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+          <div style="background-color: #fa7516; color: white; text-align: center; padding: 15px; border-radius: 8px 8px 0 0;">
+            <h1 style="margin: 0;">Password Reset Request</h1>
+          </div>
+          <div style="margin-top: 20px;">
+            <p>You are receiving this because you (or someone else) have requested the reset of the password for your account.</p>
+            <p>Please click the button below, or paste the following link into your browser to complete the process:</p>
+            
+            <a href="${resetURL}" style="display: inline-block; background-color: #fa7516; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0; text-align: center;">
+              Reset Password
+            </a>
+            
+            <p>If the button above doesn't work, copy and paste this link:</p>
+            <p style="word-break: break-all; font-size: 0.9em;">${resetURL}</p>
+            
+            <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
+          </div>
+          <div style="margin-top: 20px; font-size: 0.9em; color: #777; text-align: center;">
+            <p>© ${new Date().getFullYear()} Codemy. All rights reserved.</p>
+          </div>
+        </div>
+      </body>
+      </html>
       `
     };
   };
-
   
 module.exports = { mailSender,passwordResetTemplate ,otpEmailTemplate,tutorApprovedEmailTemplate };

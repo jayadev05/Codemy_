@@ -30,6 +30,7 @@ const StudentManagement = () => {
     try {
       setLoading(true);
       const response = await axios.get("http://localhost:3000/admin/get-students");
+      console.log("response data length ",response.data.students.length);
       setStudents(response.data.students || []);
       setLoading(false);
     } catch (err) {

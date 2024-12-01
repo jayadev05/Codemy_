@@ -32,7 +32,7 @@ export default function ResetPassword() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <ToastContainer/>
+    
       {/* Header */}
       <header className="flex justify-between items-center px-6 py-4 bg-white">
         <div className="flex items-center gap-1">
@@ -49,21 +49,21 @@ export default function ResetPassword() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 mt-8">
-        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-8 items-center">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-20 items-center">
           {/* Left Side - Illustration */}
           <div className="hidden md:block">
             <div className="relative w-full aspect-square">
-              <div className="absolute inset-0 bg-purple-50 rounded-full"></div>
+              <div className="absolute inset-0 bg-purple-50 rounded-full ml-[-120px] mt-10"></div>
               <img
                 src={heroImg}
                 alt="Person with key illustration"
-                className="relative z-10 w-[450px] object-contain"
+                className="relative z-10 w-[450px] object-contain ml-[-40px] mt-16"
               />
             </div>
           </div>
 
           {/* Right Side - Form */}
-          <div className="max-w-md mx-auto w-full space-y-6 p-4">
+          <div className="max-w-md mx-auto w-full space-y-6 p-4 mt-16">
             <div className="space-y-4">
               <h1 className="text-2xl font-bold text-gray-900">
                 Reset your password

@@ -6,6 +6,7 @@ const app = express();
 const cors=require('cors')
 const mongoose = require('mongoose')
 const cookieParser=require('cookie-parser');
+const nocache=require("nocache")
 
 
 // Database Connection
@@ -26,6 +27,7 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(nocache());
 app.use(express.json());
 app.use(cookieParser())
 app.use(express.urlencoded({extended:true}));

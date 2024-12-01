@@ -8,7 +8,6 @@ import { toast } from "react-toastify";
 import { useDispatch, useSelector } from "react-redux";
 import { addUser } from "../../../../store/userSlice";
 import { useGoogleLogin } from "@react-oauth/google";
-import { setItem } from "../../../../../../server/utils/localStorage";
 import { addTutor } from "../../../../store/tutorSlice";
 import { addAdmin } from "../../../../store/adminSlice";
 
@@ -59,11 +58,6 @@ const Login = () => {
             console.warn("Unknown user type:", userType);
         }
 
-        // Store token in localStorage
-        if (token) {
-          localStorage.setItem("token", token);
-        }
-
         toast.success("Logged In Successfully!");
 
         // Navigate after a short delay
@@ -91,8 +85,6 @@ const Login = () => {
         });
 
         if (response.data.success) {
-          localStorage.setItem("token", response.data.data.token);
-          setItem("user", response.data.data.user);
           dispatch(addUser(response.data.data.user));
           toast.success("Google Sign-in Successful!");
 

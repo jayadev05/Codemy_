@@ -20,6 +20,8 @@ import ResetPassword from "./components/pages/general/PasswordReset";
 import ForgotPassword from "./components/pages/general/ForgotPassword";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import UnauthorizedPage from "./components/pages/general/403";
+import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 
 
 function App() {
@@ -41,21 +43,28 @@ function App() {
               <Route path="/forgot-password" element={<ForgotPassword/>} />
 
 
-              {/* admin routes */}
-              <Route path="/admin/dashboard" element={<Dashboard />} />
-              <Route path="/admin/manage-tutors" element={<TutorManagement />} />
-              <Route path="/admin/manage-students" element={<StudentManagement/>} />
 
+              {/* admin routes */}
+              <Route path="/admin/dashboard" element={<ProtectedRoute userType="admin"><Dashboard /></ProtectedRoute>} />
+              <Route path="/admin/manage-tutors" element={<ProtectedRoute userType="admin"><TutorManagement /></ProtectedRoute>} />
+              <Route path="/admin/manage-students" element={<ProtectedRoute userType="admin"><StudentManagement /></ProtectedRoute>} />
+             
+             
               {/* //user routes */}
-              <Route path="/user/profile" element={<UserProfile />} />
-              <Route path="/user/settings" element={<SettingsPage />} />
+              <Route path="/user/profile" element={<ProtectedRoute userType="user"><UserProfile /></ProtectedRoute>} />
+              <Route path="/user/settings" element={<ProtectedRoute userType="user"><SettingsPage /></ProtectedRoute>} />
 
               {/* tutor routes */}
-              <Route path="/tutor/dashboard" element={<TutorDashboard />} />
-              <Route path="/tutor/settings" element={<TutorSettings />} />
+              <Route path="/tutor/dashboard" element={<ProtectedRoute userType="tutor"><TutorDashboard /></ProtectedRoute>} />
+              <Route path="/tutor/settings" element={<ProtectedRoute userType="tutor"><TutorSettings /></ProtectedRoute>} />
 
               {/* Catch-all route for undefined paths */}
               <Route path="*" element={<PageNotFound />} />
+
+              {/* Error Page */}
+              <Route path="/forbidden" element={<UnauthorizedPage/>} />
+
+
             </Routes>
           </BrowserRouter>
         </GoogleOAuthProvider>

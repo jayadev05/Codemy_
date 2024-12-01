@@ -1,19 +1,16 @@
- const express = require("express");
+
 const User = require("../model/userModel");
 const Tutor = require("../model/tutorModel");
 const Admin=require('../model/adminModel');
 const bcrypt = require('bcryptjs');
-const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const otpSchema = require('../model/otpStore');
-const otpGenerator = require("otp-generator");
 const crypto = require('crypto');
 const { mailSender, otpEmailTemplate } = require('../utils/nodeMailer');
-const genarateAccesTocken = require("../utils/genarateAccesTocken");
-const genarateRefreshTocken = require("../utils/genarateRefreshTocken");
+const genarateAccesToken = require("../utils/genarateAccesToken");
+const genarateRefreshToken = require("../utils/genarateRefreshToken");
 const { oauth2client } = require("../config/googleConfig");
 const axios =require('axios');
-
 
 
 
@@ -32,8 +29,6 @@ const sendOtp = async (req, res) => {
             otp: otp.toString()
         });
         
-        console.log("Generated OTP:", otp);
-        console.log("Saved OTP document:", otpDoc);
         
         const { subject, htmlContent } = otpEmailTemplate(otp);
         const info = await mailSender(email, subject, htmlContent);
@@ -42,6 +37,7 @@ const sendOtp = async (req, res) => {
             success: true,
             message: "OTP sent successfully"
         });
+
     } catch (err) {
         console.error("Error in sendOtp:", err);
         res.status(500).json({
@@ -58,14 +54,17 @@ const signUp = async (req, res) => {
   try {
       const { userName, fullName, password, email, phone } = req.body;
       
-      // Check if user exists in BOTH User and Tutor collections
-      const userExists = await User.findOne({ email });
-      const tutorExists = await Tutor.findOne({ email });
       
-      if (userExists || tutorExists) {
+    const [userExists,tutorExists,adminExists]=await Promise.all([
+      User.findOne({email}),
+      Tutor.findOne({email}),
+      Admin.findOne({email})
+    ])
+      
+      if (userExists || tutorExists || adminExists) {
           return res.status(409).json({ 
               message: "User already exists", 
-              existsAs: userExists ? "user" : "tutor" 
+              existsAs: adminExists?"admin":( userExists ? "user" : "tutor" )
           });
       }
       
@@ -103,9 +102,11 @@ const login = async (req, res) => {
     }
 
     // Find the account by email (User, Tutor, Admin)
-    const user = await User.findOne({ email });
-    const tutor = await Tutor.findOne({ email });
-    const admin = await Admin.findOne({ email });
+ const [user,tutor,admin]=await Promise.all([
+  User.findOne({email}),
+  Tutor.findOne({email}),
+  Admin.findOne({email})
+ ])
 
   
 
@@ -131,8 +132,8 @@ const login = async (req, res) => {
     const userType = admin ? "admin" : (user ? "user" : "tutor");
 
     try {
-      genarateAccesTocken(res, userId);
-      genarateRefreshTocken(res, userId);
+      genarateAccesToken(res, userId);
+      genarateRefreshToken(res, userId);
 
       // Respond with success
       res.status(200).json({
@@ -154,7 +155,6 @@ const login = async (req, res) => {
     res.status(500).json({ message: "Server error. Please try again later." });
   }
 };
-
 
 const googleLogin = async (req, res, next) => {
     try {
@@ -226,8 +226,8 @@ const googleLogin = async (req, res, next) => {
       }
   
       // Generate tokens
-      genarateAccesTocken(res, user._id);
-      genarateRefreshTocken(res, user._id);
+      genarateAccesToken(res, user._id);
+      genarateRefreshToken(res, user._id);
   
       // Return success response
       return res.status(200).json({
@@ -272,8 +272,6 @@ const googleLogin = async (req, res, next) => {
       });
     }
   };
-
-
 
 const updateUser = async (req, res) => {
     try {

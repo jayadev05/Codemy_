@@ -84,7 +84,7 @@ export default function ForgotPassword() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <ToastContainer />
+    
       {/* Header */}
       <header className="flex justify-between items-center px-6 py-4 bg-white">
         <div className="flex items-center gap-1">
@@ -106,13 +106,13 @@ export default function ForgotPassword() {
       <main className="container mx-auto px-4 mt-8">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-6 items-center">
           {/* Left Side - Illustration */}
-          <div className="hidden md:block">
+          <div className="hidden md:block ">
             <div className="relative w-full aspect-square">
-              <div className="absolute inset-0 bg-purple-50 rounded-full"></div>
+              <div className="absolute inset-0 bg-purple-50 rounded-full ml-[-70px]"></div>
               <img
                 src={heroImg}
                 alt="Person on rocket illustration"
-                className="relative z-10 w-full h-full object-contain"
+                className="relative z-10 w-full h-full object-contain mt-16 ml-[-50px]"
               />
             </div>
           </div>

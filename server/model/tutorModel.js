@@ -56,6 +56,10 @@ const tutorSchema = new mongoose.Schema({
   isActive:{
     type:Boolean,
     default:true
+  },
+  isVerified:{
+    type:Boolean,
+    default:true
   }
 }, { 
   timestamps: true 
