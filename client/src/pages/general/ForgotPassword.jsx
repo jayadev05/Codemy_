@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router";
-import heroImg from "../../../assets/hero.png";
-import logo from "../../../assets/logo_cap.png";
+import heroImg from "../../assets/hero.png";
+import logo from "../../assets/logo_cap.png";
 import { useState } from "react";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";

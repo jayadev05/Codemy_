@@ -5,6 +5,9 @@ import 'react-toastify/dist/ReactToastify.css';
 import { useNavigate } from "react-router-dom";
 
 export default function EmailVerify({ formData, setIsModalVisible }) {
+
+
+
     const [otp, setOtp] = useState(Array(6).fill(""));
     const [loading, setLoading] = useState(false);
     const [timer, setTimer] = useState(0);
@@ -64,8 +67,9 @@ export default function EmailVerify({ formData, setIsModalVisible }) {
         };
 
         const response = await axios.post('http://localhost:3000/user/create', requestPayload);
-        
-        toast.success('Account created successfully!');
+
+
+        toast.success('Account created successfully! You can login with the credentials');
         setIsModalVisible(false);
         navigate('/login');
         

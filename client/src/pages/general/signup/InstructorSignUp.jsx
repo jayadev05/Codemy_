@@ -2,12 +2,17 @@ import React, { useState } from 'react';
 import { X, Upload } from 'lucide-react';
 import { toast } from 'react-toastify';
 import axios from 'axios';
+import { useSelector } from 'react-redux';
+import { selectUser } from '../../../store/userSlice';
 
 export function InstructorModal({ onClose }) {
+
+  const user=useSelector(selectUser);
+
   // State for form data
   const [formData, setFormData] = useState({
     fullName: '',
-    email: '',
+    email:user.email,
     phone: '',
     experience: '',
     certificates: null
@@ -25,16 +30,7 @@ export function InstructorModal({ onClose }) {
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'Full name is required';
     }
-    
-    // Email Validation
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else {
-       
-      if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(String(formData.email).toLowerCase())) {
-        newErrors.email = 'Please enter a valid email address';
-      }
-    }
+  
     
     // Phone Validation
     if (!formData.phone.trim()) {
@@ -55,24 +51,14 @@ export function InstructorModal({ onClose }) {
     }));
   };
 
-  // Check if application exists
-  const checkTutorExists = async (email) => {
-    try {
-      const response = await axios.get('http://localhost:3000/admin/get-tutors', {params: { search: email }});
-      // Check if any tutors were returned with this email
-    return response.data.tutors.length > 0;
-
-    } catch (error) {
-      console.error('Check application error:', error);
-      toast.error('Unable to verify application. Please try again.');
-      return true;
-    }
-  };
 
   // Submit application handler
   const submitInstructorApplication = async (e) => {
     e.preventDefault();
     
+    // Clear previous errors before validation
+    setErrors({});
+
     // Validate form
     const validationErrors = validateForm();
     
@@ -81,12 +67,6 @@ export function InstructorModal({ onClose }) {
       return;
     }
   
-    // Check for existing application
-    const tutorExists = await checkTutorExists(formData.email);
-    if (tutorExists) {
-      toast.error('Email already exists. Please use a different email.');
-      return;
-    }
   
     setIsSubmitting(true);
   
@@ -170,26 +150,7 @@ export function InstructorModal({ onClose }) {
               )}
             </div>
             
-            {/* Email Input */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="Email address"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              {errors.email && (
-                <span className="text-red-500 text-sm">
-                  {errors.email}
-                </span>
-              )}
-            </div>
+            
 
             {/* Phone Input */}
             <div>

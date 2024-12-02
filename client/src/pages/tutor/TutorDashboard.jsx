@@ -2,9 +2,11 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { BookOpen, MessageCircle, Settings, Star, Users, BarChart, LogOut, Search, Bell } from 'lucide-react';
 import Sidebar from './partials/Sidebar';
-import { useSelector } from 'react-redux';
-import { selectTutor } from '../../../store/tutorSlice';
-import defprofile from '../../../assets/user-profile.png'
+import { useDispatch, useSelector } from 'react-redux';
+import { logoutTutor, selectTutor } from '../../store/tutorSlice';
+import defprofile from '../../assets/user-profile.png'
+import { useNavigate } from 'react-router';
+import { toast } from 'react-toastify';
 
 const chartData = [
   { name: "Mon", value1: 70, value2: 120, value3: 90 },
@@ -33,6 +35,16 @@ const StatCard = ({ icon: Icon, label, value, iconColor, iconBg }) => (
 const Dashboard = () => {
 
   const tutor =useSelector(selectTutor);
+  const navigate=useNavigate();
+  const dispatch=useDispatch();
+
+  const handleLogout=async()=>{
+
+    dispatch(logoutTutor(tutor));
+    toast.success("Logged out successfully")
+    navigate('/login');
+    
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -78,19 +90,19 @@ const Dashboard = () => {
                   </div>
 
                   <a
-                    href="/user/profile"
+                    onClick={()=>navigate("/tutor/profile")}
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     Profile
                   </a>
                   <a
-                    href="/user/settings"
+                   onClick={()=>navigate("/tutor/settings")}
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     Settings
                   </a>
                   <button
-                    
+                    onClick={handleLogout}
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                   >
                     Logout
@@ -106,18 +118,12 @@ const Dashboard = () => {
           <div className="mb-6 grid grid-cols-4 gap-6">
             <StatCard
               icon={BookOpen}
-              label="Enrolled Courses"
+              label="My Courses"
               value="17"
               iconColor="text-orange-500"
               iconBg="bg-orange-50"
             />
-            <StatCard
-              icon={BookOpen}
-              label="Active Courses"
-              value="5"
-              iconColor="text-purple-500"
-              iconBg="bg-purple-50"
-            />
+          
             <StatCard
               icon={Users}
               label="Students Enrolled"
@@ -132,35 +138,15 @@ const Dashboard = () => {
               iconColor="text-green-500"
               iconBg="bg-green-50"
             />
-          </div>
-
-          {/* Secondary Stats */}
-          <div className="mb-6 grid grid-cols-4 gap-6">
-            <StatCard
-              label="Reviews"
+             <StatCard
+              label="total Reviews"
               value="125"
               iconColor="text-red-500"
               iconBg="bg-red-50"
             />
-            <StatCard
-              label="Online Courses"
-              value="3"
-              iconColor="text-green-500"
-              iconBg="bg-green-50"
-            />
-            <StatCard
-              label="Net Total Earning"
-              value="₹150,000"
-              iconColor="text-gray-500"
-              iconBg="bg-gray-50"
-            />
-            <StatCard
-              label="Course Staff"
-              value="₹6,489"
-              iconColor="text-blue-500"
-              iconBg="bg-blue-50"
-            />
           </div>
+
+
 
           {/* Financial Stats */}
           <div className="mb-6 grid grid-cols-3 gap-6">
@@ -178,7 +164,7 @@ const Dashboard = () => {
             />
             <div className="flex items-center justify-between rounded-lg border bg-white p-6">
               <div>
-                <p className="text-sm text-gray-500">Availabel Balance</p>
+                <p className="text-sm text-gray-500">Available Balance</p>
                 <p className="text-2xl font-semibold">₹18,184</p>
               </div>
               <button className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">

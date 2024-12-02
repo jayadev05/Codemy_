@@ -4,9 +4,9 @@ import { Bell, ChevronDown, Search } from 'lucide-react'
 import { useState } from 'react'
 import Sidebar from './partials/sidebar'
 import { useDispatch, useSelector } from 'react-redux'
-import { logoutAdmin, selectAdmin } from '../../../store/adminSlice'
+import { logoutAdmin, selectAdmin } from '../../store/adminSlice'
 import { useNavigate } from 'react-router'
-import defProfile from "../../../assets/user-profile.png";
+import defProfile from "../../assets/user-profile.png";
 
 export default function Dashboard() {
   const [courseFilter, setCourseFilter] = useState('all')
@@ -69,7 +69,20 @@ export default function Dashboard() {
   const paginatedCourses = filteredCourses.slice(startIndex, endIndex);
 
  
+const handleLogout=async()=>{
+  try {
+    await axios.post("http://localhost:3000/admin/logout");
 
+    dispatch(logoutAdmin(admin));
+
+    navigate('/login');
+
+    toast.success("Logged out successfully");
+  } catch (error) {
+    console.log(error.message);
+    toast.error(error.message || "Error Logging out user")
+  }
+}
 
   return (
     
@@ -128,7 +141,7 @@ export default function Dashboard() {
                     Settings
                   </a>
                   <button
-                   
+                   onClick={handleLogout}
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                   >
                     Logout

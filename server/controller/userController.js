@@ -273,6 +273,38 @@ const googleLogin = async (req, res, next) => {
     }
   };
 
+  const changePassword = async (req, res) => {
+    const { currentPassword, newPassword, email } = req.body;
+  
+    try {
+      // Find user by email
+      const user = await User.findOne({ email });
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+  
+      // Check if the current password matches the stored hashed password
+      const isPasswordMatch = await bcrypt.compare(currentPassword, user.password);
+  
+      if (!isPasswordMatch) {
+        return res.status(401).json({ message: "Incorrect current password" });
+      }
+  
+      // Hash the new password
+      const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+  
+      // Update the password in the database
+      user.password = hashedNewPassword;
+      await user.save();
+  
+      return res.status(200).json({ message: "Password changed successfully" });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  };
+
 const updateUser = async (req, res) => {
     try {
         const { _id, email, name, phone, profileImage } = req.body;
@@ -308,4 +340,4 @@ const logoutUser = (req, res) => {
     res.status(200).json({ message: 'Logged out successfully' });
 };
 
-module.exports = { googleLogin, signUp, login, updateUser, logoutUser,  sendOtp };
+module.exports = { googleLogin, signUp, login, updateUser, logoutUser,  sendOtp ,changePassword};

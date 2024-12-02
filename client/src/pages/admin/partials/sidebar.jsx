@@ -9,10 +9,11 @@ import {
   LogOut,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import defProfile from "../../../../assets/user-profile.png";
+import { logoutAdmin, selectAdmin } from "../../../store/adminSlice";
+import defProfile from "../../../assets/user-profile.png";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
-import { logoutTutor, selectTutor } from "../../../../store/tutorSlice";
+import axios from 'axios'
 
 const Sidebar = ({ activeSection }) => {
   const dispatch=useDispatch()
@@ -21,9 +22,9 @@ const Sidebar = ({ activeSection }) => {
 
   const onLogout=()=>{
     try {
-      const response=axios.post("http://localhost:3000/tutor/logout");
+      const response=axios.post("http://localhost:3000/admin/logout");
 
-      dispatch(logoutTutor(tutor));
+      dispatch(logoutAdmin(admin));
 
       navigate('/login');
 
@@ -39,26 +40,26 @@ const Sidebar = ({ activeSection }) => {
     {
       title: "Dashboard",
       icon: LayoutDashboard,
-      href: "/tutor/dashboard",
+      href: "/admin/dashboard",
       isActive: activeSection === "Dashboard",
     },
     {
-      title: "Create new Course",
+      title: "Instructors",
       icon: Users,
-      href: "",
-      isActive: activeSection === "New Course",
+      href: "/admin/manage-tutors",
+      isActive: activeSection === "Instructors",
     },
     {
-      title: "My Courses",
+      title: "Students",
       icon: GraduationCap,
-      href: "",
-      isActive: activeSection === "My Courses",
+      href: "/admin/manage-students",
+      isActive: activeSection === "Students",
     },
     {
-      title: "Message",
+      title: "Billing",
       icon: CreditCard,
       href: "#",
-      isActive: activeSection === "Message",
+      isActive: activeSection === "Billing",
     },
     {
       title: "Settings and profile",
@@ -67,26 +68,26 @@ const Sidebar = ({ activeSection }) => {
       isActive: activeSection === "Settings and profile",
     },
     {
-      title: "Offer management",
+      title: "Coupon management",
       icon: Ticket,
       href: "#",
-      isActive: activeSection === "Offer management",
+      isActive: activeSection === "Coupon management",
     },
   ];
 
-  const tutor = useSelector(selectTutor);
+  const admin = useSelector(selectAdmin);
 
   return (
     <div className="flex h-screen w-[240px] flex-col bg-gray-900">
       <div className="flex flex-col items-center gap-2 p-6">
         <div className="h-14 w-14 overflow-hidden rounded-full bg-gray-800">
           <img
-            src={tutor?.profileImg || defProfile}
-            alt="Tutor avatar"
+            src={admin?.profileImg || defProfile}
+            alt="Admin avatar"
             className="h-full w-full object-cover"
           />
         </div>
-        <span className="text-sm font-medium text-gray-200">{tutor?.fullName}</span>
+        <span className="text-sm font-medium text-gray-200">Admin</span>
       </div>
       <nav className="flex-1 space-y-1 px-3">
         {menuItems.map((item) => (

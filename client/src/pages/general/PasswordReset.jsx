@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import heroImg from '../../../assets/reset.png'
-import logo from '../../../assets/logo_cap.png'
+import heroImg from '../../assets/reset.png'
+import logo from '../../assets/logo_cap.png'
 import { useNavigate, useParams } from 'react-router'
 import { toast, ToastContainer } from 'react-toastify'
 import axios from 'axios'

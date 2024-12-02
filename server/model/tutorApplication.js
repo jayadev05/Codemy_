@@ -14,7 +14,7 @@ const instructorApplicationSchema = new mongoose.Schema({
     trim: true
   },
   phone: {
-    type: String,
+    type: Number,
     trim: true
   },
   experience: {

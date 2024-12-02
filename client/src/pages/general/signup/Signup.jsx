@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import logo from "../../../../assets/logo_cap.png";
-import signUpBG from "../../../../assets/signup_illustration.png";
-import google_logo from '../../../../assets/google_icon.png';
+import logo from "../../../assets/logo_cap.png";
+import signUpBG from "../../../assets/signup_illustration.png";
+import google_logo from '../../../assets/google_icon.png';
 import { useGoogleLogin } from '@react-oauth/google';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import EmailVerify from "./emailVerify";
 import { useDispatch } from 'react-redux';
-import { addUser } from '../../../../store/userSlice'
+import { addUser } from '../../../store/userSlice'
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -36,7 +36,7 @@ export default function Signup() {
 
   // Validation Regex Patterns
   const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-  const PASSWORD_REGEX = /^(?!.*(.)\1{3,})(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  const PASSWORD_REGEX = /^(?!.*(.)\1{3,})(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
   const USERNAME_REGEX = /^[a-zA-Z0-9_]{5,16}$/;
   
 
@@ -82,15 +82,26 @@ export default function Signup() {
 
       // First, check if email already exists
       const checkEmailResponse = await axios.post('http://localhost:3000/admin/check-mail', {
-        email: formData.email
+        email: formData.email,
+        username:formData.username
       });
 
-      // If email exists, show error and stop further process
-      if (checkEmailResponse.data.exists) {
-        toast.error('Email already in use. Please use a different email.');
-        setErrors(prev => ({ ...prev, email: 'Email is already registered' }));
+      console.log(checkEmailResponse.data
+
+      )
+      // If email or username exists, show error and stop further process
+      const { emailExists, userNameExists } = checkEmailResponse.data;
+
+      // Set both errors if applicable
+      if (emailExists || userNameExists) {
+        setErrors(prev => ({
+          ...prev,
+          email: emailExists ? 'Email is already registered' : null,
+          username: userNameExists ? 'Username is already in use' : null
+        }));
         return;
       }
+      
 
       const response = await axios.post('http://localhost:3000/user/sendotp', {
         email: formData.email

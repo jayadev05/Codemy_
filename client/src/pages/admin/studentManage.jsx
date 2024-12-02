@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "./partials/sidebar";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
-import defProfile from "../../../assets/user-profile.png";
+import defProfile from "../../assets/user-profile.png";
 import {
   Search,
   UserCheck,

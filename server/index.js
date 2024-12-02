@@ -1,7 +1,6 @@
 const express = require("express");
 const userRoute = require('./routes/user/userRoutes'); 
 const adminRoute = require('./routes/admin/adminRoutes'); 
-const authRoute=require ('./routes/authRoutes')
 const app = express();
 const cors=require('cors')
 const mongoose = require('mongoose')
@@ -40,7 +39,7 @@ app.use(cors({
 
 app.use("/user", userRoute); 
 app.use("/admin",adminRoute)
-app.use('/auth',authRoute);
+
 
 app.listen(3000, () => {
   console.log("Server started on http://localhost:3000");

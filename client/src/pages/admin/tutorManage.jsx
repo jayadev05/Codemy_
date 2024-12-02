@@ -11,8 +11,8 @@ import {
 import Sidebar from "./partials/sidebar";
 import axios from "axios";
 import { toast } from "react-toastify";
-import defProfile from "../../../assets/user-profile.png";
-import Pagination from "../../utils/Pagination";
+import defProfile from "../../assets/user-profile.png";
+import Pagination from "../../components/utils/Pagination";
 
 const TutorManagement = () => {
   const [activeTab, setActiveTab] = useState("tutors");
@@ -265,10 +265,6 @@ const TutorManagement = () => {
   const totalData=dummy.length;
 
   
-  
-
- 
-
   useEffect(() => {
     fetchTutorsAndApplications();
   }, []);
@@ -281,12 +277,13 @@ const TutorManagement = () => {
         axios.get("http://localhost:3000/admin/instructor-applications"),
       ]);
 
-      console.log("response data length ",tutorsResponse.data.tutors.length);
 
       // Ensure we have a clean list of tutors and applications
       setTutors(tutorsResponse.data.tutors || []);
       setApplications(applicationsResponse.data.applications || []);
+
       setLoading(false);
+
     } catch (err) {
 
       setError("Failed to fetch tutors and applications");
@@ -301,6 +298,7 @@ const TutorManagement = () => {
 
   const handleApplicationAction = async (applicationId, action) => {
     try {
+      setLoading(true);
       const result = await axios.patch(
         `http://localhost:3000/admin/approve-tutor/${applicationId}`,
         {
@@ -341,7 +339,7 @@ const TutorManagement = () => {
         setApplications((prevApplications) =>
           prevApplications.filter((app) => app._id !== applicationId)
         );
-
+        setLoading(false);
         toast.success("Tutor Application Approved Successfully");
 
         // Optionally, switch to the tutors tab to show the newly added tutor
@@ -452,6 +450,8 @@ const TutorManagement = () => {
     );
   }
 
+ 
+
   return (
     <div className="flex h-screen overflow-hidden bg-white">
      
@@ -529,6 +529,8 @@ const TutorManagement = () => {
                         <td className="px-4 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <img
+                              crossorigin="anonymous"
+                              referrerpolicy="no-referrer"
                               src={tutor.profileImg || defProfile}
                               alt={tutor.fullName}
                               className="h-10 w-10 rounded-full mr-3 object-cover"

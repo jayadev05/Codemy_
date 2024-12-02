@@ -1,15 +1,15 @@
 import React, { useState } from "react";
 import axios from "axios";
-import logo from "../../../../assets/logo_cap.png";
-import illustration from "../../../../assets/login_ill.png";
-import google_logo from "../../../../assets/google_icon.png";
+import logo from "../../../assets/logo_cap.png";
+import illustration from "../../../assets/login_ill.png";
+import google_logo from "../../../assets/google_icon.png";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 import { useDispatch, useSelector } from "react-redux";
-import { addUser } from "../../../../store/userSlice";
+import { addUser } from "../../../store/userSlice";
 import { useGoogleLogin } from "@react-oauth/google";
-import { addTutor } from "../../../../store/tutorSlice";
-import { addAdmin } from "../../../../store/adminSlice";
+import { addTutor } from "../../../store/tutorSlice";
+import { addAdmin } from "../../../store/adminSlice";
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -58,7 +58,7 @@ const Login = () => {
             console.warn("Unknown user type:", userType);
         }
 
-        toast.success("Logged In Successfully!");
+        toast.success("Log In Successfull!");
 
         // Navigate after a short delay
         setTimeout(() => {
@@ -80,7 +80,7 @@ const Login = () => {
       setIsLoading(true);
 
       if (authResult.code) {
-        const response = await axios.post("http://localhost:3000/auth/google", {
+        const response = await axios.post("http://localhost:3000/user/google", {
           code: authResult.code,
         });
 

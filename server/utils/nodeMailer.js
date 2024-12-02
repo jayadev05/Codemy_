@@ -93,8 +93,8 @@ const tutorApprovedEmailTemplate = (tutorName,randomPassword) => {
                 </p>
                 <p style="font-size: 16px; color: #333;">Here are some next steps to get started:</p>
                 <ul style="font-size: 16px; color: #333; padding-left: 20px;">
-                  <li>Log in to your account to access your tutor dashboard.</li>
-                  <li>Your Password is <strong>${randomPassword}</strong>, Please change the password after Login!</li>
+                  <li>Log in to your account to access your tutor dashboard. Your old account has been deleted </li>
+                  <li>Your new Password is <strong>${randomPassword} </strong> , Please change the password after Login!</li>
                   <li>Start creating and publishing your courses.</li>
                   <li>Engage with students and build your community.</li>
                 </ul>

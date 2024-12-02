@@ -2,6 +2,7 @@ import React from "react";
 import { NavLink } from "react-router-dom";
 import appleLogo from "../../assets/apple.png";
 import googlePlayStoreLogo from "../../assets/google-play.svg";
+import logo from '../../assets/logo_cap.png'
 
 function Footer() {
   return (
@@ -49,7 +50,7 @@ function Footer() {
               {/* Logo and Social Links */}
               <div className="lg:col-span-2">
                 <div className="flex items-center gap-2 mb-6">
-                  <div className="text-2xl font-bold">📚 Codemy</div>
+                  <div className="text-2xl font-bold flex items-center gap-2"><img src={logo} alt="" /> Codemy</div>
                 </div>
                 <p className="text-gray-400 mb-6">
                   Aliquam rhoncus ligula est, non pulvinar elit venenatis nec.

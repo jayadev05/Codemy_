@@ -1,27 +1,28 @@
 import { useEffect, useState } from "react";
 import { Search, Star } from "lucide-react";
-import hero_img from "../../../assets/hero_img.png";
-import course1 from "../../../assets/Course-1.png";
-import course2 from "../../../assets/Course-2.png";
-import course3 from "../../../assets/Course-3.png";
-import logo from "../../../assets/logo_cap.png";
-import cat1 from "../../../assets/cat-1.png";
-import cat2 from "../../../assets/cat-2.png";
-import cat3 from "../../../assets/cat-3.png";
-import cat4 from "../../../assets/cat-4.png";
-import cat5 from "../../../assets/cat-5.png";
-import cat6 from "../../../assets/cat-6.png";
-import cat7 from "../../../assets/cat-7.png";
-import cat8 from "../../../assets/cat-8.png";
+import hero_img from "../../assets/hero_img.png";
+import course1 from "../../assets/Course-1.png";
+import course2 from "../../assets/Course-2.png";
+import course3 from "../../assets/Course-3.png";
+import logo from "../../assets/logo_cap.png";
+import cat1 from "../../assets/cat-1.png";
+import cat2 from "../../assets/cat-2.png";
+import cat3 from "../../assets/cat-3.png";
+import cat4 from "../../assets/cat-4.png";
+import cat5 from "../../assets/cat-5.png";
+import cat6 from "../../assets/cat-6.png";
+import cat7 from "../../assets/cat-7.png";
+import cat8 from "../../assets/cat-8.png";
 import { useNavigate } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
-import { addUser, selectUser, logoutUser } from "../../../store/userSlice";
-import defProfile from "../../../assets/user-profile.png";
-import Footer from "../../layout/Footer";
+import { addUser, selectUser, logoutUser } from "../../store/userSlice";
+import defProfile from "../../assets/user-profile.png";
+import Footer from "../../components/layout/Footer";
 import { InstructorModal } from "../general/signup/InstructorSignUp";
 import {  BookOpen, Users } from 'lucide-react';
 import { toast } from "react-toastify";
 import axios from "axios";
+import Header from "../../components/layout/Header";
 
 
 const categories = [
@@ -135,76 +136,21 @@ export default function Home() {
 
   const user = useSelector(selectUser);
 
-  const handleLogout=async()=>{
+  const handleLogout = async () => {
     try {
-      const response = axios.post("http://localhost:3000/user/logout");
+      await axios.post("http://localhost:3000/user/logout");
       dispatch(logoutUser(user));
-
       toast.success("Logged out successfully");
-
     } catch (error) {
-      console.log(error.message);
-      toast.error(error.message || "Error logging out user")
+      toast.error(error.message || "Error logging out user");
     }
-  }
-
-  {console.log(user)}
-
-
+  };
   
+  const isLoggedIn=user;
+
   return (
     <>
-      <header className="bg-[#1d2026] text-[#8c94a3]">
-       
-        <div className="container mx-auto px-4">
-          <nav className="flex items-center justify-between h-14">
-            <div className="flex items-center space-x-6">
-              <a href="/" className="text-sm font-medium hover:text-gray-300">
-                Home
-              </a>
-              <a
-                href="/courses"
-                className="text-sm font-medium hover:text-gray-300"
-              >
-                Courses
-              </a>
-              <a
-                href="/about"
-                className="text-sm font-medium hover:text-gray-300"
-              >
-                About
-              </a>
-              <a
-                href="/contact"
-                className="text-sm font-medium hover:text-gray-300"
-              >
-                Contact
-              </a>
-              <a
-               onClick={() => setShowModal(true)}
-                className="text-sm font-medium hover:text-gray-300"
-              >
-                Become an Instructor
-              </a>
-            </div>
-            <div className="relative">
-              <select
-                className="appearance-none bg-transparent text-sm font-medium hover:text-gray-300 cursor-pointer pr-6"
-                defaultValue="English"
-              >
-                <option value="English">English</option>
-                <option value="Spanish">Spanish</option>
-                <option value="French">French</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center">
-                <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20">
-                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                </svg>
-              </div>
-            </div>
-          </nav>
-        </div>
-      </header>
+    <Header showModal={setShowModal} isLoggedIn={isLoggedIn}/>
       <div className="min-h-screen bg-white">
        
         <nav className={`sticky z-10 top-0 flex items-center justify-between px-6 py-4 bg-white border-b md:py-3 ${showModal ? 'relative z-[-0]' : ''}` }>
@@ -426,7 +372,7 @@ export default function Home() {
                     students. We provide the tools and skills to teach what you
                     love.
                   </p>
-                  <button onClick={() => setShowModal(true)} className="bg-white text-indigo-700 px-6 py-2 rounded-lg font-medium hover:bg-indigo-50 w-fit">
+                  <button onClick={() => isLoggedIn? (setShowModal(true)):(navigate("/login"))} className="bg-white text-indigo-700 px-6 py-2 rounded-lg font-medium hover:bg-indigo-50 w-fit">
                     Start Teaching →
                   </button>
                 </div>
