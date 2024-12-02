@@ -7,11 +7,12 @@ import { useDispatch, useSelector } from 'react-redux'
 import { logoutAdmin, selectAdmin } from '../../store/adminSlice'
 import { useNavigate } from 'react-router'
 import defProfile from "../../assets/user-profile.png";
+import Pagination from '../../components/utils/Pagination'
 
 export default function Dashboard() {
   const [courseFilter, setCourseFilter] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
-  const coursesPerPage = 5
+  const [coursesPerPage] = useState(3)
 
   const admin=useSelector(selectAdmin);
 
@@ -50,7 +51,7 @@ export default function Dashboard() {
     },
     {
       id: 3,
-      title: 'UI/UX Design',
+      title: 'UI/UX asdasdDesign',
       image: '/placeholder.svg?height=200&width=300',
       instructor: 'Emma Wilson',
       students: 156,
@@ -58,16 +59,15 @@ export default function Dashboard() {
       enrollCount:12,
       status: 'Draft'
     },
+    
   ]
 
-  const filteredCourses = courseFilter === 'all'
-    ? courses
-    : courses.filter(course => course.status === courseFilter)
 
-  const startIndex = (currentPage - 1) * coursesPerPage;
-  const endIndex = startIndex + coursesPerPage;
-  const paginatedCourses = filteredCourses.slice(startIndex, endIndex);
-
+    const paginateData = (data) => {
+      const startIndex = currentPage * coursesPerPage - coursesPerPage;
+      const endIndex = startIndex + coursesPerPage;
+      return data.slice(startIndex, endIndex);
+    };
  
 const handleLogout=async()=>{
   try {
@@ -84,6 +84,18 @@ const handleLogout=async()=>{
   }
 }
 
+const handlePageChange = (pageNumber) => {
+  setCurrentPage(pageNumber);
+};
+
+const filteredCourses = courseFilter === 'all'
+? courses
+: courses.filter(course => course.status === courseFilter)
+
+const filteredItems=paginateData(filteredCourses);
+
+
+
   return (
     
     <div className="flex min-h-screen bg-gray-50 ">
@@ -93,7 +105,7 @@ const handleLogout=async()=>{
       {/* Main Content */}
       <main className="flex-1 ">
         {/* Header */}
-        <header className="flex items-center justify-between border-b bg-white px-6 py-4 ">
+        <header className="flex items-center justify-between border-b bg-white px-6 py-2 ">
           <div>
             <h1 className="text-xl font-semibold">Dashboard</h1>
             <p className="text-sm text-gray-500">Good Morning</p>
@@ -152,8 +164,7 @@ const handleLogout=async()=>{
         </header>
 
         {/* Dashboard Content */}
-        <div className="space-y-8 mt-6 px-8">
-          <h1 className="text-2xl font-bold text-gray-900 ">Dashboard Overview</h1>
+        <div className="space-y-6 mt-6 px-12">
 
           {/* Stats Grid */}
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -203,7 +214,7 @@ const handleLogout=async()=>{
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 ">
-                  {paginatedCourses.map((course) => (
+                  {filteredItems.map((course) => (
                     <tr key={course.id} className="text-sm">
                       <td className="py-4 pl-2">
                         <div className="flex items-center gap-3">
@@ -238,6 +249,8 @@ const handleLogout=async()=>{
               </table>
             </div>
           </div>
+          <Pagination className="mt-4 flex justify-center gap-3" totalData={filteredItems.length} dataPerPage={coursesPerPage} currentPage={currentPage} setCurrentPage={handlePageChange}/>
+
         </div>
       </main>
     </div>

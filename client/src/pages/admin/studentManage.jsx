@@ -13,6 +13,7 @@ import {
   X,
 
 } from "lucide-react";
+import Pagination from "../../components/utils/Pagination";
 
 const StudentManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -41,6 +42,23 @@ const StudentManagement = () => {
     }
   };
 
+    //pagination
+  
+    const [currentPage,setCurrentPage]=useState(1);
+    const [dataPerPage]=useState(4);
+  
+    // Pagination logic for both tutors and applications
+  
+    const paginateData = (data) => {
+      const startIndex = currentPage * dataPerPage - dataPerPage;
+      const endIndex = startIndex + dataPerPage;
+      return data.slice(startIndex, endIndex);
+    };
+   
+    const handlePageChange = (pageNumber) => {
+      setCurrentPage(pageNumber);
+    };
+
   const openModal = (student) => {
     setSelectedStudent(student);
     setIsModalOpen(true);
@@ -56,6 +74,8 @@ const StudentManagement = () => {
       student.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const paginatedItems=paginateData(filteredStudents);
 
   if (loading) {
     return (
@@ -111,7 +131,7 @@ const StudentManagement = () => {
         </header>
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
           <div className="max-w-6xl mx-auto px-4 py-8">
-            <div className="bg-white rounded-xl shadow-lg p-8">
+            <div className="bg-white rounded-xl min-h-[500px] shadow-lg p-8">
               <div className="mb-6 flex justify-end">
                 <div className="relative w-64">
                   <input
@@ -146,8 +166,8 @@ const StudentManagement = () => {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {filteredStudents.map((student) => (
+                  <tbody className="divide-y divide-gray-100">
+                    {paginatedItems.map((student) => (
                       <tr
                         key={student._id}
                         className="hover:bg-gray-50 transition-colors"
@@ -220,8 +240,11 @@ const StudentManagement = () => {
                     ))}
                   </tbody>
                 </table>
+
               </div>
             </div>
+            <Pagination className="mt-4 flex justify-center gap-3" totalData={filteredStudents.length} dataPerPage={dataPerPage} currentPage={currentPage} setCurrentPage={handlePageChange}/>
+
           </div>
         </main>
       </div>
