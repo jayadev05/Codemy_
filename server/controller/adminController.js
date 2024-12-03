@@ -205,9 +205,6 @@ const getTutors = async(req,res)=>{
 
 const submitInstructorApplication = async (req, res) => {
   try {
-    // Log incoming request details for debugging
-    console.log('Request body:', req.body);
-    console.log('Request files:', req.files);
 
     const {
       fullName,
@@ -248,7 +245,7 @@ const submitInstructorApplication = async (req, res) => {
     const credentials = req.files?.certificates
       ? req.files.certificates.map(file => ({
           certificate: file.path,
-          description: experience || ''
+       
         }))
       : [];
 
@@ -385,6 +382,7 @@ const getCertificates = async (req, res) => {
 };
 
 const reviewInstructorApplication = async (req, res) => {   
+
   try {       
       const { id } = req.params;
       const { status } = req.body;
@@ -424,20 +422,8 @@ const reviewInstructorApplication = async (req, res) => {
               
               // Delete data from user collection
               await User.findByIdAndDelete(existingUser._id);
-
-              // clear tokens on user deletion
-              
-              res.clearCookie('accessToken', {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'Lax',
-              });
-              res.clearCookie('refreshToken', {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'Lax',
-              });
-              
+             
+             
               // Send approval email with new password
               try {
                   const { subject, htmlContent } = tutorApprovedEmailTemplate(
@@ -498,7 +484,7 @@ const reviewInstructorApplication = async (req, res) => {
 
 const existsCheck = async (req, res) => {   
   try {
-    const {  username, phone, checkType } = req.body;      
+    const { email,username, phone, checkType } = req.body;      
 
   
     let emailExists = false;

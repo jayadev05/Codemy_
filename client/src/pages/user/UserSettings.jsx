@@ -97,6 +97,7 @@ const Tabs = () => {
 const SettingsForm = () => {
 
   const user = useSelector(selectUser);
+  const PASSWORD_REGEX = /^(?!.*(.)\1{3,})(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
  
 
   const [profileImage, setProfileImage] = useState(null);
@@ -167,10 +168,18 @@ const SettingsForm = () => {
   const handlePasswordChange = async (e) => {
     e.preventDefault();
     
+
+    if(!PASSWORD_REGEX.test(formData.newPassword)){
+      toast.error("Please enter a valid password , with one uppercase , lowercase , digit etc");
+      return;
+    }
+    
     if (formData.newPassword !== formData.confirmPassword) {
         toast.error("New password and confirm password do not match.");
         return;
     }
+
+    
     
     try {
         const payload = {

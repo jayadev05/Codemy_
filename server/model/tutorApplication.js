@@ -18,6 +18,7 @@ const instructorApplicationSchema = new mongoose.Schema({
     trim: true
   },
   experience: {
+    required:true,
     type: String,
     default: ''
   },
@@ -26,11 +27,9 @@ const instructorApplicationSchema = new mongoose.Schema({
       type: String, // File path to the certificate
       default: ''
     },
-    description: {
-      type: String,
-      default: ''
-    }
+    
   }],
+  
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected'],

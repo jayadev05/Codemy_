@@ -43,6 +43,7 @@ export default function Signup() {
   const validateForm = () => {
     const newErrors = {};
     if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
+    else if(formData.firstName.trim().length<5) newErrors.firstName=`Should be atleast 5 characters`
 
     if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
 
@@ -53,7 +54,7 @@ export default function Signup() {
     else if (!EMAIL_REGEX.test(formData.email)) newErrors.email = 'Enter a valid Email';
 
     if (!formData.password) newErrors.password = 'Password is required';
-    else if (!PASSWORD_REGEX.test(formData.password)) newErrors.password = "Enter a valid Password"
+    else if (!PASSWORD_REGEX.test(formData.password)) newErrors.password = "Password should be atleast 6 characters long ,Include one uppercase, one lowercase, one digit and a symmbol"
 
     if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
 
@@ -138,7 +139,7 @@ export default function Signup() {
       setIsLoading(true);
       
       if (authResult.code) {
-        const response = await axios.post('http://localhost:3000/auth/google', {
+        const response = await axios.post('http://localhost:3000/user/google', {
           code: authResult.code
         });
 

@@ -135,6 +135,7 @@ export default function Home() {
   const dispatch = useDispatch();
 
   const user = useSelector(selectUser);
+  
 
   const handleLogout = async () => {
     try {

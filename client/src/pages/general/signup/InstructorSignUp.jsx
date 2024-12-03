@@ -7,6 +7,8 @@ import { selectUser } from '../../../store/userSlice';
 
 export function InstructorModal({ onClose }) {
 
+  const FULLNAME_REGEX = /^[A-Za-z]+(?:\s[A-Za-z]+|\s[A-Z]\.?)+$/;
+
   const user=useSelector(selectUser);
 
   // State for form data
@@ -30,13 +32,18 @@ export function InstructorModal({ onClose }) {
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'Full name is required';
     }
+    else if (!FULLNAME_REGEX.test(formData.fullName)) {
+      newErrors.fullName = 'Please Enter a real name with atleast 5 characters';
+    }
   
-    
     // Phone Validation
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone number is required';
     }
     else if(!/^(?!0{10}$)\d{10}$/.test(formData.phone)) newErrors.phone="Enter a valid mobile number"
+
+    if(!formData.experience.trim()) newErrors.experience="Experience is a must"
+    else if(formData.experience.trim().length<10) newErrors.experience="Enter atleast 10-20 characters"
 
     return newErrors;
   };
@@ -188,11 +195,16 @@ export function InstructorModal({ onClose }) {
                 rows="3"
               />
             </div>
+            {errors.experience && (
+                <span className="text-red-500 text-sm">
+                  {errors.experience}
+                </span>
+              )}
 
             {/* Certificates Upload */}
             <div>
               <label htmlFor="certificates" className="block text-sm font-medium text-gray-700 mb-1">
-                Certificates
+                Certificates (optional)
               </label>
               <div className="mt-1 flex justify-between items-center px-3 py-2 border border-gray-300 rounded-md">
                 <span className="text-sm text-gray-500">

@@ -13,8 +13,14 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import defProfile from "../../assets/user-profile.png";
 import Pagination from "../../components/utils/Pagination";
+import { useDispatch, useSelector } from "react-redux";
+import { logoutUser, selectUser } from "../../store/userSlice";
 
 const TutorManagement = () => {
+  const user=useSelector(selectUser);
+  
+  const dispatch=useDispatch()
+
   const [activeTab, setActiveTab] = useState("tutors");
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -91,15 +97,15 @@ const TutorManagement = () => {
             fullName: result.data.tutor.fullName,
             email: result.data.tutor.email,
             userName: result.data.tutor.userName,
-            status: result.data.tutor.status || "active",
+            isActive:result.data.tutor.isActive,
             profileImg: result.data.tutor.profileImg,
-            // Spread the rest of the tutor data
+            
             ...result.data.tutor,
           };
 
           // Add the new tutor to the tutors list
           setTutors((prevTutors) => {
-            // Check if tutor already exists to prevent duplicates
+           
             const tutorExists = prevTutors.some(
               (tutor) => tutor._id === newTutor._id
             );
@@ -115,8 +121,14 @@ const TutorManagement = () => {
         setApplications((prevApplications) =>
           prevApplications.filter((app) => app._id !== applicationId)
         );
+
+        //clear user state
+        dispatch(logoutUser(user));
+
+         
         setLoading(false);
         toast.success("Tutor Application Approved Successfully");
+        
 
         // Optionally, switch to the tutors tab to show the newly added tutor
         setActiveTab("tutors");
@@ -552,8 +564,8 @@ const TutorManagement = () => {
                         <td className="px-4 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <img
-                              crossorigin="anonymous"
-                              referrerpolicy="no-referrer"
+                              crossOrigin="anonymous"
+                              referrerPolicy="no-referrer"
                               src={tutor.profileImg || defProfile}
                               alt={tutor.fullName}
                               className="h-10 w-10 rounded-full mr-3 object-cover"
@@ -759,12 +771,12 @@ const TutorManagement = () => {
                   <p className="font-semibold text-gray-900">Status:</p>
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      selectedApplication.status === "active"
+                      selectedApplication.status === "active" || selectedApplication.isActive===true
                         ? "bg-green-200 text-green-800"
                         : "bg-red-200 text-red-800"
                     }`}
                   >
-                    {selectedApplication.status}
+                    {selectedApplication.status }
                   </span>
                 </div>
               </div>
@@ -783,7 +795,7 @@ const TutorManagement = () => {
                 <div>
                   <p className="font-semibold text-gray-900">Total Revenue:</p>
                   <p>
-                    ${Number(selectedApplication.totalRevenue || 0).toFixed(2)}
+                    ${Number(selectedApplication.totalRevenue || 0)}
                   </p>
                 </div>
 

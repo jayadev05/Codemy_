@@ -13,6 +13,7 @@ import defProfile from "../../../assets/user-profile.png";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 import { logoutTutor, selectTutor } from "../../../store/tutorSlice";
+import axios from 'axios'
 
 const Sidebar = ({ activeSection }) => {
   const dispatch=useDispatch()

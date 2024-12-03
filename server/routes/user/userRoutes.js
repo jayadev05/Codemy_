@@ -8,7 +8,7 @@ userRoute.post('/sendotp', sendOtp);
 userRoute.post('/create',verifyOtp, signUp);
 userRoute.post('/login', login);
 userRoute.post('/google', googleLogin);
-userRoute.put('/change-password',verifyUser,changePassword);
+userRoute.put('/change-password',changePassword);
 userRoute.put('/update', updateUser);
 userRoute.post("/logout", logoutUser);
 

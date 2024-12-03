@@ -96,11 +96,7 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate email and password input
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
-    }
-
+  
     // Find the account by email (User, Tutor, Admin)
  const [user,tutor,admin]=await Promise.all([
   User.findOne({email}),
@@ -131,14 +127,13 @@ const login = async (req, res) => {
     const userId = accountToAuthenticate._id;
     const userType = admin ? "admin" : (user ? "user" : "tutor");
 
-    // Debugging cookie setting
-    console.log("Before Token Generation - Response Headers:", res.getHeaders());
+    
 
     try {
       genarateAccessToken(res, userId, userType);
       genarateRefreshToken(res,userId, userType);
 
-      console.log("After Token Generation - Response Headers:", res.getHeaders());   
+        
 
       // Respond with success
       res.status(200).json({
@@ -192,13 +187,13 @@ const googleLogin = async (req, res, next) => {
       } = userInfo.data;
   
       // Check if user exists
-    const [user,admin,tutor]=await Promise.all([
+    let [user,admin,tutor]=await Promise.all([
       User.findOne({email}),
       Admin.findOne({email}),
       Tutor.findOne({email}),
     ])
 
-      const currentUser= user|| admin || tutor;
+      let currentUser= user|| admin || tutor;
       const accType = admin ? "admin" : (tutor ? "tutor" : "user");
   
 
@@ -235,15 +230,11 @@ const googleLogin = async (req, res, next) => {
         await currentUser.save();
       }
      
-      // Debugging cookie setting
-    console.log("Before Token Generation - Response Headers:", res.getHeaders());
-
+  
       // Generate tokens
       genarateAccessToken(res, currentUser._id,accType);
       genarateRefreshToken(res, currentUser._id,accType);
   
-// Debugging cookie setting
-console.log("After Token Generation - Response Headers:", res.getHeaders());
 
       const responseData = {
         _id: currentUser._id,
