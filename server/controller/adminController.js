@@ -411,6 +411,7 @@ const reviewInstructorApplication = async (req, res) => {
               const newTutor = new Tutor({
           ...existingUser.toObject(),
           email:application.email,
+          fullName:fullName,
           password:hashedPassword,
           phone: application.phone,
           credentials: application.credentials.map((cred) => ({

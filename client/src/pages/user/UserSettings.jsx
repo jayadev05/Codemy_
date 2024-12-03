@@ -97,14 +97,13 @@ const Tabs = () => {
 const SettingsForm = () => {
 
   const user = useSelector(selectUser);
-  const PASSWORD_REGEX = /^(?!.*(.)\1{3,})(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
- 
+  
 
   const [profileImage, setProfileImage] = useState(null);
   const [showCurrentPass, setCurrentPass] = useState(false);
   const [showNewPass, setNewPass] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
+  const [errors,setErrors]=useState({})
   const [firstName, lastName] = user.fullName.split(" ");
 
   const [formData, setFormData] = useState({
@@ -116,6 +115,20 @@ const SettingsForm = () => {
     newPassword: '',
     confirmPassword: ''
   });
+
+  const validateForm=()=>{
+    const PASSWORD_REGEX = /^(?!.*(.)\1{3,})(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
+    const newErrors={}
+
+    if(!PASSWORD_REGEX.test(formData.newPassword)) newErrors.newPass="Please enter a valid password , with one uppercase , lowercase , digit etc" 
+    
+
+    if (formData.newPassword !== formData.confirmPassword) newErrors.confirmPass="Passwords do not match";  
+
+    setErrors(newErrors);
+  
+  return Object.keys(errors).length === 0;
+  }
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -168,18 +181,9 @@ const SettingsForm = () => {
   const handlePasswordChange = async (e) => {
     e.preventDefault();
     
-
-    if(!PASSWORD_REGEX.test(formData.newPassword)){
-      toast.error("Please enter a valid password , with one uppercase , lowercase , digit etc");
-      return;
-    }
     
-    if (formData.newPassword !== formData.confirmPassword) {
-        toast.error("New password and confirm password do not match.");
-        return;
-    }
-
-    
+    if (!validateForm()) return;
+   
     
     try {
         const payload = {
@@ -359,6 +363,7 @@ const SettingsForm = () => {
                 {showCurrentPass ? <Eye size={18} /> : <EyeOff size={18} />}
               </button>
             </div>
+            {errors.currentPass && <p className="text-red-500 text-xs mt-1">{errors.currentPass}</p>}
           </div>
 
           <div>
@@ -384,6 +389,7 @@ const SettingsForm = () => {
                 {showNewPass ? <Eye size={18} /> : <EyeOff size={18} />}
               </button>
             </div>
+            {errors.currentPass && <p className="text-red-500 text-xs mt-1">{errors.newPass}</p>}
           </div>
 
           <div>
@@ -409,6 +415,7 @@ const SettingsForm = () => {
                 {showConfirmPassword ? <Eye size={18} /> : <EyeOff size={18} />}
               </button>
             </div>
+            {errors.currentPass && <p className="text-red-500 text-xs mt-1">{errors.confirmPass}</p>}
           </div>
 
           <button
