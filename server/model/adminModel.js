@@ -2,12 +2,12 @@ const mongoose = require('mongoose');
 
 const adminSchema = new mongoose.Schema(
   {
-    full_name: {
+    fullName: {
       type: String,
       required: true,
       trim: true,
     },
-    user_name: {
+    userName: {
       type: String,
       required: true,
       unique: true,
@@ -29,11 +29,11 @@ const adminSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    created_at: {
+    createdAt: {
       type: Date,
       default: Date.now,
     },
-    updated_at: {
+    updatedAt: {
       type: Date,
       default: Date.now,
     },

@@ -3,12 +3,10 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "./partials/sidebar";
 import axios from "axios";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 import defProfile from "../../assets/user-profile.png";
 import {
   Search,
-  UserCheck,
-  UserX,
   FileText,
   X,
 
@@ -30,7 +28,7 @@ const StudentManagement = () => {
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("http://localhost:3000/admin/get-students");
+      const response = await axios.get("http://localhost:3000/admin/get-students",{withCredentials:true});
       console.log("response data length ",response.data.students.length);
       setStudents(response.data.students || []);
       setLoading(false);
@@ -101,12 +99,13 @@ const StudentManagement = () => {
   
       const result = await axios.put(endpoint);
       
-      // Update the tutors state to reflect the new status
+      // Update the student state to reflect the new status
+
       setStudents(prevStudents => 
         prevStudents.map(student => 
           student._id === id 
             ? { ...student, isActive: currentStatus === false ? true : false } 
-            : tutor
+            : student
         )
       );
   
@@ -123,15 +122,15 @@ const StudentManagement = () => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-white">
-      <ToastContainer />
+   
       <Sidebar activeSection={"Students"} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-white border-b border-gray-200 p-6">
           <h1 className="text-3xl font-bold text-gray-800">Student Management</h1>
         </header>
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
+        <main className="flex-1  overflow-x-hidden overflow-y-auto bg-gray-100">
           <div className="max-w-6xl mx-auto px-4 py-8">
-            <div className="bg-white rounded-xl min-h-[500px] shadow-lg p-8">
+            <div className="bg-white  rounded-xl min-h-[500px] shadow-lg p-8">
               <div className="mb-6 flex justify-end">
                 <div className="relative w-64">
                   <input
@@ -175,6 +174,8 @@ const StudentManagement = () => {
                         <td className="px-4 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <img
+                              crossorigin="anonymous"
+                            
                               src={student.profileImg || defProfile}
                               alt={student.fullName}
                               className="h-10 w-10 rounded-full mr-3 object-cover"
@@ -217,10 +218,10 @@ const StudentManagement = () => {
                               onClick={() =>
                                 handleToggleList(student._id, student.isActive)
                               }
-                              className={`transition-colors ${
+                              className={`transition-colors text-white min-w-[70px]  p-2 rounded-sm ${
                                 student.isActive === false
-                                  ? "text-green-500 hover:text-green-700"
-                                  : "text-red-500 hover:text-red-700"
+                                  ? "t bg-green-400 hover:bg-green-600"
+                                  : " bg-red-500 hover:bg-red-600 "
                               }`}
                               title={
                                 student.isActive === false
@@ -229,9 +230,9 @@ const StudentManagement = () => {
                               }
                             >
                               {student.isActive === false ? (
-                                <UserCheck className="h-5 w-5" />
+                                "List"
                               ) : (
-                                <UserX className="h-5 w-5" />
+                               "Unlist"
                               )}
                             </button>
                           </div>
@@ -243,7 +244,7 @@ const StudentManagement = () => {
 
               </div>
             </div>
-            <Pagination className="mt-4 flex justify-center gap-3" totalData={filteredStudents.length} dataPerPage={dataPerPage} currentPage={currentPage} setCurrentPage={handlePageChange}/>
+            <Pagination className="mt-4  flex justify-center gap-3" totalData={filteredStudents.length} dataPerPage={dataPerPage} currentPage={currentPage} setCurrentPage={handlePageChange}/>
 
           </div>
         </main>
@@ -267,6 +268,7 @@ const StudentManagement = () => {
               {selectedStudent.profileImg && (
                 <div className="flex justify-center mb-4">
                   <img
+                  crossOrigin="anonymous"
                     src={selectedStudent.profileImg}
                     alt={`${selectedStudent.fullName}'s profile`}
                     className="w-32 h-32 rounded-full object-cover border-4 border-orange-500"

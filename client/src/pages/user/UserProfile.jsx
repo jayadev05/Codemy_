@@ -1,11 +1,12 @@
 import React from 'react'
-import { Bell, ChevronDown, Heart, Search, ShoppingCart } from 'lucide-react'
-import { useNavigate } from 'react-router'
+import {  Heart, Search, ShoppingCart } from 'lucide-react'
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux'
 import { selectUser } from '../../store/userSlice'
 import defProfile from '../../assets/user-profile.png'
 import Header from '../../components/layout/Header'
 import Footer from '../../components/layout/Footer'
+import Pagination from "../../components/utils/Pagination";
 
 
 
@@ -59,78 +60,105 @@ const UserProfile = () => {
   )
 }
 
+
+
 const Tabs = () => {
-  const navigate=useNavigate()
-  const tabs = ['Courses', 'Message', 'Wishlist', 'Purchase History', 'Settings']
+  const navigate = useNavigate();
+  const location = useLocation();
+  const tabs = [
+    { label: 'Courses', path: '/user/profile' },
+    { label: 'Message', path: '/user/messages' },
+    { label: 'Wishlist', path: '/user/wishlist' },
+    { label: 'Purchase History', path: '/user/purchases' },
+    { label: 'Settings', path: '/user/settings' },
+  ];
+
   return (
     <div className="bg-white border-b">
       <div className="container mx-auto px-4">
         <div className="flex">
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              onClick={()=>{
-                switch(tab){
-                  case "Courses":
-                    navigate("/user/profile");
-                    break;
-
-                  case "Settings":
-                    navigate("/user/settings");
-                    break;
-                }
-              }}
-              className={`px-4 py-3 text-sm ${tab === 'Courses' ? 'text-orange-500 border-b-2 border-orange-500 font-medium' : 'text-gray-500 hover:text-gray-700'} transition duration-300`}
-            >
-              {tab}
-            </button>
-          ))}
+          {tabs.map((tab) => {
+            const isActive = location.pathname === tab.path;
+            return (
+              <button
+                key={tab.label}
+                onClick={() => navigate(tab.path)}
+                className={`px-4 py-3 text-sm ${
+                  isActive
+                    ? 'text-orange-500 border-b-2 border-orange-500 font-medium'
+                    : 'text-gray-500 hover:text-gray-700'
+                } transition duration-300`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
+
+
+
 
 const CourseCard = ({ title, description, progress, image }) => (
-  <div className="bg-white rounded-lg shadow-md overflow-hidden">
-    <img src={image} alt={title} className="w-full h-40 object-cover" />
+  <div className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 max-w-sm">
+    <img src={image} alt={title} className="w-full h-48 object-cover" />
     <div className="p-4">
-      <p className="text-sm text-gray-600 mb-2">{description}</p>
-      <h4 className="font-medium mb-4 text-sm">{title}</h4>
-      <button className="bg-orange-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-orange-600 transition duration-300">
-        {progress}
+      <h3 className="font-semibold text-lg mb-2 truncate">{title}</h3>
+      <p className="text-gray-600 text-sm mb-4 line-clamp-2">{description}</p>
+      <div className="mb-4">
+        <div className="h-2 bg-gray-200 rounded-full">
+          <div 
+            className="h-full bg-orange-500 rounded-full" 
+            style={{ width: `${progress}%` }}
+            role="progressbar"
+            aria-valuenow={progress}
+            aria-valuemin="0"
+            aria-valuemax="100"
+          ></div>
+        </div>
+        <p className="text-xs text-gray-500 mt-1 text-right">{progress}% Complete</p>
+      </div>
+      <button className="w-full bg-orange-500 text-white py-2 px-4 rounded-lg hover:bg-orange-600 transition-colors duration-300">
+        {progress===0?"Start Course" :"Continue Course"}
       </button>
     </div>
   </div>
 )
 
+
+
 const Courses = () => {
   const courses = [
     {
-      title: "21. Learn More About Web Design",
+      title: "Learn More About Web Design",
       description: "Learn Official Guide from Codemy",
-      progress: "Watch Lecture",
+      progress: 40,
       image: "/placeholder.svg?height=200&width=300"
     },
     {
-      title: "101. User Experience Design 3 : Create...",
+      title: "User Experience Design 3: Create...",
       description: "UX/UI Web Design Master Course",
-      progress: "Watch Lecture",
+      progress: 16,
       image: "/placeholder.svg?height=200&width=300"
     },
     {
-      title: "7. Adding Content to Our Website",
+      title: "Adding Content to Our Website",
       description: "Complete Web Design: From Figma to Webflow",
-      progress: "25% Completed",
+      progress: 25,
       image: "/placeholder.svg?height=200&width=300"
     },
     {
-      title: "101. CSS Font Property Challenge Solut...",
+      title: "CSS Font Property Challenge Solution",
       description: "Modern Frontend Development Course",
-      progress: "Watch Lecture",
+      progress: 0,
       image: "/placeholder.svg?height=200&width=300"
     }
   ]
+  
+  
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -158,33 +186,20 @@ const Courses = () => {
   )
 }
 
-const Pagination = () => (
-  <div className="flex justify-center mt-8 space-x-2">
-    <button className="px-3 py-1 border rounded-full text-orange-500 hover:bg-orange-100">←</button>
-    {[1, 2, 3, 4, 5].map((page) => (
-      <button
-        key={page}
-        className={`px-3 py-1 border rounded-full ${page === 1 ? 'bg-orange-500 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-      >
-        {page.toString().padStart(2, '0')}
-      </button>
-    ))}
-    <button className="px-3 py-1 border rounded-full text-orange-500 hover:bg-orange-100">→</button>
-  </div>
-)
+
 
 
 
 export default function UserDashboard() {
   return (
-    <div className="bg-gray-100 min-h-screen flex flex-col">
+    <div className="bg-gray-100 min-h-screen  flex flex-col">
       <Header/>
       <MainHeader />
       <main className="flex-grow mb-4">
         <UserProfile />
         <Tabs />
         <Courses />
-        <Pagination />
+      
       </main>
       <Footer/>
     </div>

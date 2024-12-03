@@ -265,12 +265,15 @@ export default function Home() {
 <p className="text-base text-gray-600 leading-relaxed">
   Our mission is to help people find the best course online and learn with experts anytime, anywhere.
 </p>
-              <button
-                onClick={() => navigate("/signup")}
-                className="px-6 py-3 text-white bg-orange-500 rounded-md transition-colors hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
-                Create Account
-              </button>
+             {!user?
+               <button
+               onClick={() => navigate("/signup")}
+               className="px-6 py-3 text-white bg-orange-500 rounded-md transition-colors hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
+             >
+               Create Account
+             </button> : ""
+             }
+             
             </div>
             <div className="relative h-[300px] md:h-[400px]">
               <img

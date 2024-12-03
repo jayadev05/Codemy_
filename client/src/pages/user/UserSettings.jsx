@@ -7,6 +7,7 @@ import axios from 'axios';
 import Header from '../../components/layout/Header'
 import Footer from '../../components/layout/Footer'
 import { toast } from 'react-toastify'
+import { useLocation, useNavigate } from 'react-router'
 
 const MainHeader = () => {
   return (
@@ -57,36 +58,57 @@ const UserProfile = () => {
 }
 
 const Tabs = () => {
-  const tabs = ['Courses', 'Message', 'Wishlist', 'Purchase History', 'Settings']
+  const navigate = useNavigate();
+  const location = useLocation();
+  const tabs = [
+    { label: 'Courses', path: '/user/profile' },
+    { label: 'Message', path: '/user/messages' },
+    { label: 'Wishlist', path: '/user/wishlist' },
+    { label: 'Purchase History', path: '/user/purchases' },
+    { label: 'Settings', path: '/user/settings' },
+  ];
+
   return (
     <div className="bg-white border-b">
       <div className="container mx-auto px-4">
         <div className="flex">
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              className={`px-4 py-3 text-sm ${tab === 'Settings' ? 'text-orange-500 border-b-2 border-orange-500 font-medium' : 'text-gray-500 hover:text-gray-700'} transition duration-300`}
-            >
-              {tab}
-            </button>
-          ))}
+          {tabs.map((tab) => {
+            const isActive = location.pathname === tab.path;
+            return (
+              <button
+                key={tab.label}
+                onClick={() => navigate(tab.path)}
+                className={`px-4 py-3 text-sm ${
+                  isActive
+                    ? 'text-orange-500 border-b-2 border-orange-500 font-medium'
+                    : 'text-gray-500 hover:text-gray-700'
+                } transition duration-300`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 const SettingsForm = () => {
+
   const user = useSelector(selectUser);
+ 
 
   const [profileImage, setProfileImage] = useState(null);
   const [showCurrentPass, setCurrentPass] = useState(false);
   const [showNewPass, setNewPass] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  const [firstName, lastName] = user.fullName.split(" ");
+
   const [formData, setFormData] = useState({
-    firstName: user?.firstName || '',
-    lastName: user?.lastName || '',
+    firstName: firstName || '',
+    lastName: lastName || '',
     mobile: user?.mobile || '',
     email: user?.email || '',
     currentPassword: '',
@@ -146,35 +168,54 @@ const SettingsForm = () => {
     e.preventDefault();
     
     if (formData.newPassword !== formData.confirmPassword) {
-      toast.error("New password and confirm password do not match.");
-      return;
+        toast.error("New password and confirm password do not match.");
+        return;
     }
-
+    
     try {
-      const payload = {
-        email: user.email,
-        currentPassword: formData.currentPassword,
-        newPassword: formData.newPassword,
-      };
-
-      const response = await axios.put('http://localhost:3000/user/change-password', payload);
-
-      if (response.data.success) {
+        const payload = {
+            email: user.email,
+            currentPassword: formData.currentPassword,
+            newPassword: formData.newPassword,
+        };
+        axios.defaults.withCredentials = true; 
+        const response = await axios.put(
+            'http://localhost:3000/user/change-password', payload
+           
+        );
+        
         toast.success("Password changed successfully!");
         setFormData(prev => ({
-          ...prev,
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: ''
+            ...prev,
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: ''
         }));
-      } else {
-        toast.error(response.data.message || "Failed to change password.");
-      }
+        
     } catch (error) {
-      console.error("Error:", error);
-      toast.error("An error occurred while changing the password.");
+        // Detailed error handling
+        if (error.response) {
+            const errorMessage = error.response.data.message || 
+                                 "Failed to change password";
+            
+            console.error("Error details:", {
+                status: error.response.status,
+                data: error.response.data,
+                headers: error.response.headers
+            });
+            
+            toast.error(errorMessage);
+        } else if (error.request) {
+            // The request was made but no response was received
+            console.error("No response received:", error.request);
+            toast.error("No response from server. Please check your connection.");
+        } else {
+            // Something happened in setting up the request that triggered an Error
+            console.error("Error setting up request:", error.message);
+            toast.error("An unexpected error occurred");
+        }
     }
-  };
+};
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -188,7 +229,7 @@ const SettingsForm = () => {
           <div className="flex items-center space-x-4 mb-4">
             <div className="relative w-20 h-20">
               <img
-                src={profileImage || user?.profileImage || defProfile}
+                src={ user?.profileImage || defProfile}
                 alt="Profile"
                 className="w-full h-full object-cover rounded-full border-2 border-orange-500 shadow-sm"
               />
@@ -324,7 +365,7 @@ const SettingsForm = () => {
                 placeholder="Enter new password"
                 className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 transition duration-300 pr-10"
                 required
-                minLength={8}
+                minLength={6}
               />
               <button
                 type="button"
@@ -349,7 +390,7 @@ const SettingsForm = () => {
                 placeholder="Confirm new password"
                 className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 transition duration-300 pr-10"
                 required
-                minLength={8}
+                minLength={6}
               />
               <button
                 type="button"

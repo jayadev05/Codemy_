@@ -16,7 +16,7 @@ const CategorySchema = new mongoose.Schema(
       }],
       tutors: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'user',
+        ref: 'tutor',
       }],
       isVisible: {
         type: Boolean,

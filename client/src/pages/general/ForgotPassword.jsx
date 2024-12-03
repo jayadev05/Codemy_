@@ -3,7 +3,7 @@ import heroImg from "../../assets/hero.png";
 import logo from "../../assets/logo_cap.png";
 import { useState } from "react";
 import axios from "axios";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -103,7 +103,7 @@ export default function ForgotPassword() {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 mt-8">
+      <main className="container mx-auto px-4 mt-6">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-6 items-center">
           {/* Left Side - Illustration */}
           <div className="hidden md:block ">
@@ -118,7 +118,7 @@ export default function ForgotPassword() {
           </div>
 
           {/* Right Side - Form */}
-          <div className="max-w-md mx-auto w-full space-y-6 p-4">
+          <div className="max-w-md mx-auto w-full space-y-6 p-4 lg:mt-[-50px]">
             <div className="space-y-4">
               <h1 className="text-2xl font-bold text-gray-900">
                 Forgot your password?

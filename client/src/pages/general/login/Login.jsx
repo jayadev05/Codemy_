@@ -84,13 +84,35 @@ const Login = () => {
           code: authResult.code,
         });
 
+        const { data } = response; 
+      
+        if(data.data.user.isActive===false){
+          setIsLoading(false);
+          toast.error("Your account is blocked. Please contact support");
+          return
+        }
+
         if (response.data.success) {
-          dispatch(addUser(response.data.data.user));
+       
           toast.success("Google Sign-in Successful!");
 
-          setTimeout(() => {
-            navigate("/");
-          }, 1000);
+          
+          const accType = data.data.user.accType;
+
+          if (accType === "admin") {
+              
+            dispatch(addAdmin(data.data.user));
+            navigate("/admin/dashboard"); 
+            // Redirect to admin dashboard
+          } else if(accType==="tutor") {
+            dispatch(addTutor(data.data.user));
+            navigate("/tutor/dashboard"); // Redirect to user/tutor home
+          }
+          else {
+            dispatch(addUser(data.data.user));
+            navigate("/")
+          }
+
         }
       }
     } catch (error) {
@@ -114,11 +136,8 @@ const Login = () => {
     flow: "auth-code",
   });
 
-
-
   return (
     <>
-   
       {isLoading && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
@@ -184,7 +203,7 @@ const Login = () => {
                 </div>
                 <div className="flex justify-end">
                   <a
-                    onClick={()=>navigate("/forgot-password")}
+                    onClick={() => navigate("/forgot-password")}
                     className="text-sm text-orange-500 hover:underline cursor-pointer"
                   >
                     Forgot password?

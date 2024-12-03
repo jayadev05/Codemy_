@@ -8,6 +8,8 @@ import { logoutAdmin, selectAdmin } from '../../store/adminSlice'
 import { useNavigate } from 'react-router'
 import defProfile from "../../assets/user-profile.png";
 import Pagination from '../../components/utils/Pagination'
+import axios from 'axios'
+import { toast } from 'react-toastify'
 
 export default function Dashboard() {
   const [courseFilter, setCourseFilter] = useState('all')
@@ -22,10 +24,10 @@ export default function Dashboard() {
   const navigate=useNavigate();
 
   const stats = [
-    { title: 'Total Students', value: '1,234', icon: '👥' },
-    { title: 'Active Courses', value: '12', icon: '📚' },
+    { title: 'Total Students', value: '134', icon: '👥' },
+    { title: 'Active Courses', value: '48', icon: '📚' },
     { title: 'Total Revenue', value: '₹150,000', icon: '💰' },
-    { title: 'Course Rating', value: '4.8', icon: '⭐' },
+    { title: 'Total Tutors', value: '8', icon: '👥' },
   ]
 
   const courses = [

@@ -7,7 +7,7 @@ require("dotenv").config();
 const otpSchema = require('../model/otpStore');
 const crypto = require('crypto');
 const { mailSender, otpEmailTemplate } = require('../utils/nodeMailer');
-const genarateAccesToken = require("../utils/genarateAccesToken");
+const genarateAccessToken = require("../utils/genarateAccesToken");
 const genarateRefreshToken = require("../utils/genarateRefreshToken");
 const { oauth2client } = require("../config/googleConfig");
 const axios =require('axios');
@@ -131,9 +131,14 @@ const login = async (req, res) => {
     const userId = accountToAuthenticate._id;
     const userType = admin ? "admin" : (user ? "user" : "tutor");
 
+    // Debugging cookie setting
+    console.log("Before Token Generation - Response Headers:", res.getHeaders());
+
     try {
-      genarateAccesToken(res, userId);
-      genarateRefreshToken(res, userId);
+      genarateAccessToken(res, userId, userType);
+      genarateRefreshToken(res,userId, userType);
+
+      console.log("After Token Generation - Response Headers:", res.getHeaders());   
 
       // Respond with success
       res.status(200).json({
@@ -187,26 +192,31 @@ const googleLogin = async (req, res, next) => {
       } = userInfo.data;
   
       // Check if user exists
-      let user = await User.findOne({ email });
+    const [user,admin,tutor]=await Promise.all([
+      User.findOne({email}),
+      Admin.findOne({email}),
+      Tutor.findOne({email}),
+    ])
+
+      const currentUser= user|| admin || tutor;
+      const accType = admin ? "admin" : (tutor ? "tutor" : "user");
   
-      if (!user) {
-        // Generate a unique username based on email
+
+  
+      if (!currentUser) {
         const baseUsername = email.split('@')[0];
         let userName = baseUsername;
         let counter = 1;
-  
-        // Keep checking until we find a unique username
+      
         while (await User.findOne({ userName })) {
           userName = `${baseUsername}${counter}`;
           counter++;
         }
-  
-        // Generate a random secure password for OAuth users
+      
         const randomPassword = crypto.randomBytes(32).toString('hex');
         const hashedPassword = await bcrypt.hash(randomPassword, 10);
-  
-        // Create new user
-        user = await User.create({
+      
+        currentUser = await User.create({
           fullName,
           userName,
           email,
@@ -214,35 +224,49 @@ const googleLogin = async (req, res, next) => {
           profileImg: profileImg || '',
           isVerified: true,
           isActive: true,
-          phone: null,
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
         });
-      } else {
-        // Update existing user's details
-        user.profileImg = profileImg || user.profileImg;
-        user.updatedAt = new Date();
-        await user.save();
       }
-  
+       else  {
+        // Update existing user's details
+        currentUser.profileImg = profileImg || currentUser.profileImg;
+        currentUser.updatedAt = new Date();
+        await currentUser.save();
+      }
+     
+      // Debugging cookie setting
+    console.log("Before Token Generation - Response Headers:", res.getHeaders());
+
       // Generate tokens
-      genarateAccesToken(res, user._id);
-      genarateRefreshToken(res, user._id);
+      genarateAccessToken(res, currentUser._id,accType);
+      genarateRefreshToken(res, currentUser._id,accType);
   
+// Debugging cookie setting
+console.log("After Token Generation - Response Headers:", res.getHeaders());
+
+      const responseData = {
+        _id: currentUser._id,
+        fullName: currentUser.fullName,
+        userName:currentUser.userName,
+        email: currentUser.email,
+        profileImg: currentUser.profileImg,
+        accType,
+      };
+      
+      if (accType === "user" || accType === "tutor") {
+        responseData.isVerified = currentUser.isVerified;
+        responseData.isActive = currentUser.isActive;
+      }
+
+
       // Return success response
       return res.status(200).json({
         success: true,
         message: 'Google authentication successful',
         data: {
-          user: {
-            _id: user._id,
-            fullName: user.fullName,
-            userName: user.userName,
-            email: user.email,
-            profileImg: user.profileImg,
-            isVerified: user.isVerified,
-            isActive: user.isActive
-          }
+          user: responseData
+          
         }
       });
   
@@ -273,12 +297,15 @@ const googleLogin = async (req, res, next) => {
     }
   };
 
-  const changePassword = async (req, res) => {
+ const changePassword = async (req, res) => {
     const { currentPassword, newPassword, email } = req.body;
   
+  
+    console.log('Cookies:', req.cookies); // This should print accessToken and refreshToken
+    
     try {
       // Find user by email
-      const user = await User.findOne({ email });
+      const user = await User.findOne({email});
       
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -288,7 +315,11 @@ const googleLogin = async (req, res, next) => {
       const isPasswordMatch = await bcrypt.compare(currentPassword, user.password);
   
       if (!isPasswordMatch) {
-        return res.status(401).json({ message: "Incorrect current password" });
+        return res.status(401).json({ message: "Current password is Incorrect" });
+      }
+
+      if(currentPassword===newPassword){
+        return res.status(409).json({message:"New Password cannot be same as Current Password"})
       }
   
       // Hash the new password

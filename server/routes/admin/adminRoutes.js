@@ -2,7 +2,8 @@ const express = require("express")
 const adminRoute = express.Router()
 const { logoutAdmin,getCertificates,forgotPassword,existsCheck,approveTutor,submitInstructorApplication,getInstructorApplications,getTutors,reviewInstructorApplication,resetPassword,getUsers,listUser,unlistUser,unlisTtutor,lisTtutor} = require("../../controller/adminController")
 const handleTutorUpload = require('../../middleware/multer');
-const handleMulterError =require('../../middleware/mulerErrorHandler')
+const handleMulterError =require('../../middleware/mulerErrorHandler');
+const verifyUser = require("../../middleware/authMiddleware");
 
 
 adminRoute.post('/forgot-password', forgotPassword);

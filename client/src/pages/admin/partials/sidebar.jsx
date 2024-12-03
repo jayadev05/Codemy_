@@ -26,9 +26,11 @@ const Sidebar = ({ activeSection }) => {
 
       dispatch(logoutAdmin(admin));
 
+      toast.success("Logged out successfully");
+      
       navigate('/login');
 
-      toast.success("Logged out successfully");
+      
     } catch (error) {
       console.log(error.message);
       toast.error(error.message || "Error Logging out user")

@@ -424,6 +424,19 @@ const reviewInstructorApplication = async (req, res) => {
               
               // Delete data from user collection
               await User.findByIdAndDelete(existingUser._id);
+
+              // clear tokens on user deletion
+              
+              res.clearCookie('accessToken', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'Lax',
+              });
+              res.clearCookie('refreshToken', {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'Lax',
+              });
               
               // Send approval email with new password
               try {

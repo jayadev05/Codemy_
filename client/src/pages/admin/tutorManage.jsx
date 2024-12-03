@@ -127,7 +127,7 @@ const TutorManagement = () => {
             app._id === applicationId ? { ...app, status: "rejected" } : app
           )
         );
-
+        setLoading(false);
         toast.error("Tutor Application Rejected");
       }
     } catch (error) {
@@ -442,7 +442,7 @@ const TutorManagement = () => {
 
   const filteredItems =
     activeTab === "tutors"
-      ? dummyUsers.filter(
+      ? tutors.filter(
           (tutor) =>
             tutor.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
             tutor.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -485,7 +485,7 @@ const TutorManagement = () => {
         </header>
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
           <div className="max-w-6xl mx-auto px-4 py-8">
-            <div className="bg-white rounded-xl shadow-lg lg:min-h-[500px] p-8">
+            <div className="bg-white rounded-xl shadow-lg lg:min-h-[550px] p-8">
               <div className="mb-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
                 <div className="flex space-x-4">
                   <button
@@ -596,10 +596,10 @@ const TutorManagement = () => {
                               onClick={() =>
                                 handleToggleList(tutor._id, tutor.isActive)
                               }
-                              className={`transition-colors ${
+                              className={`transition-colors text-white min-w-[70px]  p-2 rounded-sm ${
                                 tutor.isActive === false
-                                  ? "text-green-500 hover:text-green-700"
-                                  : "text-red-500 hover:text-red-700"
+                                  ? "t bg-green-400 hover:bg-green-600"
+                                  : " bg-red-500 hover:bg-red-600 "
                               }`}
                               title={
                                 tutor.isActive === false
@@ -608,9 +608,9 @@ const TutorManagement = () => {
                               }
                             >
                               {tutor.isActive === false ? (
-                                <UserCheck className="h-5 w-5" />
+                                "List"
                               ) : (
-                                <UserX className="h-5 w-5" />
+                               "Unlist"
                               )}
                             </button>
                           </div>

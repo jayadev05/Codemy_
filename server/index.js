@@ -4,7 +4,7 @@ const adminRoute = require('./routes/admin/adminRoutes');
 const app = express();
 const cors=require('cors')
 const mongoose = require('mongoose')
-const cookieParser=require('cookie-parser');
+const cookieParser=require('cookie-parser')
 const nocache=require("nocache")
 
 
@@ -28,10 +28,10 @@ app.use((req, res, next) => {
 
 app.use(nocache());
 app.use(express.json());
-app.use(cookieParser())
 app.use(express.urlencoded({extended:true}));
+app.use(cookieParser())
 app.use(cors({
-  origin: 'http://localhost:5173', // Your React app's URL
+  origin: 'http://localhost:5173', // Frontend URL
   methods: ['GET', 'POST', 'PUT','PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
