@@ -2,7 +2,7 @@
 
 import { Bell, ChevronDown, Search } from 'lucide-react'
 import { useState } from 'react'
-import Sidebar from './partials/sidebar'
+import Sidebar from '../../components/layout/admin/Sidebar';
 import { useDispatch, useSelector } from 'react-redux'
 import { logoutAdmin, selectAdmin } from '../../store/adminSlice'
 import { useNavigate } from 'react-router'

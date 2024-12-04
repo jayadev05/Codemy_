@@ -22,11 +22,17 @@ const instructorApplicationSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  field: {
+    required:true,
+    type: String,
+    default: ''
+  },
   credentials: [{
     certificate: {
       type: String, // File path to the certificate
       default: ''
     },
+    mimeType: String,
     
   }],
   

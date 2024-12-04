@@ -1,105 +1,25 @@
 import React, { useState } from 'react'
-import { Heart, Search, ShoppingCart, Eye, EyeOff, Camera } from 'lucide-react'
+import {  Eye, EyeOff, Camera } from 'lucide-react'
 import defProfile from '../../assets/user-profile.png'
-import { useSelector } from 'react-redux'
-import { selectUser } from '../../store/userSlice'
+import { useDispatch, useSelector } from 'react-redux'
+import { addUser, selectUser } from '../../store/userSlice'
 import axios from 'axios';
 import Header from '../../components/layout/Header'
-import Footer from '../../components/layout/Footer'
 import { toast } from 'react-toastify'
-import { useLocation, useNavigate } from 'react-router'
+import MainHeader from '../../components/layout/user/MainHeader'
+import UserProfile from '../../components/layout/user/UserDetails'
+import Tabs from '../../components/layout/user/Tabs'
 
-const MainHeader = () => {
-  return (
-    <header className="bg-white shadow-md py-3 px-4">
-      <div className="container mx-auto flex justify-between items-center">
-        <div className="flex items-center space-x-4">
-          <h1 className="text-2xl font-bold text-orange-500">Codemy</h1>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-            <input
-              type="text"
-              placeholder="What do you want to learn..."
-              className="pl-10 pr-4 py-2 w-64 sm:w-80 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 transition duration-300"
-            />
-          </div>
-        </div>
-        <div className="flex items-center space-x-4">
-          {[Search, Heart, ShoppingCart].map((Icon, index) => (
-            <button key={index} className="p-1.5 hover:bg-gray-100 rounded-full transition duration-300">
-              <Icon size={20} className="text-gray-600 hover:text-orange-500" />
-            </button>
-          ))}
-        </div>
-      </div>
-    </header>
-  )
-}
 
-const UserProfile = () => {
-  const user = useSelector(selectUser);
-  console.log(user)
 
-  return (
-    <div className="bg-rose-50 py-4">
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <img crossOrigin="anonymous" referrerPolicy="no-referrer" src={user?.profileImg || defProfile} className='w-16 h-16 rounded-full border-2 border-white shadow-md' alt="" />
-            <h2 className="text-2xl font-bold text-gray-800">{user.fullName}</h2>
-          </div>
-          <button className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition duration-300 text-sm font-semibold shadow-sm">
-            Become Instructor →
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-const Tabs = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const tabs = [
-    { label: 'Courses', path: '/user/profile' },
-    { label: 'Message', path: '/user/messages' },
-    { label: 'Wishlist', path: '/user/wishlist' },
-    { label: 'Purchase History', path: '/user/purchases' },
-    { label: 'Settings', path: '/user/settings' },
-  ];
-
-  return (
-    <div className="bg-white border-b">
-      <div className="container mx-auto px-4">
-        <div className="flex">
-          {tabs.map((tab) => {
-            const isActive = location.pathname === tab.path;
-            return (
-              <button
-                key={tab.label}
-                onClick={() => navigate(tab.path)}
-                className={`px-4 py-3 text-sm ${
-                  isActive
-                    ? 'text-orange-500 border-b-2 border-orange-500 font-medium'
-                    : 'text-gray-500 hover:text-gray-700'
-                } transition duration-300`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const SettingsForm = () => {
 
   const user = useSelector(selectUser);
   
+ const dispatch=useDispatch();
 
-  const [profileImage, setProfileImage] = useState(null);
+  const [profileImg, setProfileImage] = useState(null);
   const [showCurrentPass, setCurrentPass] = useState(false);
   const [showNewPass, setNewPass] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -109,26 +29,44 @@ const SettingsForm = () => {
   const [formData, setFormData] = useState({
     firstName: firstName || '',
     lastName: lastName || '',
-    mobile: user?.mobile || '',
+    phone: user?.phone || '',
     email: user?.email || '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
 
-  const validateForm=()=>{
+  const validateForm = () => {
     const PASSWORD_REGEX = /^(?!.*(.)\1{3,})(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
-    const newErrors={}
-
-    if(!PASSWORD_REGEX.test(formData.newPassword)) newErrors.newPass="Please enter a valid password , with one uppercase , lowercase , digit etc" 
-    
-
-    if (formData.newPassword !== formData.confirmPassword) newErrors.confirmPass="Passwords do not match";  
-
-    setErrors(newErrors);
+    const newErrors = {};
   
-  return Object.keys(errors).length === 0;
-  }
+    // Validate current password
+    if (!formData.currentPassword.trim()) {
+      newErrors.currentPass = "Current password is required";
+    }
+    else if (!PASSWORD_REGEX.test(formData.currentPassword)) {
+      newErrors.currentPass = "Password will contain at least one uppercase, lowercase, digit, and special character";
+    }
+  
+    // Validate new password
+    if (!formData.newPassword.trim()) {
+      newErrors.newPass = "New password is required";
+    } else if (!PASSWORD_REGEX.test(formData.newPassword)) {
+      newErrors.newPass = "Password must contain at least one uppercase, lowercase, digit, and special character";
+    }
+  
+    // Validate confirm password
+    if (!formData.confirmPassword.trim()) {
+      newErrors.confirmPass = "Please confirm your new password";
+    } else if (formData.newPassword !== formData.confirmPassword) {
+      newErrors.confirmPass = "Passwords do not match";
+    }
+  
+    setErrors(newErrors);
+    console.log(errors);
+    
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -138,19 +76,74 @@ const SettingsForm = () => {
     }));
   };
 
-  const handleImageUpload = (e) => {
+  function resizeImage(file, size = 800) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+  
+          const ctx = canvas.getContext('2d');
+          
+          // Calculate crop dimensions
+          const sourceWidth = img.width;
+          const sourceHeight = img.height;
+          const sourceAspect = sourceWidth / sourceHeight;
+          
+          let drawWidth, drawHeight, sx, sy;
+          
+          if (sourceAspect > 1) {
+            // Landscape
+            drawHeight = sourceHeight;
+            drawWidth = drawHeight * 1;
+            sx = (sourceWidth - drawWidth) / 2;
+            sy = 0;
+          } else {
+            // Portrait
+            drawWidth = sourceWidth;
+            drawHeight = drawWidth;
+            sx = 0;
+            sy = (sourceHeight - drawHeight) / 2;
+          }
+  
+          // Draw the cropped and scaled image
+          ctx.drawImage(
+            img, 
+            sx, sy, drawWidth, drawHeight,  // Source rectangle
+            0, 0, size, size  // Destination rectangle
+          );
+  
+          canvas.toBlob((blob) => {
+            resolve(blob);
+          }, 'image/jpeg', 0.7);
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 3 * 1024 * 1024) {
         toast.error('Image size should be under 3MB');
         return;
       }
-
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfileImage(reader.result);
-      };
-      reader.readAsDataURL(file);
+  
+      try {
+        const resizedBlob = await resizeImage(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setProfileImage(reader.result);
+        };
+        reader.readAsDataURL(resizedBlob);
+      } catch (error) {
+        toast.error('Image processing failed');
+      }
     }
   };
 
@@ -160,21 +153,29 @@ const SettingsForm = () => {
       const payload = {
         firstName: formData.firstName,
         lastName: formData.lastName,
-        mobile: formData.mobile,
+        phone: formData.phone,
         email: formData.email,
-        profileImage
+        profileImg:profileImg
       };
 
-      const response = await axios.put('http://localhost:3000/user/update-profile', payload);
+      const response = await axios.put('http://localhost:3000/user/update-profile', payload );
 
-      if (response.data.success) {
+      
+
+      if (response.status===200) {
+        const updatedUser=response.data.updatedUser;
         toast.success("Profile updated successfully!");
-      } else {
+        dispatch(addUser(updatedUser));
+      } 
+      else {
         toast.error(response.data.message || "Failed to update profile.");
       }
     } catch (error) {
       console.error("Error:", error);
-      toast.error("An error occurred while updating profile.");
+      if(error.response){
+        toast.error(error.response.data.message || "An Error accoured while trying to update profile , Please try again.")
+      }
+      toast.error(error.message);
     }
   };
 
@@ -182,7 +183,9 @@ const SettingsForm = () => {
     e.preventDefault();
     
     
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      return; 
+    }
    
     
     try {
@@ -231,6 +234,7 @@ const SettingsForm = () => {
 };
 
   return (
+    <>
     <div className="container mx-auto px-4 py-6">
       <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
         <form 
@@ -242,7 +246,7 @@ const SettingsForm = () => {
           <div className="flex items-center space-x-4 mb-4">
             <div className="relative w-20 h-20">
               <img
-                src={ user?.profileImage || defProfile}
+                src={ user?.profileImg || defProfile}
                 alt="Profile"
                 className="w-full h-full object-cover rounded-full border-2 border-orange-500 shadow-sm"
               />
@@ -303,8 +307,8 @@ const SettingsForm = () => {
             </label>
             <input
               type="tel"
-              name="mobile"
-              value={formData.mobile}
+              name="phone"
+              value={formData.phone}
               onChange={handleInputChange}
               placeholder="Enter mobile number"
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 transition duration-300"
@@ -353,7 +357,7 @@ const SettingsForm = () => {
                 onChange={handleInputChange}
                 placeholder="Enter current password"
                 className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 transition duration-300 pr-10"
-                required
+             
               />
               <button
                 type="button"
@@ -378,8 +382,7 @@ const SettingsForm = () => {
                 onChange={handleInputChange}
                 placeholder="Enter new password"
                 className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 transition duration-300 pr-10"
-                required
-                minLength={6}
+              
               />
               <button
                 type="button"
@@ -389,7 +392,7 @@ const SettingsForm = () => {
                 {showNewPass ? <Eye size={18} /> : <EyeOff size={18} />}
               </button>
             </div>
-            {errors.currentPass && <p className="text-red-500 text-xs mt-1">{errors.newPass}</p>}
+            {errors.newPass && <p className="text-red-500 text-xs mt-1">{errors.newPass}</p>}
           </div>
 
           <div>
@@ -404,8 +407,7 @@ const SettingsForm = () => {
                 onChange={handleInputChange}
                 placeholder="Confirm new password"
                 className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 transition duration-300 pr-10"
-                required
-                minLength={6}
+             
               />
               <button
                 type="button"
@@ -415,7 +417,7 @@ const SettingsForm = () => {
                 {showConfirmPassword ? <Eye size={18} /> : <EyeOff size={18} />}
               </button>
             </div>
-            {errors.currentPass && <p className="text-red-500 text-xs mt-1">{errors.confirmPass}</p>}
+            {errors.confirmPass && <p className="text-red-500 text-xs mt-1">{errors.confirmPass}</p>}
           </div>
 
           <button
@@ -425,22 +427,46 @@ const SettingsForm = () => {
             Change Password
           </button>
         </form>
+        
+      </div>
+      
+      
+    </div>
+    <footer className="bg-white mt-auto fixed bottom-0 right-0 left-0 ">
+    <div className=" mx-auto py-4 px-4 sm:px-6 lg:px-8">
+      <div className="flex flex-col sm:flex-row justify-between items-center">
+        <p className="text-sm text-gray-500 mb-2 sm:mb-0">© 2021 - Eduguard. Designed by Templatecookie. All rights reserved.</p>
+        <div className="flex space-x-6">
+          <a href="#" className="text-sm text-gray-500 hover:text-gray-900">
+            FAQs
+          </a>
+          <a href="#" className="text-sm text-gray-500 hover:text-gray-900">
+            Privacy Policy
+          </a>
+          <a href="#" className="text-sm text-gray-500 hover:text-gray-900">
+            Terms & Condition
+          </a>
+        </div>
       </div>
     </div>
+  </footer>
+  </>
   );
 };
 
 export default function SettingsPage() {
+
+  
   return (
     <div className="bg-gray-100 min-h-screen flex flex-col">
-      <Header/>
+      <Header />
       <MainHeader />
       <main className="flex-grow">
         <UserProfile />
         <Tabs />
         <SettingsForm />
       </main>
-      <Footer />
+      
     </div>
   )
 }

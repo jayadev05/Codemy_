@@ -1,13 +1,12 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router";
+import React from "react";
 import { NavLink } from "react-router-dom";
 
 function Header({ showModal,isLoggedIn }) {
  
 
   return (
-    <header className="bg-[#1d2026] text-[#8c94a3]">
-      <div className="container mx-auto px-4">
+    <header className="bg-[#1d2026] text-[#8c94a3]  ">
+      <div className="container mx-auto  px-4 max-w-[1900px]">
         <nav className="flex items-center justify-between h-14">
           <div className="flex items-center space-x-6">
           <NavLink

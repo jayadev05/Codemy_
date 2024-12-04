@@ -9,7 +9,7 @@ userRoute.post('/create',verifyOtp, signUp);
 userRoute.post('/login', login);
 userRoute.post('/google', googleLogin);
 userRoute.put('/change-password',changePassword);
-userRoute.put('/update', updateUser);
+userRoute.put('/update-profile', updateUser);
 userRoute.post("/logout", logoutUser);
 
 

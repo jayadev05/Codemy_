@@ -2,19 +2,39 @@ import { useState } from 'react'
 import heroImg from '../../assets/reset.png'
 import logo from '../../assets/logo_cap.png'
 import { useNavigate, useParams } from 'react-router'
-import { toast, ToastContainer } from 'react-toastify'
+import { toast} from 'react-toastify'
 import axios from 'axios'
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword,setShowPassword]=useState(false);
+  const [showConfirmPassword,setShowConfirmPassword]=useState(false);
+  const [errors,setErrors]=useState({});
 
   const navigate=useNavigate()
   const {token}= useParams();
+
+  const PASSWORD_REGEX = /^(?!.*(.)\1{3,})(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
   
+  const validateform=()=>{
+    const newErrors={}
+    if(!password.trim()) newErrors.password="Password is required"
+    else if(!PASSWORD_REGEX.test(password)) newErrors.password="Password should be at least 6 characters long, include one uppercase, one lowercase, one digit, and a symbol"
+
+    if(!confirmPassword.trim()) newErrors.confirmPassword="Confirm password is required";
+    else if(confirmPassword!==password) newErrors.confirmPassword="Passwords do not match"
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length===0;
+  }
 
   const handleSubmit =async (e) => {
     e.preventDefault()
+
+    if(!validateform()) return;
+
     try {
       
       const response = await axios.post(`http://localhost:3000/admin/reset/${token}`,{password})
@@ -74,36 +94,50 @@ export default function ResetPassword() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                  New Password
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  name="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter new password"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  required
-                />
+            <div className="space-y-2">
+                <label htmlFor="password" className="text-sm font-medium">Password</label>
+                <div className="relative">
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e)=>setPassword(e.target.value)}
+                    placeholder="Create password"
+                    className={`w-full rounded-md border ${errors.password ? 'border-red-500' : 'border-gray-300'} px-3 py-2 text-sm`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"
+                  >
+                    <i className={`ri-${showPassword ? "eye" : "eye-off"}-line`}></i>
+                  </button>
+                </div>
+                {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                  Confirm New Password
-                </label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm new password"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  required
-                />
+                <label htmlFor="password" className="text-sm font-medium">Confirm Password</label>
+                <div className="relative">
+                  <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e)=>setConfirmPassword(e.target.value)}
+                    placeholder="Create password"
+                    className={`w-full rounded-md border ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'} px-3 py-2 text-sm`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"
+                  >
+                    <i className={`ri-${showPassword ? "eye" : "eye-off"}-line`}></i>
+                  </button>
+                </div>
+                {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
               </div>
 
               <button

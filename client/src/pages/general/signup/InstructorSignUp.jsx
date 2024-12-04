@@ -16,6 +16,7 @@ export function InstructorModal({ onClose }) {
     fullName: '',
     email:user.email,
     phone: '',
+    field:'',
     experience: '',
     certificates: null
   });
@@ -45,7 +46,10 @@ export function InstructorModal({ onClose }) {
     if(!formData.experience.trim()) newErrors.experience="Experience is a must"
     else if(formData.experience.trim().length<10) newErrors.experience="Enter atleast 10-20 characters"
 
-    return newErrors;
+    if(!formData.field.trim()) newErrors.field="Please Enter your field of expertise"
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   // Handle input changes
@@ -63,18 +67,12 @@ export function InstructorModal({ onClose }) {
   const submitInstructorApplication = async (e) => {
     e.preventDefault();
     
-    // Clear previous errors before validation
-    setErrors({});
-
     // Validate form
-    const validationErrors = validateForm();
+   if(!validateForm()) {
+    return
+   };
     
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-  
-  
+   
     setIsSubmitting(true);
   
     try {
@@ -180,6 +178,27 @@ export function InstructorModal({ onClose }) {
               )}
             </div>
 
+            {/* Expertise Input */}
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+               Field of Expertise
+              </label>
+              <input
+                type="text"
+                id="field"
+                name="field"
+                value={formData.field}
+                onChange={handleInputChange}
+                placeholder="Enter you field of expertise"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {errors.field && (
+                <span className="text-red-500 text-sm">
+                  {errors.field}
+                </span>
+              )}
+            </div>
+
             {/* Experience Textarea */}
             <div>
               <label htmlFor="experience" className="block text-sm font-medium text-gray-700 mb-1">
@@ -190,7 +209,7 @@ export function InstructorModal({ onClose }) {
                 name="experience"
                 value={formData.experience}
                 onChange={handleInputChange}
-                placeholder="Enter your teaching or professional experience (optional)"
+                placeholder="Enter your teaching or professional experience "
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows="3"
               />

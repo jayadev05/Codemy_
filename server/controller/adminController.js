@@ -30,27 +30,20 @@ const forgotPassword = async (req, res) => {
     });
   }
 
-  // Email format validation
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return res.status(400).json({ 
-      message: 'Invalid email format',
-      type: 'error'
-    });
-  }
+  
 
   try {
     // Normalize email for consistent searching
     const normalizedEmail = email.trim().toLowerCase();
 
-    const [user,admin,tutor]= await Promise.all([
+    let [user,admin,tutor]= await Promise.all([
       User.findOne({email:normalizedEmail}),
        Admin.findOne({email:normalizedEmail}),
       Tutor.findOne({email:normalizedEmail}),
     ])
    
 
-    const currentUser = user || tutor || admin;
+    let currentUser = user || tutor || admin;
 
     // If no user found, return a generic success-like response
     if (!currentUser) {
@@ -68,6 +61,8 @@ const forgotPassword = async (req, res) => {
     currentUser.resetPasswordExpires = Date.now() + 900000; // 15 mins
 
     await currentUser.save();
+
+    console.log("asdasdasd",currentUser);
 
     // Create reset URL
     const resetURL = `http://localhost:5173/reset-password/${resetToken}`;
@@ -210,6 +205,7 @@ const submitInstructorApplication = async (req, res) => {
       fullName,
       email,
       phone,
+      field,
       experience
     } = req.body;
 
@@ -241,10 +237,12 @@ const submitInstructorApplication = async (req, res) => {
       });
     }
 
+  
     // Prepare credentials
     const credentials = req.files?.certificates
       ? req.files.certificates.map(file => ({
           certificate: file.path,
+          mimeType: file.mimetype,
        
         }))
       : [];
@@ -254,6 +252,7 @@ const submitInstructorApplication = async (req, res) => {
       fullName,
       email,
       phone,
+      field,
       experience: experience || '',
       credentials
     });

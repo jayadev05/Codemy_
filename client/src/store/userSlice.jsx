@@ -14,6 +14,7 @@ const userSlice = createSlice({
         fullName: action.payload.fullName,
         userName: action.payload.userName,
         email: action.payload.email,
+        phone:action.payload.phone,
         password: action.payload.password,
         profileImg: action.payload.profileImg || '',
         isVerified: action.payload.isVerified,

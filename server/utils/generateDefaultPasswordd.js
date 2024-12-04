@@ -1,11 +1,16 @@
- const generateDefaultPassword = (email) => {
-  // Extract some unique elements from the email to create a somewhat personalized default password
-  const emailPrefix = email.split('@')[0];
+const crypto = require('crypto');
+
+const generateDefaultPassword = (email) => {
+
+  // Extract some unique elements from the email to personalize the password
+  const emailPrefix = email.split('@')[0].slice(0, 3); // First 3 characters of email prefix
   const currentYear = new Date().getFullYear();
-  
-  // Use a combination of email prefix, current year, and a fixed suffix
-  // This creates a somewhat predictable but not entirely fixed password
-  return `Codemy${emailPrefix.slice(0,3)}${currentYear}!`;
+
+  // Generate a secure random string
+  const randomString = crypto.randomBytes(4).toString('hex'); 
+
+  // Combine components to form the password
+  return `Codemy${emailPrefix}${currentYear}${randomString}`;
 };
 
-module.exports=generateDefaultPassword;
+module.exports = generateDefaultPassword;

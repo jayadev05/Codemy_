@@ -1,20 +1,21 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo,useCallback } from "react";
 import {
   Search,
-  UserCheck,
-  UserX,
   FileText,
   X,
 } from "lucide-react";
-import Sidebar from "./partials/sidebar";
+import Sidebar from '../../components/layout/admin/Sidebar';
 import axios from "axios";
 import { toast } from "react-toastify";
 import defProfile from "../../assets/user-profile.png";
 import Pagination from "../../components/utils/Pagination";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutUser, selectUser } from "../../store/userSlice";
+import CertificateViewer from "../../components/utils/CertificateViewer";
+
+
 
 const TutorManagement = () => {
   const user=useSelector(selectUser);
@@ -32,6 +33,9 @@ const TutorManagement = () => {
   const [error, setError] = useState(null);
   const [selectedCertificate, setSelectedCertificate] = useState(null);
   const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false);
+  const [numPages, setNumPages] = useState(null);
+  const [pageNumber, setPageNumber] = useState(1);
+
 
   //pagination
   
@@ -63,6 +67,7 @@ const TutorManagement = () => {
       // Ensure we have a clean list of tutors and applications
       setTutors(tutorsResponse.data.tutors || []);
       setApplications(applicationsResponse.data.applications || []);
+     
 
       setLoading(false);
 
@@ -89,7 +94,7 @@ const TutorManagement = () => {
       );
 
       if (action === "approved") {
-        // Ensure the new tutor is added to the tutors list
+        
         if (result.data.tutor) {
           // Transform the application data to match tutor data structure
           const newTutor = {
@@ -177,7 +182,7 @@ const TutorManagement = () => {
   
       toast.success(
         currentStatus === false
-          ? "Tutor listed successfully" 
+          ? "Tutor Unblocked successfully" 
           : "Tutor blocked successfully"
       );
     } catch (error) {
@@ -189,6 +194,18 @@ const TutorManagement = () => {
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
   };
+
+  // Conversion function
+const convertDecimalToNumber = (decimalObj) => {
+  return decimalObj && decimalObj.$numberDecimal 
+    ? parseFloat(decimalObj.$numberDecimal) 
+    : decimalObj;
+};
+
+
+
+
+
 
   const openModal = (item, content) => {
     setSelectedApplication(item);
@@ -210,6 +227,8 @@ const TutorManagement = () => {
     setIsCertificateModalOpen(false);
     setSelectedCertificate(null);
   };
+
+ 
 
   const dummyUsers = [
     {
@@ -608,21 +627,21 @@ const TutorManagement = () => {
                               onClick={() =>
                                 handleToggleList(tutor._id, tutor.isActive)
                               }
-                              className={`transition-colors text-white min-w-[70px]  p-2 rounded-sm ${
+                              className={`transition-colors text-white min-w-[70px]  p-1 rounded-sm ${
                                 tutor.isActive === false
                                   ? "t bg-green-400 hover:bg-green-600"
                                   : " bg-red-500 hover:bg-red-600 "
                               }`}
                               title={
                                 tutor.isActive === false
-                                  ? "List User"
-                                  : "Unlist User"
+                                  ? "Unblock User"
+                                  : "Block User"
                               }
                             >
                               {tutor.isActive === false ? (
-                                "List"
+                                "Unblock"
                               ) : (
-                               "Unlist"
+                               "Block"
                               )}
                             </button>
                           </div>
@@ -731,7 +750,7 @@ const TutorManagement = () => {
           <div className="bg-white rounded-xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-3xl font-bold text-gray-800">
-                Tutor Details
+                 {activeTab==="tutors"?"Tutor Details":"Application Details"}
               </h2>
               <button
                 onClick={closeModal}
@@ -757,15 +776,37 @@ const TutorManagement = () => {
                   <p>{selectedApplication.fullName}</p>
                 </div>
 
-                <div>
+                {selectedApplication?.userName?( <div>
                   <p className="font-semibold text-gray-900">Username:</p>
-                  <p>{selectedApplication.userName}</p>
-                </div>
+                  <p>
+                    {convertDecimalToNumber(selectedApplication?.userName)}
+                  </p>
+                </div>):""}
+
+                {selectedApplication?.field?( <div>
+                  <p className="font-semibold text-gray-900">Field:</p>
+                  <p>
+                    {selectedApplication?.field}
+                  </p>
+                </div>):""}
 
                 <div>
                   <p className="font-semibold text-gray-900">Email:</p>
                   <p>{selectedApplication.email}</p>
                 </div>
+
+                {selectedApplication?.experience?( <div>
+                  <p className="font-semibold text-gray-900">Experience:</p>
+                  <p>
+                    {selectedApplication?.experience}
+                  </p>
+                </div>):""}
+
+              
+                <div className="space-y-2">
+                <p className="font-semibold text-gray-900">Job Title:</p>
+                <p>{selectedApplication.jobTitle || "Not specified"}</p>
+              </div>
 
                 <div>
                   <p className="font-semibold text-gray-900">Status:</p>
@@ -781,23 +822,26 @@ const TutorManagement = () => {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <p className="font-semibold text-gray-900">Job Title:</p>
-                <p>{selectedApplication.jobTitle || "Not specified"}</p>
-              </div>
+              
 
               <div className="space-y-2">
                 <p className="font-semibold text-gray-900">Bio:</p>
                 <p>{selectedApplication.bio || "No bio provided"}</p>
               </div>
 
+              
+
+
+              
               <div className="grid md:grid-cols-2 gap-4">
-                <div>
+
+              {selectedApplication?.totalRevenue?( <div>
                   <p className="font-semibold text-gray-900">Total Revenue:</p>
                   <p>
-                    ${Number(selectedApplication.totalRevenue || 0)}
+                    {convertDecimalToNumber(selectedApplication?.totalRevenue)}
                   </p>
-                </div>
+                </div>):""}
+               
 
                 <div>
                   <p className="font-semibold text-gray-900">
@@ -809,35 +853,21 @@ const TutorManagement = () => {
                     ).toLocaleDateString()}
                   </p>
                 </div>
+
               </div>
 
-              {selectedApplication.credentials &&
-                selectedApplication.credentials.some(
-                  (credential) => credential.description
-                ) && (
-                  <div className="space-y-2">
-                    <p className="font-semibold text-gray-900">
-                      Experience/Description:
-                    </p>
-                    {selectedApplication.credentials
-                      .filter((credential) => credential.description)
-                      .map((credential, index) => (
-                        <div key={index} className="bg-gray-100 p-4 rounded-lg">
-                          <p>{credential.description}</p>
-                        </div>
-                      ))}
-                  </div>
-                )}
+            
             </div>
           </div>
         </div>
       )}
       {isCertificateModalOpen && selectedCertificate && (
+        
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl p-8 max-w-2xl h-[700px] w-full">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-3xl font-bold text-gray-800">
-                Certificate Details
+                Certificate Preview
               </h2>
               <button
                 onClick={closeCertificateModal}
@@ -848,15 +878,9 @@ const TutorManagement = () => {
             </div>
             <div className="text-gray-700 space-y-4">
               <div>
-                <h3 className="text-xl font-semibold mb-2 text-gray-900">
-                  Certificate Preview
-                </h3>
+               
                 <div className="bg-gray-100 p-4 rounded-lg">
-                  <img
-                    src={`http://localhost:3000/admin/certificates/${selectedCertificate._id}`}
-                    alt="Certificate"
-                    className="w-full h-[500px] object-contain rounded-lg"
-                  />
+                <CertificateViewer certificate={selectedCertificate}/>
                 </div>
               </div>
             </div>

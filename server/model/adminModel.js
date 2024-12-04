@@ -22,7 +22,6 @@ const adminSchema = new mongoose.Schema(
     },
     phone: {
       type: Number,
-      required: true,
       unique: true,
     },
     password: {
@@ -37,6 +36,8 @@ const adminSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
   },
   {
     timestamps: true, // Automatically handles `created_at` and `updated_at`

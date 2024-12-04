@@ -5,7 +5,8 @@ const app = express();
 const cors=require('cors')
 const mongoose = require('mongoose')
 const cookieParser=require('cookie-parser')
-const nocache=require("nocache")
+const nocache=require("nocache");
+const tutorRoute = require("./routes/tutor/tutorRoutes");
 
 
 // Database Connection
@@ -27,8 +28,8 @@ app.use((req, res, next) => {
 });
 
 app.use(nocache());
-app.use(express.json());
-app.use(express.urlencoded({extended:true}));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(cookieParser())
 app.use(cors({
   origin: 'http://localhost:5173', // Frontend URL
@@ -38,7 +39,8 @@ app.use(cors({
 }));
 
 app.use("/user", userRoute); 
-app.use("/admin",adminRoute)
+app.use("/admin",adminRoute);
+app.use("/tutor",tutorRoute)
 
 
 app.listen(3000, () => {

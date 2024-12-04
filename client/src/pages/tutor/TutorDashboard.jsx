@@ -1,7 +1,7 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { BookOpen, MessageCircle, Settings, Star, Users, BarChart, LogOut, Search, Bell } from 'lucide-react';
-import Sidebar from './partials/Sidebar';
+import { BookOpen,  Star, Users, Search, Bell } from 'lucide-react';
+import Sidebar from '../../components/layout/tutor/Sidebar';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutTutor, selectTutor } from '../../store/tutorSlice';
 import defprofile from '../../assets/user-profile.png'
@@ -38,13 +38,7 @@ const Dashboard = () => {
   const navigate=useNavigate();
   const dispatch=useDispatch();
 
-  const handleLogout=async()=>{
-
-    dispatch(logoutTutor(tutor));
-    toast.success("Logged out successfully")
-    navigate('/login');
-    
-  }
+ 
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -68,47 +62,8 @@ const Dashboard = () => {
               <Bell className="h-5 w-5" />
             </button>
            
-           {/* Dropdown container */}
-           <div className="relative group">
-                <img
-                  referrerPolicy="no-referrer"
-                  crossOrigin="anonymous"
-                  className="h-10 w-10 rounded-full cursor-pointer hover:ring-2 hover:ring-orange-500"
-                  src={tutor?.profileImg || defprofile}
-                  alt=""
-                />
-
-                {/* Dropdown menu */}
-                <div className="absolute right-0  w-48 bg-white rounded-md shadow-lg py-1 border hidden group-hover:block">
-                  <div className="px-4 py-2 border-b">
-                    <p className="text-sm font-medium text-gray-900">
-                      {tutor?.userName}
-                    </p>
-                    <p className="text-sm text-gray-500 truncate">
-                      {tutor?.email}
-                    </p>
-                  </div>
-
-                  <a
-                    onClick={()=>navigate("/tutor/profile")}
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    Profile
-                  </a>
-                  <a
-                   onClick={()=>navigate("/tutor/settings")}
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    Settings
-                  </a>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                  >
-                    Logout
-                  </button>
-                </div>
-              </div>
+           
+           
           </div>
         </header>
 

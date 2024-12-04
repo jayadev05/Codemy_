@@ -64,7 +64,7 @@ const Sidebar = ({ activeSection }) => {
     {
       title: "Settings and profile",
       icon: Settings,
-      href: "#",
+      href: "/tutor/settings",
       isActive: activeSection === "Settings and profile",
     },
     {
@@ -89,7 +89,7 @@ const Sidebar = ({ activeSection }) => {
         </div>
         <span className="text-sm font-medium text-gray-200">{tutor?.fullName}</span>
       </div>
-      <nav className="flex-1 space-y-1 px-3">
+      <nav className="flex-1 space-y-1 px-4">
         {menuItems.map((item) => (
           <a
             key={item.title}

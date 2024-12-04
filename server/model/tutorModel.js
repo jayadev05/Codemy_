@@ -21,7 +21,7 @@ const tutorSchema = new mongoose.Schema({
   },
   phone: {
     type: Number,
-    default:null
+    default:''
   },
   password:{
     type:String,
@@ -60,7 +60,9 @@ const tutorSchema = new mongoose.Schema({
   isVerified:{
     type:Boolean,
     default:true
-  }
+  },
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date },
 }, { 
   timestamps: true 
 });

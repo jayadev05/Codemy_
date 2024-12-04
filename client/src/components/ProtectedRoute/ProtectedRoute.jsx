@@ -12,6 +12,8 @@ function ProtectedRoute({ children, userType }) {
 
   const activeUser = admin ? "admin" : (user ? "user" : (tutor ? "tutor" : null));
 
+  console.log("usertype",activeUser);
+
   // Redirect to login if no user is authenticated
   if (!activeUser) {
     return <Navigate to="/login" replace />;

@@ -35,34 +35,61 @@ export default function Signup() {
   const [errors, setErrors] = useState({});
 
   // Validation Regex Patterns
-  const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-  const PASSWORD_REGEX = /^(?!.*(.)\1{3,})(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
-  const USERNAME_REGEX = /^[a-zA-Z0-9_]{5,16}$/;
-  
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+const PASSWORD_REGEX = /^(?!.*(.)\1{3,})(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
+const NAME_REGEX = /^[a-zA-Z\s]{5,50}$/;
+const USERNAME_REGEX = /^(?!.*_{2,})[a-zA-Z0-9_]{5,16}$/;
 
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
-    else if(formData.firstName.trim().length<5) newErrors.firstName=`Should be atleast 5 characters`
+const validateForm = () => {
+  const newErrors = {};
 
-    if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
+  // First Name Validation
+  if (!formData.firstName.trim()) {
+    newErrors.firstName = 'First name is required';
+  } else if (!NAME_REGEX.test(formData.firstName.trim())) {
+    newErrors.firstName = 'First name must be 5 letters, no symbols';
+  }
 
-    if (!formData.username.trim()) newErrors.username = 'Username is required';
-    else if(!USERNAME_REGEX.test(formData.username)) newErrors.username="Username must be 5-16 characters, alphanumeric or underscore "
+  // Last Name Validation
+  if (!formData.lastName.trim()) {
+    newErrors.lastName = 'Last name is required';
+  }
+  else if(!/^[a-zA-Z]$/.test(formData.lastName)) newErrors.lastName ="only letters are allowed"
 
-    if (!formData.email.trim()) newErrors.email = 'Email is required';
-    else if (!EMAIL_REGEX.test(formData.email)) newErrors.email = 'Enter a valid Email';
+  // Username Validation
+  if (!formData.username.trim()) {
+    newErrors.username = 'Username is required';
+  } else if (!USERNAME_REGEX.test(formData.username.trim())) {
+    newErrors.username = 'Username must be 5-16 characters, alphanumeric or underscore';
+  }
 
-    if (!formData.password) newErrors.password = 'Password is required';
-    else if (!PASSWORD_REGEX.test(formData.password)) newErrors.password = "Password should be atleast 6 characters long ,Include one uppercase, one lowercase, one digit and a symmbol"
+  // Email Validation
+  if (!formData.email.trim()) {
+    newErrors.email = 'Email is required';
+  } else if (!EMAIL_REGEX.test(formData.email)) {
+    newErrors.email = 'Enter a valid Email';
+  }
 
-    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
+  // Password Validation
+  if (!formData.password) {
+    newErrors.password = 'Password is required';
+  } else if (!PASSWORD_REGEX.test(formData.password)) {
+    newErrors.password = "Password should be at least 6 characters long, include one uppercase, one lowercase, one digit, and a symbol";
+  }
 
-    if (!formData.termsAccepted) newErrors.terms = 'You must accept the terms and conditions';
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  // Confirm Password Validation
+  if (formData.password !== formData.confirmPassword) {
+    newErrors.confirmPassword = 'Passwords do not match';
+  }
+
+  // Terms Acceptance Validation
+  if (!formData.termsAccepted) {
+    newErrors.terms = 'You must accept the terms and conditions';
+  }
+
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;

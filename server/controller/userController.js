@@ -329,27 +329,30 @@ const googleLogin = async (req, res, next) => {
 
 const updateUser = async (req, res) => {
     try {
-        const { _id, email, name, phone, profileImage } = req.body;
-        console.log('Received update request:', { _id, email, name, phone, profileImage });
+      console.log(req.body);
+        const { email, firstName, lastName, phone, profileImg } = req.body;
+      const fullName=`${firstName} ${lastName}`
 
-        const user = await User.findById(_id);
+        const user = await User.findOne({email});
         if (!user) {
-            console.log('User not found:', _id);
+           
             return res.status(404).json({ message: "User not found" });
         }
 
         const updatedData = { 
-            ...(name && { name }), 
+            ...(fullName && { fullName }), 
             ...(email && { email }), 
             ...(phone && { phone }),
-            ...(profileImage && { profileImage })
+            ...(profileImg && { profileImg })
         };
-        console.log('Updating user with data:', updatedData);
-
-        const updatedUser = await User.findByIdAndUpdate(_id, updatedData, { new: true });
-        console.log('Updated user:', updatedUser);
         
-        res.json({ message: "Update successful", updatedUser });
+        const id=user._id;
+
+        const updatedUser = await User.findByIdAndUpdate(id, updatedData, { new: true });
+      
+        
+        res.status(200).json({ message: "Update successful", updatedUser });
+        
     } catch (error) {
         console.error("Error in updateUser:", error);
         res.status(500).json({ message: "Server error", error: error.message });

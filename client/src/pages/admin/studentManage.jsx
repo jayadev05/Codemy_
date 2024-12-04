@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Sidebar from "./partials/sidebar";
+import Sidebar from '../../components/layout/admin/Sidebar';
 import axios from "axios";
 import { toast } from "react-toastify";
 import defProfile from "../../assets/user-profile.png";
@@ -111,8 +111,8 @@ const StudentManagement = () => {
   
       toast.success(
         currentStatus === false
-          ? "Student Listed successfully" 
-          : "Student Unlisted successfully"
+          ? "Student Unblocked successfully" 
+          : "Student Blocked successfully"
       );
     } catch (error) {
       console.error("Error toggling student status:", error);
@@ -218,21 +218,21 @@ const StudentManagement = () => {
                               onClick={() =>
                                 handleToggleList(student._id, student.isActive)
                               }
-                              className={`transition-colors text-white min-w-[70px]  p-2 rounded-sm ${
+                              className={`transition-colors text-white min-w-[70px]  p-1 rounded-sm ${
                                 student.isActive === false
                                   ? "t bg-green-400 hover:bg-green-600"
                                   : " bg-red-500 hover:bg-red-600 "
                               }`}
                               title={
                                 student.isActive === false
-                                  ? "List User"
-                                  : "Unlist User"
+                                  ? "Unblock User"
+                                  : "Block User"
                               }
                             >
                               {student.isActive === false ? (
-                                "List"
+                                "Unblock"
                               ) : (
-                               "Unlist"
+                               "Block"
                               )}
                             </button>
                           </div>
