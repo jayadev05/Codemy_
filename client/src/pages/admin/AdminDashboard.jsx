@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router'
 import defProfile from "../../assets/user-profile.png";
 import Pagination from '../../components/utils/Pagination'
 import axios from 'axios'
-import { toast } from 'react-toastify'
+import { toast } from 'react-hot-toast'
 
 export default function Dashboard() {
   const [courseFilter, setCourseFilter] = useState('all')
@@ -107,7 +107,7 @@ const filteredItems=paginateData(filteredCourses);
       {/* Main Content */}
       <main className="flex-1 ">
         {/* Header */}
-        <header className="flex items-center justify-between border-b bg-white px-6 py-2 ">
+        <header className="flex items-center justify-between border-b bg-white px-6 py-4 ">
           <div>
             <h1 className="text-xl font-semibold">Dashboard</h1>
             <p className="text-sm text-gray-500">Good Morning</p>
@@ -143,13 +143,13 @@ const filteredItems=paginateData(filteredCourses);
                   </div>
 
                   <a
-                    href="/user/profile"
+                   
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     Profile
                   </a>
                   <a
-                    href="/user/settings"
+                    
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     Settings
@@ -251,7 +251,7 @@ const filteredItems=paginateData(filteredCourses);
               </table>
             </div>
           </div>
-          <Pagination className="mt-4 flex justify-center gap-3" totalData={filteredItems.length} dataPerPage={coursesPerPage} currentPage={currentPage} setCurrentPage={handlePageChange}/>
+          <Pagination className="flex items-center justify-between" totalData={filteredItems.length} dataPerPage={coursesPerPage} currentPage={currentPage} setCurrentPage={handlePageChange}/>
 
         </div>
       </main>

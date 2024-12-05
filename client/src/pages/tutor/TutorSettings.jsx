@@ -4,7 +4,7 @@ import Sidebar from '../../components/layout/tutor/Sidebar'
 import axios from "axios";
 import { useDispatch, useSelector } from 'react-redux';
 import { addTutor, selectTutor } from '../../store/tutorSlice';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 import defProfile from "../../assets/user-profile.png"
 
 export default function TutorSettings() {

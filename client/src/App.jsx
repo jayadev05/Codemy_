@@ -18,10 +18,13 @@ import SignUp from './pages/general/signup/Signup'
 import Login from './pages/general/login/Login'
 import ResetPassword from "./pages/general/PasswordReset";
 import ForgotPassword from "./pages/general/ForgotPassword";
-import { ToastContainer } from 'react-toastify';
+import { Toaster } from 'react-hot-toast';
 import 'react-toastify/dist/ReactToastify.css';
 import UnauthorizedPage from "./pages/general/403";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
+import CategoryManagement from "./pages/admin/CategoryManagement";
+import CourseCreation from "./pages/tutor/TutorAddCourse";
+
 
 
 function App() {
@@ -31,7 +34,7 @@ function App() {
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <GoogleOAuthProvider clientId="532055856231-5bvv6o4cog4srbvvghv969kfenmd33cl.apps.googleusercontent.com">
-          <ToastContainer/>
+          <Toaster position="top-right"/>
           <BrowserRouter>
             <Routes>
 
@@ -48,6 +51,8 @@ function App() {
               <Route path="/admin/dashboard" element={<ProtectedRoute userType="admin"><Dashboard /></ProtectedRoute>} />
               <Route path="/admin/manage-tutors" element={<ProtectedRoute userType="admin"><TutorManagement /></ProtectedRoute>} />
               <Route path="/admin/manage-students" element={<ProtectedRoute userType="admin"><StudentManagement /></ProtectedRoute>} />
+              <Route path="/admin/category" element={<ProtectedRoute userType="admin"><CategoryManagement/></ProtectedRoute>} />
+             
              
              
               {/* //user routes */}
@@ -57,6 +62,7 @@ function App() {
               {/* tutor routes */}
               <Route path="/tutor/dashboard" element={<ProtectedRoute userType="tutor"><TutorDashboard /></ProtectedRoute>} />
               <Route path="/tutor/settings" element={<ProtectedRoute userType="tutor"><TutorSettings /></ProtectedRoute>} />
+              <Route path="/tutor/create-course" element={<ProtectedRoute userType="tutor"><CourseCreation /></ProtectedRoute>} />
 
               {/* Catch-all route for undefined paths */}
               <Route path="*" element={<PageNotFound />} />

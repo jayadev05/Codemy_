@@ -1,3 +1,4 @@
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import React from 'react';
 
 function Pagination({ totalData, dataPerPage, currentPage, setCurrentPage , className }) {
@@ -11,15 +12,18 @@ function Pagination({ totalData, dataPerPage, currentPage, setCurrentPage , clas
 
   return (
     <div className={className}>
-      <button onClick={()=>setCurrentPage(currentPage>1?currentPage-1:currentPage)}>Prev</button>
+      <button disabled={currentPage === 1} className='px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50' onClick={()=>setCurrentPage(currentPage>1?currentPage-1:currentPage)}>
+      <ChevronLeft className="h-5 w-5" />
+      </button>
+      <div className='flex gap-3'>
       {pageNumbers.map((pageNumber) => (
         <button
           key={pageNumber}
           onClick={() => setCurrentPage(pageNumber)}
           className={`
-            px-4 py-2 rounded-md transition-colors
+            px-4 py-2 border text-sm font-medium rounded-md
             ${currentPage === pageNumber
-              ? 'bg-orange-500 text-white'
+              ? 'bg-orange-600 text-white'
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }
           `}
@@ -27,8 +31,12 @@ function Pagination({ totalData, dataPerPage, currentPage, setCurrentPage , clas
           {pageNumber}
         </button>
       ))}
+      </div>
+      
       {totalPages > 5 && <span>...</span>}
-      <button onClick={()=>setCurrentPage(currentPage<totalPages?currentPage+1:currentPage)}>Next</button>
+      <button  disabled={currentPage === totalPages} className='px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50' onClick={()=>setCurrentPage(currentPage<totalPages?currentPage+1:currentPage)}>
+      <ChevronRight className="h-5 w-5" />
+      </button>
     </div>
   );
 }

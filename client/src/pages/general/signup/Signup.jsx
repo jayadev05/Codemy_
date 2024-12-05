@@ -5,7 +5,7 @@ import logo from "../../../assets/logo_cap.png";
 import signUpBG from "../../../assets/signup_illustration.png";
 import google_logo from '../../../assets/google_icon.png';
 import { useGoogleLogin } from '@react-oauth/google';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 import 'react-toastify/dist/ReactToastify.css';
 import EmailVerify from "./emailVerify";
 import { useDispatch } from 'react-redux';

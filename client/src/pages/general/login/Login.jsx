@@ -4,7 +4,7 @@ import logo from "../../../assets/logo_cap.png";
 import illustration from "../../../assets/login_ill.png";
 import google_logo from "../../../assets/google_icon.png";
 import { useNavigate } from "react-router";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 import { addUser } from "../../../store/userSlice";
 import { useGoogleLogin } from "@react-oauth/google";

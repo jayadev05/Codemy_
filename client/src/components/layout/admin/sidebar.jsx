@@ -7,6 +7,7 @@ import {
   Settings,
   Ticket,
   LogOut,
+  LayoutList
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutAdmin, selectAdmin } from "../../../store/adminSlice";
@@ -58,6 +59,12 @@ const Sidebar = ({ activeSection }) => {
       isActive: activeSection === "Students",
     },
     {
+      title: "Category Management",
+      icon: LayoutList,
+      href: "/admin/category",
+      isActive: activeSection === "Category",
+    },
+    {
       title: "Billing",
       icon: CreditCard,
       href: "#",
@@ -84,6 +91,7 @@ const Sidebar = ({ activeSection }) => {
       <div className="flex flex-col items-center gap-2 p-6">
         <div className="h-14 w-14 overflow-hidden rounded-full bg-gray-800">
           <img
+          crossOrigin="anonymous"
             src={admin?.profileImg || defProfile}
             alt="Admin avatar"
             className="h-full w-full object-cover"

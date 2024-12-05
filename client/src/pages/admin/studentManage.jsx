@@ -3,17 +3,23 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from '../../components/layout/admin/Sidebar';
 import axios from "axios";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import defProfile from "../../assets/user-profile.png";
 import {
   Search,
   FileText,
   X,
+  Bell,
 
 } from "lucide-react";
 import Pagination from "../../components/utils/Pagination";
+import { useDispatch, useSelector } from "react-redux";
+import { logoutAdmin, selectAdmin } from "../../store/adminSlice";
 
 const StudentManagement = () => {
+  const admin=useSelector(selectAdmin);
+  const dispatch=useDispatch()
+
   const [searchTerm, setSearchTerm] = useState("");
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -120,19 +126,95 @@ const StudentManagement = () => {
     }
   };
 
+  const onLogout=()=>{
+    try {
+      const response=axios.post("http://localhost:3000/admin/logout");
+
+      dispatch(logoutAdmin(admin));
+
+      toast.success("Logged out successfully");
+      
+      navigate('/login');
+
+      
+    } catch (error) {
+      console.log(error.message);
+      toast.error(error.message || "Error Logging out user")
+    }
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-white">
    
       <Sidebar activeSection={"Students"} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white border-b border-gray-200 p-6">
-          <h1 className="text-3xl font-bold text-gray-800">Student Management</h1>
+      <header className="flex items-center justify-between border-b bg-white px-6 py-4 ">
+          <div>
+            <h1 className="text-xl font-semibold">Student Management</h1>
+            
+          </div>
+          <div className="flex items-center gap-4">
+            
+            <button className="p-2 rounded-full hover:bg-gray-100">
+              <Bell className="h-5 w-5" />
+            </button>
+           
+           {/* Dropdown container */}
+           <div className="relative group">
+                <img
+                  referrerPolicy="no-referrer"
+                  crossOrigin="anonymous"
+                  className="h-10 w-10 rounded-full cursor-pointer hover:ring-2 hover:ring-orange-500"
+                  src={admin?.profileImg || defProfile}
+                  alt=""
+                />
+
+                {/* Dropdown menu */}
+                <div className="absolute right-0  w-48 bg-white rounded-md shadow-lg py-1 border hidden group-hover:block">
+                  <div className="px-4 py-2 border-b">
+                    <p className="text-sm font-medium text-gray-900">
+                      {admin?.userName}
+                    </p>
+                    <p className="text-sm text-gray-500 truncate">
+                      {admin?.email}
+                    </p>
+                  </div>
+
+                  <a
+                    href="/user/profile"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Profile
+                  </a>
+                  <a
+                    href="/user/settings"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Settings
+                  </a>
+                  <button
+                  onClick={onLogout}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+          </div>
         </header>
         <main className="flex-1  overflow-x-hidden overflow-y-auto bg-gray-100">
           <div className="max-w-6xl mx-auto px-4 py-8">
             <div className="bg-white  rounded-xl min-h-[500px] shadow-lg p-8">
-              <div className="mb-6 flex justify-end">
-                <div className="relative w-64">
+              <div className="mb-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
+
+              <div className="flex space-x-4">
+              <button           
+              className={`px-6 py-3 rounded-lg font-semibold transition-colors  bg-orange-500 text-white`}                  >
+                Students
+               </button>
+              </div>
+                <div className="relative  w-64">
+                
                   <input
                     type="text"
                     placeholder="Search students..."
@@ -143,7 +225,7 @@ const StudentManagement = () => {
                   <Search className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
                 </div>
               </div>
-
+             
               <div className="overflow-x-auto">
                 <table className="w-full bg-white border border-gray-200">
                   <thead>
@@ -220,7 +302,7 @@ const StudentManagement = () => {
                               }
                               className={`transition-colors text-white min-w-[70px]  p-1 rounded-sm ${
                                 student.isActive === false
-                                  ? "t bg-green-400 hover:bg-green-600"
+                                  ? "t bg-green-500 hover:bg-green-600"
                                   : " bg-red-500 hover:bg-red-600 "
                               }`}
                               title={
@@ -244,7 +326,7 @@ const StudentManagement = () => {
 
               </div>
             </div>
-            <Pagination className="mt-4  flex justify-center gap-3" totalData={filteredStudents.length} dataPerPage={dataPerPage} currentPage={currentPage} setCurrentPage={handlePageChange}/>
+            <Pagination className="flex items-center justify-between mt-3" totalData={filteredStudents.length} dataPerPage={dataPerPage} currentPage={currentPage} setCurrentPage={handlePageChange}/>
 
           </div>
         </main>

@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { logoutTutor, selectTutor } from '../../store/tutorSlice';
 import defprofile from '../../assets/user-profile.png'
 import { useNavigate } from 'react-router';
-import { toast } from 'react-toastify';
+import { toast } from 'react-hot-toast';
 
 const chartData = [
   { name: "Mon", value1: 70, value2: 120, value3: 90 },
@@ -41,7 +41,7 @@ const Dashboard = () => {
  
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-100 flex">
       {/* Sidebar */}
    <Sidebar activeSection={"Dashboard"}/>
 
@@ -61,6 +61,8 @@ const Dashboard = () => {
             <button className="p-2 rounded-full hover:bg-gray-100">
               <Bell className="h-5 w-5" />
             </button>
+            <img crossOrigin="anonymous" src={tutor.profileImg || defProfile} className="w-12 h-12 rounded-full" alt="" />
+
            
            
            

@@ -14,6 +14,7 @@ import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 import { logoutTutor, selectTutor } from "../../../store/tutorSlice";
 import axios from 'axios'
+import logo from '../../../assets/logo_cap.png'
 
 const Sidebar = ({ activeSection }) => {
   const dispatch=useDispatch()
@@ -46,7 +47,7 @@ const Sidebar = ({ activeSection }) => {
     {
       title: "Create new Course",
       icon: Users,
-      href: "",
+      href: "/tutor/create-course",
       isActive: activeSection === "New Course",
     },
     {
@@ -79,15 +80,11 @@ const Sidebar = ({ activeSection }) => {
 
   return (
     <div className="flex h-screen w-[240px] flex-col bg-gray-900">
-      <div className="flex flex-col items-center gap-2 p-6">
-        <div className="h-14 w-14 overflow-hidden rounded-full bg-gray-800">
-          <img
-            src={tutor?.profileImg || defProfile}
-            alt="Tutor avatar"
-            className="h-full w-full object-cover"
-          />
+      <div className="p-4 mb-4 border-b border-b-gray-700">
+        <div className="flex items-center gap-2 text-white">
+          <img src={logo} alt="" />
+          <span className="text-xl font-semibold">Codemy</span>
         </div>
-        <span className="text-sm font-medium text-gray-200">{tutor?.fullName}</span>
       </div>
       <nav className="flex-1 space-y-1 px-4">
         {menuItems.map((item) => (

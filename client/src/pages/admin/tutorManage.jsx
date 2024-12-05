@@ -5,22 +5,27 @@ import {
   Search,
   FileText,
   X,
+  Bell,
 } from "lucide-react";
 import Sidebar from '../../components/layout/admin/Sidebar';
 import axios from "axios";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import defProfile from "../../assets/user-profile.png";
 import Pagination from "../../components/utils/Pagination";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutUser, selectUser } from "../../store/userSlice";
 import CertificateViewer from "../../components/utils/CertificateViewer";
+import { logoutAdmin, selectAdmin } from "../../store/adminSlice";
+import { useNavigate } from "react-router";
 
 
 
 const TutorManagement = () => {
   const user=useSelector(selectUser);
+  const admin=useSelector(selectAdmin);
   
   const dispatch=useDispatch()
+  const navigate=useNavigate()
 
   const [activeTab, setActiveTab] = useState("tutors");
   const [selectedApplication, setSelectedApplication] = useState(null);
@@ -195,15 +200,29 @@ const TutorManagement = () => {
     setCurrentPage(pageNumber);
   };
 
+  const onLogout=()=>{
+    try {
+      const response=axios.post("http://localhost:3000/admin/logout");
+
+      dispatch(logoutAdmin(admin));
+
+      toast.success("Logged out successfully");
+      
+      navigate('/login');
+
+      
+    } catch (error) {
+      console.log(error.message);
+      toast.error(error.message || "Error Logging out user")
+    }
+  }
+
   // Conversion function
 const convertDecimalToNumber = (decimalObj) => {
   return decimalObj && decimalObj.$numberDecimal 
     ? parseFloat(decimalObj.$numberDecimal) 
     : decimalObj;
 };
-
-
-
 
 
 
@@ -504,6 +523,7 @@ const convertDecimalToNumber = (decimalObj) => {
 
   const paginatedItems = paginateData(filteredItems);
 
+
  
 
   return (
@@ -511,8 +531,58 @@ const convertDecimalToNumber = (decimalObj) => {
      
       <Sidebar activeSection={"Instructors"} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white border-b border-gray-200 p-6">
-          <h1 className="text-3xl font-bold text-gray-800">Tutor Management</h1>
+      <header className="flex items-center justify-between border-b bg-white px-6 py-4 ">
+          <div>
+            <h1 className="text-xl font-semibold">Tutor Management</h1>
+          </div>
+          <div className="flex items-center gap-4">
+            
+            <button className="p-2 rounded-full hover:bg-gray-100">
+              <Bell className="h-5 w-5" />
+            </button>
+           
+           {/* Dropdown container */}
+           <div className="relative group">
+                <img
+                  referrerPolicy="no-referrer"
+                  crossOrigin="anonymous"
+                  className="h-10 w-10 rounded-full cursor-pointer hover:ring-2 hover:ring-orange-500"
+                  src={admin?.profileImg || defProfile}
+                  alt=""
+                />
+
+                {/* Dropdown menu */}
+                <div className="absolute z-10 right-0  w-48 bg-white rounded-md shadow-lg py-1 border hidden group-hover:block">
+                  <div className="px-4 py-2 border-b">
+                    <p className="text-sm font-medium text-gray-900">
+                      {admin?.userName}
+                    </p>
+                    <p className="text-sm text-gray-500 truncate">
+                      {admin?.email}
+                    </p>
+                  </div>
+
+                  <a
+                  
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Profile
+                  </a>
+                  <a
+                   
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Settings
+                  </a>
+                  <button
+                    onClick={onLogout}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+          </div>
         </header>
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
           <div className="max-w-6xl mx-auto px-4 py-8">
@@ -629,7 +699,7 @@ const convertDecimalToNumber = (decimalObj) => {
                               }
                               className={`transition-colors text-white min-w-[70px]  p-1 rounded-sm ${
                                 tutor.isActive === false
-                                  ? "t bg-green-400 hover:bg-green-600"
+                                  ? "t bg-green-500 hover:bg-green-600"
                                   : " bg-red-500 hover:bg-red-600 "
                               }`}
                               title={
@@ -738,7 +808,7 @@ const convertDecimalToNumber = (decimalObj) => {
               )}
 
             </div>
-            <Pagination className="mt-3 justify-center flex gap-3"  totalData={filteredItems.length} dataPerPage={dataPerPage} currentPage={currentPage} setCurrentPage={handlePageChange}/>
+            <Pagination className="flex items-center justify-between mt-3"  totalData={filteredItems.length} dataPerPage={dataPerPage} currentPage={currentPage} setCurrentPage={handlePageChange}/>
 
           </div>
 

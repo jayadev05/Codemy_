@@ -3,6 +3,7 @@ const User = require("../model/userModel");
 const Tutor = require("../model/tutorModel");
 const Admin = require("../model/adminModel");
 const InstructorApplication = require("../model/tutorApplication");
+const Category = require('../model/categoryModel')
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
@@ -410,7 +411,7 @@ const reviewInstructorApplication = async (req, res) => {
               const newTutor = new Tutor({
           ...existingUser.toObject(),
           email:application.email,
-          fullName:fullName,
+          fullName:application.fullName,
           password:hashedPassword,
           phone: application.phone,
           credentials: application.credentials.map((cred) => ({
@@ -664,6 +665,68 @@ const unlisTtutor = async(req, res) => {
   }
 };
 
+const addCategory = async (req, res) => {
+  const { title, description } = req.body;
+
+  if (!title || !description) {
+    return res.status(400).json({ message: "Title and description are required" });
+  }
+
+  try {
+    const category = new Category({ title, description });
+    await category.save();
+    res.status(201).json({ message: "Category created successfully", category });
+  } catch (error) {
+    console.error("Error creating category:", error);
+    res.status(500).json({ message: "Failed to create category" });
+  }
+};
+
+const getCategories = async (req, res) => {
+  try {
+    const categories = await Category.find();
+    console.log("This is the category request coming ", categories);
+    return res.status(200).json(categories);
+  } catch (error) {
+    console.error("Error fetching categories:", error);
+    res.status(500).json({ message: "Failed to fetch categories" });
+  }                             
+};
+
+const updateCategory = async (req, res) => {
+  const { id } = req.params;
+  const { title, description } = req.body;
+
+  console.log(id,"id");
+  console.log(req.body);
+
+  try {
+    const updatedCategory = await Category.findByIdAndUpdate(id, { title, description }, { new: true });
+    if (!updatedCategory) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+    res.status(200).json({ message: "Category updated successfully", updatedCategory });
+  } catch (error) {
+    console.error("Error updating category:", error);
+    res.status(500).json({ message: "Failed to update category" });
+  }
+};
+
+const deleteCategory = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const category = await Category.findByIdAndDelete(id);
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+    res.status(200).json({ message: "Category deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting category:", error);
+    res.status(500).json({ message: "Failed to delete category" });
+  }
+};
+
 
 
 module.exports = {
@@ -681,5 +744,9 @@ module.exports = {
   getTutors,
   getCertificates,
   approveTutor,
-  existsCheck
+  existsCheck,
+  getCategories,
+  addCategory,
+  updateCategory,
+  deleteCategory
 };

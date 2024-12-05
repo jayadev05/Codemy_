@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { addUser, selectUser } from '../../store/userSlice'
 import axios from 'axios';
 import Header from '../../components/layout/Header'
-import { toast } from 'react-toastify'
+import { toast } from 'react-hot-toast'
 import MainHeader from '../../components/layout/user/MainHeader'
 import UserProfile from '../../components/layout/user/UserDetails'
 import Tabs from '../../components/layout/user/Tabs'

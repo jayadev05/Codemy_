@@ -20,7 +20,7 @@ import defProfile from "../../assets/user-profile.png";
 import Footer from "../../components/layout/Footer";
 import { InstructorModal } from "../general/signup/InstructorSignUp";
 import {  BookOpen, Users } from 'lucide-react';
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import axios from "axios";
 import Header from "../../components/layout/Header";
 
