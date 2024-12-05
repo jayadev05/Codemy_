@@ -16,6 +16,8 @@ const CourseSchema = new mongoose.Schema(
   language: String,
 
   level: String,
+  
+  topic:String,
 
   price: { type:Schema.Types.Decimal128, required: true },
 
