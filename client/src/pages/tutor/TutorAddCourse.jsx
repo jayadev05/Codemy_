@@ -10,7 +10,7 @@ import BasicInfo from './tabs/BasicInfo';
 import AdvancedInfo from './tabs/AdvancedInfo';
 import Curriculum from './tabs/Curriculum';
 
-export default function CourseCreation() {
+export default function AddCourse() {
   const tutor = useSelector(selectTutor);
   const [categories,setCategories]=useState([]);
 
@@ -121,7 +121,8 @@ export default function CourseCreation() {
     const courseData = {
       basicInfo: basicInfo,
       advancedInfo: advanceInfo,
-      tutodId:tutor._id
+      curriculum:curriculum,
+      tutorId:tutor._id
     };
   
     try {
@@ -213,7 +214,7 @@ export default function CourseCreation() {
                   <div>
                     <h3 className="text-lg font-medium mb-4">Publish Course</h3>
                     {/* Add your publish course form fields here */}
-                    <p>Publish Course form fields will be added here.</p>
+                    <p>Preview</p>
                   </div>
                 )}
 

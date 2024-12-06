@@ -114,19 +114,30 @@ function Curriculum({ sendData }) {
   });
 
   // Centralized data sending
-  useEffect(() => {
-    const payload = generatePayload();
+  // Remove the dependency on sendData and only depend on the specific state values
+useEffect(() => {
+  const payload = {
+    title: state.title,
+    thumbnail: state.selectedThumbnail,
+    description: state.description,
+    lectureNote: state.lectureNote,
+    video: state.selectedFile,
+    section: state.editName,
+  };
+  
+  // Only call sendData if the payload has meaningful content
+  if (payload.title || payload.thumbnail || payload.description || 
+      payload.lectureNote || payload.video || payload.section) {
     sendData(payload);
-  }, [
-    state.title,
-    state.selectedThumbnail,
-    state.description,
-    state.lectureNote,
-    state.selectedFile,
-    state.editName,
-    sendData,
-  ]);
-
+  }
+}, [
+  state.title,
+  state.selectedThumbnail, 
+  state.description,
+  state.lectureNote,
+  state.selectedFile,
+  state.editName
+]);
   // Simplified section management functions
   const addSection = () => {
     setSections((prev) => [
@@ -163,6 +174,7 @@ function Curriculum({ sendData }) {
           section.id === activeModal.sectionId
             ? {
                 ...section,
+                isExpanded: true, // Always expand the section when adding content
                 content: [
                   ...section.content,
                   {
@@ -191,13 +203,47 @@ function Curriculum({ sendData }) {
   const handleTextSave = () => {
     const { activeModal } = state;
     if (activeModal.type === "description") {
-      // Save description logic
+      setSections((prev) =>
+        prev.map((section) =>
+          section.id === activeModal.sectionId
+            ? {
+                ...section,
+                isExpanded: true,
+                content: [
+                  ...section.content,
+                  {
+                    type: "description",
+                    name: state.description,
+                  },
+                ],
+              }
+            : section
+        )
+      );
+
       updateState({
         activeModal: { type: null, sectionId: null },
         description: state.description,
       });
     } else if (activeModal.type === "notes") {
-      // Save title logic
+      setSections((prev) =>
+        prev.map((section) =>
+          section.id === activeModal.sectionId
+            ? {
+                ...section,
+                isExpanded: true,
+                content: [
+                  ...section.content,
+                  {
+                    type: "title",
+                    name: state.title,
+                  },
+                ],
+              }
+            : section
+        )
+      );
+
       updateState({
         activeModal: { type: null, sectionId: null },
         title: state.title,
@@ -349,6 +395,38 @@ function Curriculum({ sendData }) {
                       className="bg-white p-3 rounded-md shadow-sm flex items-center justify-between"
                     >
                       <div className="flex items-center">
+                        {item.type === "description" && (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5 mr-2 text-green-500"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M4 6h16M4 10h16M4 14h16M4 18h16"
+                            />
+                          </svg>
+                        )}
+                        {item.type === "image" && (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5 mr-2 text-pink-500"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                        )}
                         {item.type === "video" && (
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -387,22 +465,23 @@ function Curriculum({ sendData }) {
                             />
                           </svg>
                         )}
-                        {item.type === "description" && (
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5 mr-2 text-yellow-500"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M4 6h16M4 10h16M4 14h16M4 18h16"
-                            />
-                          </svg>
-                        )}
+                        {item.type === "description" ||
+                          (item.type === "title" && (
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-5 w-5 mr-2 text-yellow-500"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M4 6h16M4 10h16M4 14h16M4 18h16"
+                              />
+                            </svg>
+                          ))}
                         {item.type === "notes" && (
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -482,7 +561,6 @@ function Curriculum({ sendData }) {
         </div>
       )}
 
-      {/* From state.activeModal.type === 'options' onwards */}
       {state.activeModal.type === "options" && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg shadow-xl w-96">

@@ -55,7 +55,7 @@ const Sidebar = ({ activeSection }) => {
     {
       title: "My Courses",
       icon: GraduationCap,
-      href: "",
+      href: "/tutor/myCourses",
       isActive: activeSection === "My Courses",
     },
     {
