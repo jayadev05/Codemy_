@@ -41,11 +41,10 @@ const changePassword = async (req, res) => {
 
   const updateTutor = async (req, res) => {
     try {
-        console.log(req.body);
+       
         const { email, userName, phone, profileImg, bio, jobTitle, firstName, lastName } = req.body;
         const fullName = `${firstName} ${lastName}`;  // Concatenate first and last name
-
-        console.log(req.body.personalInfo)
+       
 
         const tutor = await Tutor.findOne({ email });
         if (!tutor) {
@@ -74,7 +73,6 @@ const changePassword = async (req, res) => {
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
-
 
   const logoutTutor = (req, res) => {
     res.clearCookie('refreshToken');

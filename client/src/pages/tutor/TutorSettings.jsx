@@ -10,6 +10,7 @@ import defProfile from "../../assets/user-profile.png"
 export default function TutorSettings() {
 
   const tutor=useSelector(selectTutor);
+  console.log(tutor)
   const dispatch=useDispatch();
 
   // State objects for Personal Information and Password Change
@@ -25,8 +26,6 @@ export default function TutorSettings() {
     
   });
 
-  
-
   const [passwordChange, setPasswordChange] = useState({
     currentPassword: '',
     newPassword: '',
@@ -34,6 +33,7 @@ export default function TutorSettings() {
     email:tutor.email
   })
 
+  const [previewImg,setPreviewImg]=useState('');
   const[errors,setErrors]=useState({});
   
   
@@ -156,6 +156,8 @@ export default function TutorSettings() {
             ...prev,
             profileImg: reader.result,
           }));
+
+          setPreviewImg(reader.result)
         };
         reader.readAsDataURL(resizedBlob);
       } catch (error) {
@@ -184,45 +186,76 @@ export default function TutorSettings() {
   }
 
   // Personal Information Form Submit Handler
-  const handlePersonalInfoSubmit = async(e) => {
-    e.preventDefault()
-
-    if(!validateInfoForm()) return;
-
-
+  const handlePersonalInfoSubmit = async (e) => {
+    e.preventDefault();
+  
+    // First, validate the form
+    if (!validateInfoForm()) return;
+  
     try {
+      // Check for existing phone or username
+      const existCheck = await axios.post('http://localhost:3000/admin/check-mail', {
+        phone: personalInfo.phone,
+        username: personalInfo.userName,
+        userId:tutor._id
 
-      const response = await axios.put("http://localhost:3000/tutor/update-profile",  personalInfo ,
-       
-      );
-
-      toast.success(response.data.message || "Details Updated successfully");
-      const updatedTutorData = response.data.updatedTutor;
-      dispatch(addTutor(updatedTutorData));
-
-    } catch (error) {
-      console.error("Error:", error);
+      });
   
     
+  
+      const { phoneExists, userNameExists } = existCheck.data;
+     
+    
+
+
+      // Create an object to store validation errors
+      const validationErrors = {};
+  
+      // Check phone existence
+      
+      if (phoneExists) {
+        validationErrors.phone = "This phone number is already registered to another user";
+      }
+  
+      // Check username existence
+    
+      if (userNameExists ) {
+        validationErrors.username = "Username already in use";
+      }
+  
+      // If there are any validation errors, stop the process
+      if (Object.keys(validationErrors).length > 0) {
+        setErrors(validationErrors);
+        return;
+      }
+  
+      // If no validation errors, proceed with update
+      const response = await axios.put(
+        "http://localhost:3000/tutor/update-profile", 
+        personalInfo
+      );
+  
+      // Success handling
+      toast.success(response.data.message || "Details Updated successfully");
+      setPreviewImg('');
+      
+      // Update global state with new tutor data
+      dispatch(addTutor(response.data.updatedTutor));
+  
+    } catch (error) {
+      // Comprehensive error handling
+      console.error("Update process error:", error);
+  
+      // Check if it's a response error
       if (error.response) {
-
-        const errorMessage = error.response.data.message || "An error occurred while updating details";
-        toast.error(errorMessage);
-
+        toast.error(error.response.data.message || "Error updating profile");
       } else if (error.request) {
-
-        // Request was made, but no response was received
-        toast.error("No response from the server. Please try again later.");
-
+        toast.error("No response from the server. Please try again.");
       } else {
-
-        // Something happened in setting up the request
-        toast.error(error.message || "An unexpected error occurred.");
-
+        toast.error("An unexpected error occurred");
       }
     }
-    
-  }
+  };
 
   // Password Change Form Submit Handler
   const handlePasswordChangeSubmit = async (e) => {
@@ -289,10 +322,12 @@ export default function TutorSettings() {
               <div className="mt-4 flex items-center space-x-4">
               <div className="relative w-20 h-20">
               <img
-                src={ tutor?.profileImg || defProfile}
+              crossOrigin='anonymous'
+                src={  previewImg?previewImg:( tutor?.profileImg || defProfile)}
                 alt="Profile"
                 className="w-full h-full object-cover rounded-full border-2 border-orange-500  shadow-sm"
               />
+               
               <label 
                 htmlFor="profileUpload"
                 className="absolute bottom-0 right-0 bg-orange-500 text-white p-1.5 rounded-full cursor-pointer hover:bg-orange-600 transition shadow-sm"
@@ -308,7 +343,7 @@ export default function TutorSettings() {
               </label>
             </div>
             <div>
-              <p className="font-medium text-gray-700">Profile Picture</p>
+              <p className="font-medium text-gray-700">Profile Picture {previewImg? (<span className='text-orange-500 ms-2'>(preview)</span>):null}</p>
               <p className="text-xs text-gray-500">Max 3MB, 1:1 ratio</p>
             </div>
               </div>

@@ -241,6 +241,7 @@ const googleLogin = async (req, res, next) => {
         fullName: currentUser.fullName,
         userName:currentUser.userName,
         email: currentUser.email,
+        phone : currentUser.phone,
         profileImg: currentUser.profileImg,
         accType,
       };
@@ -248,6 +249,12 @@ const googleLogin = async (req, res, next) => {
       if (accType === "user" || accType === "tutor") {
         responseData.isVerified = currentUser.isVerified;
         responseData.isActive = currentUser.isActive;
+      }
+
+      if(accType==='tutor'){
+        responseData.bio = currentUser.bio;
+        responseData.jobTitle = currentUser.jobTitle;
+  
       }
 
 

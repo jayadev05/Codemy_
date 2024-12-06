@@ -6,7 +6,7 @@ import google_logo from "../../../assets/google_icon.png";
 import { useNavigate } from "react-router";
 import { toast } from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
-import { addUser } from "../../../store/userSlice";
+import { addUser, selectUser } from "../../../store/userSlice";
 import { useGoogleLogin } from "@react-oauth/google";
 import { addTutor } from "../../../store/tutorSlice";
 import { addAdmin } from "../../../store/adminSlice";
@@ -14,6 +14,7 @@ import { addAdmin } from "../../../store/adminSlice";
 const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -34,7 +35,11 @@ const Login = () => {
 
         // Check if the user is active before proceeding
         if (userData.isActive === false) {
-          toast.error("Your account is blocked. Please contact support.");
+          toast.error("Your account is blocked. Please contact support.",{style: {
+            borderRadius: '10px',
+            background: '#111826',
+            color: '#fff',
+          }});
           setIsLoading(false);
           return;
         }
@@ -58,7 +63,11 @@ const Login = () => {
             console.warn("Unknown user type:", userType);
         }
 
-        toast.success("Log In Successfull!");
+        toast.success("Log In Successfull!",{style: {
+          borderRadius: '10px',
+          background: '#111826',
+          color: '#fff',
+        }});
 
         // Navigate after a short delay
         setTimeout(() => {
@@ -68,7 +77,11 @@ const Login = () => {
     } catch (error) {
       console.error("Login error:", error);
       toast.error(
-        error.response?.data?.message || "Login failed. Please try again."
+        error.response?.data?.message || "Login failed. Please try again.",{style: {
+          borderRadius: '10px',
+          background: '#111826',
+          color: '#fff',
+        }}
       );
     } finally {
       setIsLoading(false);
@@ -88,16 +101,25 @@ const Login = () => {
       
         if(data.data.user.isActive===false){
           setIsLoading(false);
-          toast.error("Your account is blocked. Please contact support");
+          toast.error("Your account is blocked. Please contact support",{style: {
+            borderRadius: '10px',
+            background: '#111826',
+            color: '#fff',
+          }});
           return
         }
 
         if (response.data.success) {
        
-          toast.success("Google Sign-in Successful!");
+          toast.success("Google Sign-in Successful!",{style: {
+            borderRadius: '10px',
+            background: '#111826',
+            color: '#fff',
+          }});
 
           
           const accType = data.data.user.accType;
+          
 
           if (accType === "admin") {
               
@@ -119,7 +141,11 @@ const Login = () => {
       console.error("Error during Google sign-in:", error);
       toast.error(
         error.response?.data?.message ||
-          "Google sign-in failed. Please try again."
+          "Google sign-in failed. Please try again.",{style: {
+            borderRadius: '10px',
+            background: '#111826',
+            color: '#fff',
+          }}
       );
     } finally {
       setIsLoading(false);

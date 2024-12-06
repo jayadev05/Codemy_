@@ -483,67 +483,82 @@ const reviewInstructorApplication = async (req, res) => {
   } 
 };
 
-const existsCheck = async (req, res) => {   
+const existsCheck = async (req, res) => {
   try {
-    const { email,username, phone, checkType } = req.body;      
+      const { email, username, phone,  userId } = req.body;
 
   
-    let emailExists = false;
-    let userNameExists = false;
-    let phoneExists=false;
-   
 
-    // Conditional checks based on checkType
-    if (checkType === 'application') {
-      
-      const [existingTutor, existingAdmin, existingUser] = await Promise.all([
-        Tutor.findOne({phone}),
-        Admin.findOne({phone}),
-        User.find({ phone })
-      ]);
+      let emailExists = false;
+      let userNameExists = false;
+      let phoneExists = false;
 
-      phoneExists = !!(existingTutor || existingAdmin || existingUser);
-     
-     
-    } 
-    
-    else {
-      // Default behavior - check all collections
-      const [existingUser, existingTutor, existingAdmin] = await Promise.all([
-        User.findOne({ email }),
-        Tutor.findOne({ email }),
-        Admin.findOne({ email })
-      ]);
+      // Helper function to check existence while excluding current user
+      const checkExistence = async (Model, field, value) => {
+          if (!value) return false;
 
-      emailExists = !!(existingUser || existingTutor || existingAdmin);
+          const query = { [field]: value };
+          
+          // If currentUserId is provided, exclude the current user's document
+          if (userId) {
+              query._id = { $ne: userId };
+          }
 
-      if(username){
-        const [userUserName, tutorUserName, adminUserName] = await Promise.all([
-         User.findOne({ userName: username }),
-         Tutor.findOne({ userName: username }),
-         Admin.findOne({ userName: username })
-        ]);
+          const existingDoc = await Model.findOne(query);
+          return !!existingDoc;
+      };
 
-        userNameExists = !!(userUserName || tutorUserName || adminUserName);
+      // Comprehensive check for username and phone
+      if (username) {
+          userNameExists = await Promise.all([
+              checkExistence(User, 'userName', username),
+              checkExistence(Tutor, 'userName', username),
+              checkExistence(Admin, 'userName', username)
+          ]).then(results => results.some(result => result));
       }
 
-      
-    }
+      if (phone) {
+          phoneExists = await Promise.all([
+              checkExistence(User, 'phone', phone),
+              checkExistence(Tutor, 'phone', phone),
+              checkExistence(Admin, 'phone', phone)
+          ]).then(results => results.some(result => result));
+      }
 
-    // Return response
-    return res.json({
-      emailExists,
-      userNameExists,
-      phoneExists, 
-      message: emailExists 
-        ? 'Email  already in use' 
-        : (userNameExists 
-          ? "Username is already in use" 
-          : "User does not exist")
-    });
+      // Fallback to email check if no specific checks are requested
+      if (!username && !phone && email) {
+          emailExists = await Promise.all([
+              checkExistence(User, 'email', email),
+              checkExistence(Tutor, 'email', email),
+              checkExistence(Admin, 'email', email)
+          ]).then(results => results.some(result => result));
+      }
+
+      console.log({
+          emailExists,
+          userNameExists,
+          phoneExists
+      });
+
+      // Determine the most appropriate message
+      let message = 'No conflicts found';
+      if (userNameExists) message = 'Username is already in use';
+      else if (phoneExists) message = 'Phone is already in use';
+      else if (emailExists) message = 'Email already in use';
+
+      return res.json({
+          emailExists,
+          userNameExists,
+          phoneExists,
+          message
+      });
+
   } catch (error) {
-    console.error('Email check error:', error);
-    return res.status(500).json({ message: 'Server error checking email / username' });
+      console.error('Uniqueness check error:', error);
+      return res.status(500).json({ 
+          message: 'Server error checking uniqueness',
+          error: error.message 
+      });
   }
 };
 

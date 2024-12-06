@@ -25,7 +25,23 @@ const CourseSchema = new mongoose.Schema(
 
   duration: Number,
 
+  durationUnit:String,
+
   thumbnail: String,
+
+  isListed:{
+    type:Boolean,
+    default:true
+  },
+
+  ratings:[Number],
+
+  ratingsCount:Number,
+
+  averageRating:{
+    type:Number,
+    default:0
+  },
 
   // Embedded lectures array for better performance
 

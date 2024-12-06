@@ -13,6 +13,11 @@ import Curriculum from './tabs/Curriculum';
 export default function CourseCreation() {
   const tutor = useSelector(selectTutor);
   const [categories,setCategories]=useState([]);
+
+  const[basicInfo,setBasicInfo]=useState([]);
+  const[advanceInfo,setAdvanceInfo]=useState([]);
+  const[curriculum,setCurriculum]=useState([]);
+
  
 
   const [activeTab, setActiveTab] = useState(0);
@@ -42,6 +47,15 @@ export default function CourseCreation() {
     }
   };
 
+  const handleBasicInfoData=async(dataFromChild)=>{
+    setBasicInfo(dataFromChild);
+  }
+  const handleAdvanceInfoData=async(dataFromChild)=>{
+    setAdvanceInfo(dataFromChild);
+  }
+  const handleCurriculumData=async(dataFromChild)=>{
+    setCurriculum(dataFromChild);
+  }
 
   const handleTabChange = (index) => {
     if (isCurrentTabComplete()) {
@@ -88,12 +102,37 @@ export default function CourseCreation() {
       if (activeTab < tabs.length - 1) {
         setActiveTab(activeTab + 1);
       } else {
-        // Handle form submission for the last tab
-        console.log("Form submitted successfully!");
-        // Add your form submission logic here
+        // This is now the final submission
+        handleFinalSubmit();
       }
     } else {
-      alert("Please fill all fields before proceeding.");
+      toast("Please fill all fields before proceeding.", {
+        icon: '✍️',
+        style: {
+          borderRadius: '10px',
+          background: '#111826',
+          color: '#fff',
+        }
+      });
+    }
+  };
+
+  const handleFinalSubmit = async () => {
+    const courseData = {
+      basicInfo: basicInfo,
+      advancedInfo: advanceInfo,
+      tutodId:tutor._id
+    };
+  
+    try {
+      const response = await axios.post("http://localhost:3000/course/create-course", courseData);
+      toast.success("Course created successfully!");
+    
+    } catch (error) {
+      console.error(error);
+      if(error.response){
+        toast.error(error.response.data.message||"Failed to create course");
+      }
     }
   };
 
@@ -160,13 +199,14 @@ export default function CourseCreation() {
               </div>
 
               <form className="space-y-6" onSubmit={handleSaveAndNext}>
-                {activeTab === 0 && <BasicInfo categories={categories}/> }
+
+                {activeTab === 0 && <BasicInfo categories={categories} sendData={handleBasicInfoData}/>}
                   
               
-                {activeTab === 1 && <AdvancedInfo/>}
+                {activeTab === 1 && <AdvancedInfo sendData={handleAdvanceInfoData}/>}
               
                                       
-                {activeTab === 2 && <Curriculum/>}
+                {activeTab === 2 && <Curriculum sendData={handleCurriculumData}/>}
                       
                                               
                 {activeTab === 3 && (
@@ -198,6 +238,7 @@ export default function CourseCreation() {
                   </button>
                 </div>
               </form>
+
             </div>
           </div>
         </main>

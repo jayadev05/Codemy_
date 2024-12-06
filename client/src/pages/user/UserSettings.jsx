@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import {  Eye, EyeOff, Camera } from 'lucide-react'
+import {  Eye, EyeOff, Camera, SpaceIcon } from 'lucide-react'
 import defProfile from '../../assets/user-profile.png'
 import { useDispatch, useSelector } from 'react-redux'
 import { addUser, selectUser } from '../../store/userSlice'
@@ -20,6 +20,7 @@ const SettingsForm = () => {
  const dispatch=useDispatch();
 
   const [profileImg, setProfileImage] = useState(null);
+  const [previewImg,setPreviewImg]=useState('');
   const [showCurrentPass, setCurrentPass] = useState(false);
   const [showNewPass, setNewPass] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -139,6 +140,7 @@ const SettingsForm = () => {
         const reader = new FileReader();
         reader.onloadend = () => {
           setProfileImage(reader.result);
+          setPreviewImg(reader.result);
         };
         reader.readAsDataURL(resizedBlob);
       } catch (error) {
@@ -158,6 +160,42 @@ const SettingsForm = () => {
         profileImg:profileImg
       };
 
+      const existCheck = await axios.post('http://localhost:3000/admin/check-mail', {
+        phone: payload.phone,
+        username: payload.userName,
+        userId:user._id
+
+      });
+  
+    
+  
+      const { phoneExists, userNameExists } = existCheck.data;
+     
+    
+
+
+      // Create an object to store validation errors
+      const validationErrors = {};
+  
+      // Check phone existence
+      
+      if (phoneExists) {
+        validationErrors.phone = "This phone number is already registered to another user";
+      }
+  
+      // Check username existence
+    
+      if (userNameExists ) {
+        validationErrors.username = "Username already in use";
+      }
+  
+      // If there are any validation errors, stop the process
+      if (Object.keys(validationErrors).length > 0) {
+        setErrors(validationErrors);
+        return;
+      }
+
+
       const response = await axios.put('http://localhost:3000/user/update-profile', payload );
 
       
@@ -165,6 +203,7 @@ const SettingsForm = () => {
       if (response.status===200) {
         const updatedUser=response.data.updatedUser;
         toast.success("Profile updated successfully!");
+        setPreviewImg('');
         dispatch(addUser(updatedUser));
       } 
       else {
@@ -239,17 +278,19 @@ const SettingsForm = () => {
       <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
         <form 
           onSubmit={handleSaveChanges}
-          className="bg-white p-6 rounded-xl shadow-md space-y-4"
+          className="bg-white p-6 rounded-xl shadow-md space-y-4 mb-12"
         >
           <h3 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Account Settings</h3>
           
           <div className="flex items-center space-x-4 mb-4">
             <div className="relative w-20 h-20">
               <img
-                src={ user?.profileImg || defProfile}
+              crossOrigin='anonymous'
+                src={ previewImg? previewImg:( user?.profileImg || defProfile)}
                 alt="Profile"
                 className="w-full h-full object-cover rounded-full border-2 border-orange-500 shadow-sm"
               />
+            {previewImg? (<span>preview</span>):null}
               <label 
                 htmlFor="profileUpload"
                 className="absolute bottom-0 right-0 bg-orange-500 text-white p-1.5 rounded-full cursor-pointer hover:bg-orange-600 transition shadow-sm"
@@ -265,7 +306,7 @@ const SettingsForm = () => {
               </label>
             </div>
             <div>
-              <p className="font-medium text-gray-700">Profile Picture</p>
+              <p className="font-medium text-gray-700">Profile Picture{previewImg? (<span className='text-orange-500 ms-2'>(preview)</span>):null}</p>
               <p className="text-xs text-gray-500">Max 3MB, 1:1 ratio</p>
             </div>
           </div>
@@ -314,6 +355,7 @@ const SettingsForm = () => {
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 transition duration-300"
               required
             />
+            {errors.phone && <span className='text-red-500 mt-3 text-sm'>{errors.phone}</span>}
           </div>
 
           <div>
@@ -341,7 +383,7 @@ const SettingsForm = () => {
 
         <form 
           onSubmit={handlePasswordChange}
-          className="bg-white p-6 rounded-xl shadow-md space-y-4"
+          className="bg-white p-6 rounded-xl shadow-md space-y-4 mb-12"
         >
           <h3 className="text-xl font-bold mb-4 text-gray-800 border-b pb-2">Change Password</h3>
 

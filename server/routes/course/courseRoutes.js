@@ -3,7 +3,7 @@ const courseRoute = express.Router();
 const { createCourse,getCourses} = require('../../controller/courseController');
 const verifyUser = require('../../middleware/authMiddleware')
 
-courseRoute.post('/addcourse',createCourse);
+courseRoute.post('/create-course',createCourse);
 courseRoute.get('/get-courses',getCourses);
 // courseRoute.post('/addlesson/:id', addLesson);
 // courseRoute.get('/viewcourse/:id',viewCourse);

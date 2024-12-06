@@ -26,10 +26,12 @@ const Sidebar = ({ activeSection }) => {
       const response=axios.post("http://localhost:3000/tutor/logout");
 
       dispatch(logoutTutor(tutor));
-
+      toast.success("Logged out successfully",{style:{borderRadius: '10px',
+        background: '#111826',
+        color: '#fff',}});
       navigate('/login');
 
-      toast.success("Logged out successfully");
+      
     } catch (error) {
       console.log(error.message);
       toast.error(error.message || "Error Logging out user")

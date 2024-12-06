@@ -32,7 +32,7 @@ const configureStorage = () => {
   });
 };
 
- // Improved file filter with more robust type checking
+ //  certificate file filter 
 
 const createFileFilter = () => {
   const ALLOWED_MIME_TYPES = new Set([
@@ -63,7 +63,8 @@ const createFileFilter = () => {
   };
 };
 
-// Create upload middleware with improved configuration
+
+// certificate upload middleware
 const handleTutorUpload = () => {
   const upload = multer({
     storage: configureStorage(),

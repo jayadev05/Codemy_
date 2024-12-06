@@ -7,6 +7,7 @@ const mongoose = require('mongoose')
 const cookieParser=require('cookie-parser')
 const nocache=require("nocache");
 const tutorRoute = require("./routes/tutor/tutorRoutes");
+const courseRoute = require("./routes/course/courseRoutes");
 
 
 // Database Connection
@@ -40,7 +41,8 @@ app.use(cors({
 
 app.use("/user", userRoute); 
 app.use("/admin",adminRoute);
-app.use("/tutor",tutorRoute)
+app.use("/tutor",tutorRoute);
+app.use('/course',courseRoute);
 
 
 app.listen(3000, () => {

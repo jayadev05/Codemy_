@@ -11,6 +11,7 @@ const tutorSlice = createSlice({
     addTutor: (state, action) => {
       // Update the state with the tutor details
       const {
+        _id,
         fullName,
         userName,
         email,
@@ -24,6 +25,7 @@ const tutorSlice = createSlice({
       } = action.payload;
 
       state.currentTutor = {
+        _id,
         fullName,
         userName,
         email,

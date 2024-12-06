@@ -1,8 +1,8 @@
 import { ChevronDown } from 'lucide-react';
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 
-function BasicInfo({categories}) {
+function BasicInfo({categories,sendData}) {
  
     const [title, setTitle] = useState('');
     const [topic, setTopic] = useState('');
@@ -11,6 +11,22 @@ function BasicInfo({categories}) {
     const [selectedCategory, setSelectedCategory] = useState('');
     const [selectedLanguage, setSelectedLanguage] = useState('');
     const [selectedDifficulty, setSelectedDifficulty] = useState('');
+
+    const formData={
+      title:title,
+      topic:topic,
+      duration:duration,
+      durationUnit:durationUnit,
+      category:selectedCategory,
+      language:selectedLanguage,
+      difficulty:selectedDifficulty
+    }
+
+  
+useEffect(() => {
+  // Send data to parent whenever any field changes
+  sendData(formData);
+}, [title, topic, duration, durationUnit, selectedCategory, selectedLanguage, selectedDifficulty]);
 
     const handleCategoryChange = (e) => {
         setSelectedCategory(e.target.value);
@@ -61,7 +77,7 @@ function BasicInfo({categories}) {
                         >
                           <option value="">Select...</option>
                           {categories.map((cat) => (
-                            <option key={cat._id} value={cat._id}>
+                            <option key={cat._id} value={cat.title}>
                               {cat.title}
                             </option>
                           ))}
