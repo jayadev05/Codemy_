@@ -1,14 +1,17 @@
 const express = require("express");
 const courseRoute = express.Router();
 const { createCourse,getCourses, getCoursesByTutorId, getCoursesByStudentId} = require('../../controller/courseController');
-const verifyUser = require('../../middleware/authMiddleware')
+const verifyUser = require('../../middleware/authMiddleware');
+const { addLesson, updateLesson } = require("../../controller/lessonController");
 
 courseRoute.post('/create-course',createCourse);
 courseRoute.get('/get-courses',getCourses);
 courseRoute.get('/tutor-courses/:tutorId',getCoursesByTutorId);  
 courseRoute.get('/student-courses/:studentId',getCoursesByStudentId);  
 
-// courseRoute.post('/addlesson/:id', addLesson);
+courseRoute.post('/addlesson/:id', addLesson);
+courseRoute.put('/update-lesson/:id', updateLesson);
+
 // courseRoute.get('/viewcourse/:id',viewCourse);
 // courseRoute.delete('/viewcourse/',deleteCourse);
 // courseRoute.post('/viewdata/:id',viewData)

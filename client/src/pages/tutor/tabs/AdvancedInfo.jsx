@@ -7,6 +7,8 @@ function AdvancedInfo({sendData}) {
     const [description, setDescription] = useState("");
     const [thumbnail, setThumbnail] = useState(null);
     const [thumbnailPreview, setThumbnailPreview] = useState(null);
+    const [courseContent, setCourseContent] = useState('');
+
     const { 
       value: price, 
       displayValue: formattedPrice, 
@@ -148,87 +150,100 @@ function AdvancedInfo({sendData}) {
     const formData = {
         description,
         thumbnail, //base64 string
-        price
+        price,
+        courseContent
     };
 
     // Send data to parent component whenever it changes
     useEffect(() => {
         sendData(formData);
-    }, [thumbnail, description, price]);
+    }, [thumbnail, description, price,courseContent]);
 
     return (
       <>
-    <div className="mb-6">
-        <h3 className="text-lg font-semibold mb-2">Course Thumbnail</h3>
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center mb-3 max-w-md aspect-video ">
+   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="md:col-span-2">
+          <h3 className="text-lg font-semibold mb-2">Course Thumbnail</h3>
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center mb-3 max-w-md aspect-video">
             {thumbnailPreview ? (
-                <div className="relative w-full max-w-md aspect-video overflow-hidden rounded-lg">
-                    <img
-                        src={thumbnailPreview}
-                        alt="Course thumbnail"
-                        className="w-full h-full object-cover"
-                    />
-                    <button
-                        onClick={removeThumbnail}
-                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full text-xs z-10"
-                    >
-                        <X/>
-                    </button>
-                </div>
+              <div className="relative w-full max-w-md  aspect-video overflow-hidden rounded-lg">
+                <img
+                  src={thumbnailPreview}
+                  alt="Course thumbnail"
+                  className="w-full h-full object-cover"
+                />
+                <button
+                  onClick={removeThumbnail}
+                  className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full text-xs z-10"
+                >
+                  <X/>
+                </button>
+              </div>
             ) : (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                    <input
-                        type="file"
-                        id="thumbnailUpload"
-                        className="hidden"
-                        accept=".jpg,.jpeg,.png"
-                        onChange={handleImageUpload}
-                    />
-                    <label
-                        htmlFor="thumbnailUpload"
-                        className="mt-4 inline-block px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer"
-                    >
-                        Upload Image
-                    </label>
-                </div>
+              <div className="border-2 border-dashed border-gray-300 aspect-video rounded-lg p-4 text-center">
+                <input
+                  type="file"
+                  id="thumbnailUpload"
+                  className="hidden"
+                  accept=".jpg,.jpeg,.png"
+                  onChange={handleImageUpload}
+                />
+                <label
+                  htmlFor="thumbnailUpload"
+                  className="mt-4 inline-block px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 cursor-pointer"
+                >
+                  Upload Image
+                </label>
+              </div>
             )}
+          </div>
         </div>
-    </div>
 
-    <div className="mb-6">
-        <h3 className="text-lg font-semibold mb-2">Course Descriptions</h3>
-        <textarea
-            placeholder="Enter your course descriptions"
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Course Description</h3>
+          <textarea
+            placeholder="Enter your course description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             maxLength={500}
             className="w-full min-h-[150px] p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-        />
-        <div className="text-right text-sm text-gray-500">
+          />
+          <div className="text-right text-sm text-gray-500">
             {description.length}/500
+          </div>
         </div>
-    </div>
 
-    <div className="mb-6">
-        <h3 className="text-lg font-semibold mb-2">Course Price</h3>
-        <div className="flex items-center">
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Course Content</h3>
+          <textarea
+            placeholder="Describe what you will teach in this course"
+            value={courseContent}
+            onChange={(e) => setCourseContent(e.target.value)}
+            className="w-full min-h-[150px] p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+          />
+        </div>
+
+        <div className="md:col-span-2">
+          <h3 className="text-lg font-semibold mb-2">Course Price</h3>
+          <div className="flex items-center">
             <span className="mr-2 text-gray-600">₹</span>
             <input
-                type="text"
-                placeholder="Enter course price"
-                value={formattedPrice}
-                onChange={handlePriceChange}
-                min="0"
-                step="1"
-                className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+              type="text"
+              placeholder="Enter course price"
+              value={formattedPrice}
+              onChange={handlePriceChange}
+              min="0"
+              step="1"
+              className="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
-        </div>
-        {price && (
+          </div>
+          {price && (
             <div className="mt-2 ms-4 text-sm text-gray-500">
-                Price in words: {convertNumberToWords(parseFloat(price))}
+              Price in words: {convertNumberToWords(parseFloat(price))}
             </div>
-        )}
-    </div>
+          )}
+        </div>
+      </div>
 </>
     )
 }

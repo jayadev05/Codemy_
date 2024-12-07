@@ -14,6 +14,8 @@ import storage from 'redux-persist/lib/storage';
 import userSlice from './userSlice';
 import tutorSlice from './tutorSlice';
 import adminSlice from './adminSlice';
+import courseSlice from './slices/courseSlice';
+import lessonsSlice from './slices/lessonsSlice';
 
 // Create persist configs for each reducer
 const userPersistConfig = {
@@ -33,16 +35,30 @@ const adminPersistConfig = {
   storage,
 };
 
+const coursePersistConfig = {
+  key: 'course',
+  storage,
+};
+
+const lessonsPersistConfig = {
+  key: 'lessons',
+  storage,
+};
+
 // Wrap reducers with persistReducer
 const persistedUserReducer = persistReducer(userPersistConfig, userSlice);
 const persistedTutorReducer = persistReducer(tutorPersistConfig, tutorSlice);
 const persistedAdminReducer = persistReducer(adminPersistConfig, adminSlice);
+const persistedCourseReducer = persistReducer(coursePersistConfig, courseSlice);
+const persistedLessonsReducer = persistReducer(lessonsPersistConfig, lessonsSlice);
 
 const store = configureStore({
   reducer: {
     user: persistedUserReducer,
     tutor: persistedTutorReducer,
-    admin: persistedAdminReducer
+    admin: persistedAdminReducer,
+    course: persistedCourseReducer,
+    lessons: persistedLessonsReducer,
   },
   middleware: (getDefaultMiddleware) => 
     getDefaultMiddleware({

@@ -57,11 +57,11 @@ useEffect(() => {
                           onChange={(e) => setTitle(e.target.value)}
                           placeholder="Your course title"
                           className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                          maxLength={20}
+                          maxLength={50}
                           required
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
-                          {title.length}/20
+                          {title.length}/50
                         </span>
                       </div>
                     </div>
@@ -95,11 +95,11 @@ useEffect(() => {
                           onChange={(e) => setTopic(e.target.value)}
                           placeholder="What this course is based on"
                           className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                          maxLength={20}
+                          maxLength={100}
                           required
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
-                          {topic.length}/20
+                          {topic.length}/100
                         </span>
                       </div>
                     </div>

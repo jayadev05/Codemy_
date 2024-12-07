@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const LessonSchema = new mongoose.Schema({
-  lessontitle: {
+  lessonTitle: {
     type: String,
     required: true,
   },
@@ -23,14 +23,17 @@ const LessonSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  Video: {
+  video: {
     type: String,
     required: true,
   },
-  pdfnotes:{
+  lessonNotes:{
     type: String,
     required: true,
-  }
+  },
+  lessonThumbnail:{
+    type:String
+  },
 },{
   timestamps: true,
  });

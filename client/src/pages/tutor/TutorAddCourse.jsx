@@ -1,25 +1,38 @@
-import React, { useState, useEffect } from 'react';
-import { Bell, ChevronDown, CirclePlay, ClipboardList, Layers, MonitorPlay, Search } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import {
+  Bell,
+  ChevronDown,
+  CirclePlay,
+  ClipboardList,
+  Layers,
+  MonitorPlay,
+  Search,
+} from "lucide-react";
 import Sidebar from "../../components/layout/tutor/Sidebar";
 import axios from "axios";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { selectTutor } from "../../store/tutorSlice";
-import defProfile from '../../assets/user-profile.png'
-import { toast } from 'react-hot-toast';
-import BasicInfo from './tabs/BasicInfo';
-import AdvancedInfo from './tabs/AdvancedInfo';
-import Curriculum from './tabs/Curriculum';
+import defProfile from "../../assets/user-profile.png";
+import { toast } from "react-hot-toast";
+import BasicInfo from "./tabs/BasicInfo";
+import AdvancedInfo from "./tabs/AdvancedInfo";
+import Curriculum from "./tabs/Curriculum";
+import CoursePreview from "../../components/layout/tutor/Preview";
+import { addCourse } from "../../store/slices/courseSlice";
+import { addLesson, clearLessons, removeLesson } from "../../store/slices/lessonsSlice";
 
 export default function AddCourse() {
   const tutor = useSelector(selectTutor);
-  const [categories,setCategories]=useState([]);
+  const dispatch = useDispatch();
 
-  const[basicInfo,setBasicInfo]=useState([]);
-  const[advanceInfo,setAdvanceInfo]=useState([]);
-  const[curriculum,setCurriculum]=useState([]);
+  const [categories, setCategories] = useState([]);
+
+  const [basicInfo, setBasicInfo] = useState([]);
+  const [advanceInfo, setAdvanceInfo] = useState([]);
+
+  const [curriculum, setCurriculum] = useState([]); //lessons
 
  
-
   const [activeTab, setActiveTab] = useState(0);
 
   const tabs = [
@@ -35,7 +48,9 @@ export default function AddCourse() {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get("http://localhost:3000/admin/get-categories");
+      const response = await axios.get(
+        "http://localhost:3000/admin/get-categories"
+      );
       setCategories(response.data);
     } catch (error) {
       console.log(error);
@@ -47,27 +62,27 @@ export default function AddCourse() {
     }
   };
 
-  const handleBasicInfoData=async(dataFromChild)=>{
+  const handleBasicInfoData = async (dataFromChild) => {
     setBasicInfo(dataFromChild);
-  }
-  const handleAdvanceInfoData=async(dataFromChild)=>{
+  };
+  const handleAdvanceInfoData = async (dataFromChild) => {
     setAdvanceInfo(dataFromChild);
-  }
-  const handleCurriculumData=async(dataFromChild)=>{
+  };
+  const handleCurriculumData = async (dataFromChild) => {
     setCurriculum(dataFromChild);
-  }
+  };
 
   const handleTabChange = (index) => {
     if (isCurrentTabComplete()) {
       setActiveTab(index);
     } else {
-      toast("Please fill all fields before moving to the next tab.",{
-        icon: '✍️',
+      toast("Please fill all fields before moving to the next tab.", {
+        icon: "✍️",
         style: {
-          borderRadius: '10px',
-          background: '#111826',
-          color: '#fff',
-        }
+          borderRadius: "10px",
+          background: "#111826",
+          color: "#fff",
+        },
       });
     }
   };
@@ -75,13 +90,13 @@ export default function AddCourse() {
   const isCurrentTabComplete = () => {
     switch (activeTab) {
       case 0: // Basic Information
-      return true;
-        // return title !== '' && 
-        //        selectedCategory !== '' && 
-        //        topic !== '' && 
-        //        selectedLanguage !== '' && 
-        //        selectedDifficulty !== '' && 
-        //        duration !== '';
+        return true;
+      // return title !== '' &&
+      //        selectedCategory !== '' &&
+      //        topic !== '' &&
+      //        selectedLanguage !== '' &&
+      //        selectedDifficulty !== '' &&
+      //        duration !== '';
       case 1: // Advance Information
         // Add logic for Advance Information tab
         return true;
@@ -100,6 +115,15 @@ export default function AddCourse() {
     e.preventDefault();
     if (isCurrentTabComplete()) {
       if (activeTab < tabs.length - 1) {
+
+        dispatch(addCourse({ ...basicInfo, ...advanceInfo }));
+        if(activeTab===2){
+    
+          console.log(curriculum,"curriculum asdasd");
+          // dispatch(clearLessons(curriculum));
+          dispatch(addLesson(...curriculum));
+        }
+
         setActiveTab(activeTab + 1);
       } else {
         // This is now the final submission
@@ -107,12 +131,12 @@ export default function AddCourse() {
       }
     } else {
       toast("Please fill all fields before proceeding.", {
-        icon: '✍️',
+        icon: "✍️",
         style: {
-          borderRadius: '10px',
-          background: '#111826',
-          color: '#fff',
-        }
+          borderRadius: "10px",
+          background: "#111826",
+          color: "#fff",
+        },
       });
     }
   };
@@ -121,31 +145,31 @@ export default function AddCourse() {
     const courseData = {
       basicInfo: basicInfo,
       advancedInfo: advanceInfo,
-      curriculum:curriculum,
-      tutorId:tutor._id
+      curriculum: curriculum,
+      tutorId: tutor._id,
     };
-  
+
     try {
-      const response = await axios.post("http://localhost:3000/course/create-course", courseData);
+      const response = await axios.post(
+        "http://localhost:3000/course/create-course",
+        courseData
+      );
       toast.success("Course created successfully!");
-    
     } catch (error) {
       console.error(error);
-      if(error.response){
-        toast.error(error.response.data.message||"Failed to create course");
+      if (error.response) {
+        toast.error(error.response.data.message || "Failed to create course");
       }
     }
   };
 
- 
-
   return (
     <>
       <div className="min-h-screen bg-gray-50 flex">
-      <div className="sticky top-0 h-screen">
-        <Sidebar activeSection={"New Course"} />
+        <div className="sticky top-0 h-screen">
+          <Sidebar activeSection={"New Course"} />
         </div>
-        
+
         <main className="w-full bg-gray-100 pb-8">
           <header className="flex items-center justify-between border-b bg-white px-6 py-4 ">
             <div>
@@ -163,7 +187,12 @@ export default function AddCourse() {
               <button className="p-2 rounded-full hover:bg-gray-100">
                 <Bell className="h-5 w-5" />
               </button>
-              <img crossOrigin="anonymous" src={tutor.profileImg || defProfile} className="w-12 h-12 rounded-full" alt="" />
+              <img
+                crossOrigin="anonymous"
+                src={tutor.profileImg || defProfile}
+                className="w-12 h-12 rounded-full"
+                alt=""
+              />
             </div>
           </header>
 
@@ -196,26 +225,31 @@ export default function AddCourse() {
 
             <div className="mt-8">
               <div className="flex justify-between mb-8">
-                <h2 className="text-xl font-semibold">{tabs[activeTab].name}</h2>
+                <h2 className="text-xl font-semibold">
+                  {tabs[activeTab].name}
+                </h2>
               </div>
 
               <form className="space-y-6" onSubmit={handleSaveAndNext}>
+                {activeTab === 0 && (
+                  <BasicInfo
+                    categories={categories}
+                    sendData={handleBasicInfoData}
+                  />
+                )}
 
-                {activeTab === 0 && <BasicInfo categories={categories} sendData={handleBasicInfoData}/>}
-                  
-              
-                {activeTab === 1 && <AdvancedInfo sendData={handleAdvanceInfoData}/>}
-              
-                                      
-                {activeTab === 2 && <Curriculum sendData={handleCurriculumData}/>}
-                      
-                                              
+                {activeTab === 1 && (
+                  <AdvancedInfo sendData={handleAdvanceInfoData} />
+                )}
+
+                {activeTab === 2 && (
+                  <Curriculum sendData={handleCurriculumData} />
+                )}
+
                 {activeTab === 3 && (
-                  <div>
-                    <h3 className="text-lg font-medium mb-4">Publish Course</h3>
-                    {/* Add your publish course form fields here */}
-                    <p>Preview</p>
-                  </div>
+                  <CoursePreview
+                  
+                  />
                 )}
 
                 <div className="flex justify-between pt-6">
@@ -239,7 +273,6 @@ export default function AddCourse() {
                   </button>
                 </div>
               </form>
-
             </div>
           </div>
         </main>
@@ -247,4 +280,3 @@ export default function AddCourse() {
     </>
   );
 }
-

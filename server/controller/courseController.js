@@ -110,7 +110,7 @@ const getCoursesByStudentId = async (req, res) => {
 };
 
 const createCourse = async (req, res) => {
-  const { basicInfo, advancedInfo, curriculum, tutorId } = req.body;
+  const { basicInfo, advancedInfo, tutorId } = req.body;
 
   const {
     title,
@@ -126,7 +126,7 @@ const createCourse = async (req, res) => {
     description,
      courseContent, 
      price, 
-     offerPrice } =
+      } =
     advancedInfo;
 
   try {
@@ -144,7 +144,6 @@ const createCourse = async (req, res) => {
       description,
       thumbnail,
       price,
-      offerPrice,
       tutorId,
     });
     await course.save();
@@ -154,6 +153,59 @@ const createCourse = async (req, res) => {
   } catch (error) {
     console.log("Create Course error : ", error);
     return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const editCourse=async(req,res)=>{
+  try {
+    
+    const {
+      title,
+      topic,
+      duration,
+      durationUnit,
+      category,
+      language,
+      difficulty,
+      thumbnail, 
+      description, 
+      price, 
+      tutorId
+    } = req.body;
+  
+    const courseId=req.params;
+
+    const course = await Course.findOne({ _id: courseId, tutorId: tutorId });;
+
+
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({message:error.message});
+  }
+}
+
+const deleteCourse = async (req, res) => {
+  try {
+    const { courseId,tutorId } = req.query; 
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    if (course.tutorId.toString() !== tutorId.toString()) {
+      return res.status(403).json({ message: "Unauthorized to delete this course" });
+    }
+
+    await Lesson.deleteMany({ course: courseId });
+
+    await Course.findByIdAndDelete(courseId);
+
+    res.status(200).json({ message: "Course deleted successfully" });
+  } catch (error) {
+    console.error("Error in deleteCourse:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
