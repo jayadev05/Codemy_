@@ -1,24 +1,22 @@
 const express = require("express");
 const courseRoute = express.Router();
-const { createCourse,getCourses, getCoursesByTutorId, getCoursesByStudentId} = require('../../controller/courseController');
+const { createCourse,getCourses, getCoursesByTutorId, getCoursesByStudentId, deleteCourse, viewCourse, editCourse} = require('../../controller/courseController');
 const verifyUser = require('../../middleware/authMiddleware');
 const { addLesson, updateLesson } = require("../../controller/lessonController");
+
 
 courseRoute.post('/create-course',createCourse);
 courseRoute.get('/get-courses',getCourses);
 courseRoute.get('/tutor-courses/:tutorId',getCoursesByTutorId);  
 courseRoute.get('/student-courses/:studentId',getCoursesByStudentId);  
 
-courseRoute.post('/addlesson/:id', addLesson);
-courseRoute.put('/update-lesson/:id', updateLesson);
+courseRoute.get('/view-course/:id',viewCourse)
 
-// courseRoute.get('/viewcourse/:id',viewCourse);
-// courseRoute.delete('/viewcourse/',deleteCourse);
-// courseRoute.post('/viewdata/:id',viewData)
-// courseRoute.put('/editData/:id',editCourse)
-// courseRoute.get('/editlesson', editLesson);
-// courseRoute.put('/editlesson,updateLesson);
-// courseRoute.delete('/editlesson/',deleteLesson);
+courseRoute.put('/update-lesson/:id', updateLesson);
+courseRoute.put('/edit-course/:id', editCourse);
+
+courseRoute.delete('/delete-course',deleteCourse);
+
 
 
 module.exports = courseRoute;

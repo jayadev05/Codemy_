@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import axios from 'axios';
 import { X } from 'lucide-react';
 import useCurrencyFormat from '../../../hooks/UseCurrencyFormat';
+import toast from 'react-hot-toast';
 
 function AdvancedInfo({sendData}) {
     const [description, setDescription] = useState("");
@@ -16,7 +17,7 @@ function AdvancedInfo({sendData}) {
   } = useCurrencyFormat();
 
     
-
+    // function to resize image
     const resizeImage=(file, width = 1200, height = 800)=> {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -102,44 +103,101 @@ function AdvancedInfo({sendData}) {
       };
   
       return convertThousands(num).trim() + " Rupees";
-  };
-    
-    // Updated handleImageUpload function
-    const handleImageUpload = async (e) => {
+    };
+
+    const handleFileUploadToCloudinary = async (file, fileType = 'image') => {
+      try {
+        const cloudName = 'diwjeqkca';
+        const uploadPreset = "unsigned_upload";
+        
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", uploadPreset);
+        
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {
+          method: "POST",
+          body: formData,
+        });
+        
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error("Cloudinary upload error:", {
+            status: res.status,
+            statusText: res.statusText,
+            errorDetails: errorText
+          });
+          throw new Error(`Upload failed: ${res.status} ${errorText}`);
+        }
+        
+        const data = await res.json();
+        console.log("Full Cloudinary response:", data);
+        
+        // For PDFs, always use Google Docs viewer
+        if (fileType === 'file') {
+          return `https://docs.google.com/viewer?url=${encodeURIComponent(data.secure_url)}&embedded=true`;
+        }
+        
+        return data.secure_url;
+      } catch (error) {
+        console.error("Detailed Cloudinary upload error:", error);
+        alert("File upload failed. Please try again.");
+        return null;
+      }
+    };
+
+    const handleImageUpload = async (e, fileType = 'image') => {
+      
       const file = e.target.files[0];
-      
-      // Validate file
-      if (!file) return;
-      
-      // Check file size (e.g., max 10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        alert('File size should be less than 10MB');
+      if (!file) {
+        console.error("No file selected");
         return;
       }
       
-      // Check file type
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+      // Validation options for different file types
+      const validationOptions = {
+        image: {
+          maxSize: 10 * 1024 * 1024, // 10MB
+          allowedTypes: ["image/jpeg", "image/png", "image/gif"],
+          maxSizeLabel: "10 MB",
+        },
+        // Add more file type configurations as needed
+      };
+      
+      const options = validationOptions[fileType] || validationOptions.image;
+      const { maxSize, allowedTypes, maxSizeLabel } = options;
+      
+      // File size check
+      if (file.size > maxSize) {
+        alert(`File size should be less than ${maxSizeLabel}`);
+        e.target.value = null; // Reset file input
+        return;
+      }
+      
+      // File type check
       if (!allowedTypes.includes(file.type)) {
-        alert('Only JPG, JPEG, and PNG files are allowed');
+        alert(`Invalid file type. Allowed types: ${allowedTypes.join(", ")}`);
+        e.target.value = null; // Reset file input
         return;
       }
       
       try {
-        // Resize the image to 1200x800
-        const resizedBlob = await resizeImage(file, 1200, 800);
+        const resizedFile=await resizeImage(file);
+        const fileUrl = await handleFileUploadToCloudinary(resizedFile, fileType);
         
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setThumbnail(reader.result);
-          setThumbnailPreview(reader.result);
-        };
-        reader.readAsDataURL(resizedBlob);
+        if (fileUrl) {
+          setThumbnail(fileUrl);
+          
+          setThumbnailPreview(fileUrl);
+        }
+        
+        e.target.value = null;
+
       } catch (error) {
-        console.error('Image processing error:', error);
-        toast.error('Failed to process image');
+        console.log(error);
+        toast.error("Error uploading thumbnail");
       }
     };
-
+    
     // Remove thumbnail
     const removeThumbnail = () => {
       setThumbnail(null);
@@ -149,7 +207,7 @@ function AdvancedInfo({sendData}) {
     // Prepare form data for parent component
     const formData = {
         description,
-        thumbnail, //base64 string
+        thumbnail, 
         price,
         courseContent
     };

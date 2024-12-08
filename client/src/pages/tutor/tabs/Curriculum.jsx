@@ -1,20 +1,27 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { useSelector } from "react-redux";
+import { selectTutor } from "../../../store/tutorSlice";
+import { selectCourse } from "../../../store/slices/courseSlice";
 
 function Curriculum({ sendData }) {
   // State for lessons with more comprehensive structure
+  const tutor=useSelector(selectTutor);
+  const course=useSelector(selectCourse);
+ 
+
   const [lessons, setLessons] = useState([
     {
       id: 1,
-      title: "Lesson Title",
+      lessonTitle: "Lesson Title",
       isExpanded: false,
       description: "",
-      video: null,
-      lectureNote: null,
-      selectedThumbnail: null,
-      thumbnailBase64: null,
-      previewUrl: "",
+      video: '',
+      lessonNotes: '',
+      selectedThumbnail: '',
+      lessonThumbnail: '',
       duration:0,
-      durationUnit:'minutes'
+      durationUnit:'minute',
+      tutorId:tutor._id
     }
   ]);
 
@@ -23,6 +30,30 @@ function Curriculum({ sendData }) {
     type: null, 
     lessonId: null
   });
+
+  const videoInputRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const imageInputRef = useRef(null);
+
+
+  // Send data effect
+  useEffect(() => {
+
+    // Only send data if there are meaningful changes
+    if (lessons.some(lesson => 
+      lesson.lessonThumbnail || 
+      lesson.description || 
+      lesson.lessonNotes || 
+      lesson.video || 
+      lesson.lessonTitle ||
+      lesson.duration||
+      lesson.durationUnit
+    )) {
+      sendData(lessons);
+     
+    }
+  }, [lessons, sendData]);
+
 
   // Utility function to update a specific lesson
   const updateLesson = (lessonId, updates) => {
@@ -35,9 +66,59 @@ function Curriculum({ sendData }) {
     );
   };
 
+  const handleFileUploadToCloudinary = async (file, fileType) => {
+    try {
+        const cloudName = 'diwjeqkca';
+        const uploadPreset = "unsigned_upload";
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("upload_preset", uploadPreset);
+
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {
+            method: "POST",
+            body: formData,
+        });
+
+        if (!res.ok) {
+            const errorText = await res.text();
+            console.error("Cloudinary upload error:", {
+                status: res.status,
+                statusText: res.statusText,
+                errorDetails: errorText
+            });
+            throw new Error(`Upload failed: ${res.status} ${errorText}`);
+        }
+
+        const data = await res.json();
+        console.log("Full Cloudinary response:", data);
+
+        // For PDFs, always use Google Docs viewer
+        if (fileType === 'file') {
+            return `https://docs.google.com/viewer?url=${encodeURIComponent(data.secure_url)}&embedded=true`;
+        }
+
+        return data.secure_url;
+    } catch (error) {
+        console.error("Detailed Cloudinary upload error:", error);
+        alert("File upload failed. Please try again.");
+        return null;
+    }
+};
+
   // Unified file upload handler
-  const handleFileUpload = (e, fileType, lessonId) => {
-    const file = e.target.files?.[0];
+  const handleFileUpload = async (inputRef, fileType, lessonId) => {
+    console.log('input ref',inputRef);
+    console.log('input ref current',inputRef.current);
+
+    const input = inputRef.current;
+  
+    if (!input || !input.files) {
+      console.error("File input reference is not available.");
+      return;
+    }
+  
+    const file = input.files[0];
     if (!file) {
       console.error("No file selected");
       return;
@@ -48,115 +129,88 @@ function Curriculum({ sendData }) {
       video: {
         maxSize: 4 * 1024 * 1024 * 1024, // 4GB
         allowedTypes: ["video/mp4", "video/mpeg", "video/quicktime"],
-        maxSizeLabel: "4 GB"
+        maxSizeLabel: "4 GB",
       },
       file: {
         maxSize: 10 * 1024 * 1024, // 10MB
         allowedTypes: ["application/pdf"],
-        maxSizeLabel: "10 MB"
+        maxSizeLabel: "10 MB",
       },
       image: {
         maxSize: 5 * 1024 * 1024, // 5MB
         allowedTypes: ["image/jpeg", "image/png", "image/gif"],
-        maxSizeLabel: "5 MB"
-      }
+        maxSizeLabel: "5 MB",
+      },
     };
   
     const options = validationOptions[fileType] || {};
     const { maxSize, allowedTypes, maxSizeLabel } = options;
   
-    // Detailed file validation with specific error messages
-    if (!file) {
-      alert("No file selected");
-      return;
-    }
-  
     // File size check
     if (file.size > maxSize) {
       alert(`File size should be less than ${maxSizeLabel}`);
-      e.target.value = null; // Reset file input
+      input.value = null; // Reset file input
       return;
     }
   
-    // Precise file type check
+    // File type check
     if (!allowedTypes.includes(file.type)) {
       alert(`Invalid file type. Allowed types: ${allowedTypes.join(", ")}`);
-      e.target.value = null; // Reset file input
+      input.value = null; // Reset file input
       return;
     }
   
     // Handle different file types
     switch (fileType) {
       case "video":
-        updateLesson(lessonId, { 
-          video: file,
-          activeModal: {
-            type: fileType,
-            lessonId: lessonId
-          }
-        });
-        break;
-      case "file":
-        updateLesson(lessonId, { 
-          lectureNote: file,
-          activeModal: {
-            type: fileType,
-            lessonId: lessonId
-          }
-        });
-        break;
       case "image":
-        const reader = new FileReader();
-        reader.onloadend = () => {
+        const fileUrl = await handleFileUploadToCloudinary(file);
+        if (fileUrl) {
           updateLesson(lessonId, {
-            selectedThumbnail: file,
-            previewUrl: reader.result,
-            thumbnailBase64: reader.result,
+            [fileType === "video" ? "video" : "lessonThumbnail"]: fileUrl,
+            isExpanded: true,
             activeModal: {
               type: fileType,
-              lessonId: lessonId
-            }
+              lessonId: lessonId,
+            },
           });
-        };
-        reader.readAsDataURL(file);
+        }
+        break;
+      case "file":
+        const docUrl = await handleFileUploadToCloudinary(file);
+        updateLesson(lessonId, {
+          lessonNotes: docUrl,
+          isExpanded: true,
+          activeModal: {
+            type: fileType,
+            lessonId: lessonId,
+          },
+        });
+        break;
+      default:
+        console.error("Unsupported file type");
         break;
     }
   
     // Clear file input after successful upload
-    e.target.value = null;
+    
+    input.value = null;
   };
-
-  // Send data effect
-  useEffect(() => {
-    // Only send data if there are meaningful changes
-    if (lessons.some(lesson => 
-      lesson.thumbnailBase64 || 
-      lesson.description || 
-      lesson.lectureNote || 
-      lesson.video || 
-      lesson.title ||
-      lesson.duration||
-      lesson.durationUnit
-    )) {
-      sendData(lessons);
-    }
-  }, [lessons, sendData]);
-
+  
   // Add new lesson
   const addLesson = () => {
     setLessons(prevLessons => [
       ...prevLessons,
       {
         id: Math.max(...prevLessons.map(l => l.id), 0) + 1,
-        title: "Lesson Name",
+        lessonTitle: "Lesson Name",
         isExpanded: false,
-        title: "",
         description: "",
         video: null,
-        lectureNote: null,
+        lessonNotes: null,
         selectedThumbnail: null,
-        thumbnailBase64: null,
-        previewUrl: ""
+        lessonThumbnail: null,
+        
       }
     ]);
   };
@@ -183,6 +237,7 @@ function Curriculum({ sendData }) {
   const handleTextSave = (lessonId, type, value) => {
     updateLesson(lessonId, {
       [type]: value,
+      isExpanded: type === 'description' && value ? true : undefined,
       activeModal: { type: null, lessonId: null }
     });
   };
@@ -191,12 +246,16 @@ function Curriculum({ sendData }) {
   const handleRemoveContent = (lessonId, contentType) => {
     const resetMap = {
       'video': { video: null },
-      'image': { selectedThumbnail: null, thumbnailBase64: null, previewUrl: '' },
-      'file': { lectureNote: null }
+      'image': { selectedThumbnail: null, lessonThumbnail: null },
+      'file': { lessonNotes: null },
+      'description': { description: null }
     };
 
     updateLesson(lessonId, resetMap[contentType] || {});
   };
+
+
+  
 
   return (
     <>
@@ -228,7 +287,7 @@ function Curriculum({ sendData }) {
               </svg>
               <span className="text-sm font-medium">
                 Lesson {String(lesson.id).padStart(2, "0")}:{" "}
-                {lesson.title}
+                {lesson.lessonTitle}
               </span>
             </button>
             <div className="flex items-center gap-2">
@@ -309,7 +368,7 @@ function Curriculum({ sendData }) {
           {lesson.isExpanded && (
             <div className="mt-4 space-y-2">
               {/* Thumbnail */}
-              {lesson.thumbnailBase64 && (
+              {lesson.lessonThumbnail && (
                 <div className="bg-white p-3 rounded-md shadow-sm flex items-center justify-between">
                   <div className="flex items-center">
                     <svg
@@ -373,7 +432,7 @@ function Curriculum({ sendData }) {
               )}
 
               {/* Lecture Notes */}
-              {lesson.lectureNote && (
+              {lesson.lessonNotes && (
                 <div className="bg-white p-3 rounded-md shadow-sm flex items-center justify-between">
                   <div className="flex items-center">
                     <svg
@@ -401,29 +460,7 @@ function Curriculum({ sendData }) {
                 </div>
               )}
 
-              {/* Title */}
-              {lesson.title && (
-                <div className="bg-white p-3 rounded-md shadow-sm flex items-center justify-between">
-                  <div className="flex items-center">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5 mr-2 text-yellow-500"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 6h16M4 10h16M4 14h16M4 18h16"
-                      />
-                    </svg>
-                    <span className="text-sm font-medium">Title</span>
-                  </div>
-                </div>
-              )}
-
+              
               {/* Description */}
               {lesson.description && (
                 <div className="bg-white p-3 rounded-md shadow-sm flex items-center justify-between">
@@ -444,8 +481,16 @@ function Curriculum({ sendData }) {
                     </svg>
                     <span className="text-sm font-medium">Description</span>
                   </div>
+                  <button 
+                    onClick={() => handleRemoveContent(lesson.id, 'description')}
+                    className="text-red-500 text-xs"
+                  >
+                    Remove
+                  </button>
                 </div>
+                
               )}
+
             </div>
           )}
         </div>
@@ -468,10 +513,10 @@ function Curriculum({ sendData }) {
       <input
         type="text"
         value={activeModal.lessonId ? 
-          lessons.find(l => l.id === activeModal.lessonId)?.title || '' 
+          lessons.find(l => l.id === activeModal.lessonId)?.lessonTitle || '' 
           : ''
         }
-        onChange={(e) => handleTextSave(activeModal.lessonId, 'title', e.target.value)}
+        onChange={(e) => handleTextSave(activeModal.lessonId, 'lessonTitle', e.target.value)}
         placeholder="Write your lesson name here..."
         className="w-full p-2 border border-gray-300 rounded mb-4"
       />
@@ -500,16 +545,14 @@ function Curriculum({ sendData }) {
     <div className="bg-white p-6 rounded-lg shadow-xl w-96">
       <h2 className="text-xl font-bold mb-4">Add Content</h2>
       <div className="space-y-2">
+
         <div className="flex items-center justify-between">
           <button
             type="button"
-            onClick={() => {
-              const input = document.createElement('input');
-              input.type = 'file';
-              input.accept = 'video/*';
-              input.onchange = (e) => handleFileUpload(e, 'video', activeModal.lessonId);
-              input.click();
-            }}
+            onClick={() => setActiveModal({ 
+              type: "video", 
+              lessonId: activeModal.lessonId 
+            })}
             className={`w-full p-2 text-left hover:bg-gray-100 rounded ${lessons.find(l => l.id === activeModal.lessonId)?.video ? 'opacity-50 cursor-not-allowed' : ''}`}
             disabled={!!lessons.find(l => l.id === activeModal.lessonId)?.video}
           >
@@ -525,22 +568,20 @@ function Curriculum({ sendData }) {
             </button>
           )}
         </div>
+
         <div className="flex items-center justify-between">
           <button
             type="button"
-            onClick={() => {
-              const input = document.createElement('input');
-              input.type = 'file';
-              input.accept = 'image/*';
-              input.onchange = (e) => handleFileUpload(e, 'image', activeModal.lessonId);
-              input.click();
-            }}
-            className={`w-full p-2 text-left hover:bg-gray-100 rounded ${lessons.find(l => l.id === activeModal.lessonId)?.thumbnailBase64 ? 'opacity-50 cursor-not-allowed' : ''}`}
-            disabled={!!lessons.find(l => l.id === activeModal.lessonId)?.thumbnailBase64}
+            onClick={() => setActiveModal({ 
+              type: "image", 
+              lessonId: activeModal.lessonId 
+            })}
+            className={`w-full p-2 text-left hover:bg-gray-100 rounded ${lessons.find(l => l.id === activeModal.lessonId)?.lessonThumbnail ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={!!lessons.find(l => l.id === activeModal.lessonId)?.lessonThumbnail}
           >
             Add Video Thumbnail
           </button>
-          {lessons.find(l => l.id === activeModal.lessonId)?.thumbnailBase64 && (
+          {lessons.find(l => l.id === activeModal.lessonId)?.lessonThumbnail && (
             <button
               type="button"
               onClick={() => handleRemoveContent(activeModal.lessonId, 'image')}
@@ -550,22 +591,20 @@ function Curriculum({ sendData }) {
             </button>
           )}
         </div>
+
         <div className="flex items-center justify-between">
           <button
             type="button"
-            onClick={() => {
-              const input = document.createElement('input');
-              input.type = 'file';
-              input.accept = '.pdf';
-              input.onchange = (e) => handleFileUpload(e, 'file', activeModal.lessonId);
-              input.click();
-            }}
-            className={`w-full p-2 text-left hover:bg-gray-100 rounded ${lessons.find(l => l.id === activeModal.lessonId)?.lectureNote ? 'opacity-50 cursor-not-allowed' : ''}`}
-            disabled={!!lessons.find(l => l.id === activeModal.lessonId)?.lectureNote}
+            onClick={() => setActiveModal({ 
+              type: "file", 
+              lessonId: activeModal.lessonId 
+            })}
+            className={`w-full p-2 text-left hover:bg-gray-100 rounded ${lessons.find(l => l.id === activeModal.lessonId)?.lessonNotes ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={!!lessons.find(l => l.id === activeModal.lessonId)?.lessonNotes}
           >
             Attach Lecture Notes (PDF)
           </button>
-          {lessons.find(l => l.id === activeModal.lessonId)?.lectureNote && (
+          {lessons.find(l => l.id === activeModal.lessonId)?.lessonNotes && (
             <button
               type="button"
               onClick={() => handleRemoveContent(activeModal.lessonId, 'file')}
@@ -575,15 +614,36 @@ function Curriculum({ sendData }) {
             </button>
           )}
         </div>
-        <button
-          type="button"
-          onClick={() => setActiveModal({ type: "description", lessonId: activeModal.lessonId })}
-          className="w-full p-2 text-left hover:bg-gray-100 rounded"
-        >
-          Add Description
-        </button>
+
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setActiveModal({ 
+              type: "description", 
+              lessonId: activeModal.lessonId 
+            })}
+            className={`w-full p-2 text-left hover:bg-gray-100 rounded ${lessons.find(l => l.id === activeModal.lessonId)?.description ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={!!lessons.find(l => l.id === activeModal.lessonId)?.description}
+          >
+            Add Description
+          </button>
+          {lessons.find(l => l.id === activeModal.lessonId)?.description && (
+            <button
+              type="button"
+              onClick={() => handleRemoveContent(activeModal.lessonId, 'description')}
+              className="ml-2 text-red-500 hover:text-red-700"
+            >
+              Remove
+            </button>
+          )}
+        </div>
+
+        
+        
       </div>
+
       <div className="flex justify-end mt-4">
+
         <button
           type="button"
           onClick={() => setActiveModal({ type: null, lessonId: null })}
@@ -604,12 +664,19 @@ function Curriculum({ sendData }) {
         <input
           type="file"
           accept="video/*"
-          onChange={(e) => handleFileUpload(e, "video")}
+          ref={videoInputRef}
+          onChange={(e) => {
+            const file = e.target.files[0];
+            setActiveModal(prev => ({
+              ...prev,
+              selectedFile: file
+            }));
+          }}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
         />
         <div className="flex items-center border border-gray-300 rounded p-2">
           <span className="flex-grow text-sm text-gray-500">
-            {state.selectedFile ? state.selectedFile.name : "Select video"}
+            {activeModal.selectedFile?.name || "Select video"}
           </span>
           <span className="ml-2 px-3 py-1 bg-gray-100 rounded">Browse</span>
         </div>
@@ -620,15 +687,24 @@ function Curriculum({ sendData }) {
       <div className="flex justify-end">
         <button
           type="button"
-          onClick={() => setActiveModal({ type: null, sectionId: null })}
+          onClick={() => setActiveModal({ type: null, lessonId: null })}
           className="px-4 py-2 text-gray-600 hover:text-gray-800 mr-2"
         >
           Cancel
         </button>
         <button
           type="button"
-          onClick={handleUploadSave}
-          disabled={!state.selectedFile}
+          onClick={() => {
+            if (activeModal.selectedFile) {
+              handleFileUpload(
+                { current: { files: [activeModal.selectedFile] } }, 
+                "video", 
+                activeModal.lessonId
+              );
+              setActiveModal({ type: null, lessonId: null });
+            }
+          }}
+          disabled={!activeModal.selectedFile}
           className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50"
         >
           Upload Video
@@ -648,12 +724,19 @@ function Curriculum({ sendData }) {
         <input
           type="file"
           accept=".pdf"
-          onChange={(e) => handleFileUpload(e, "file")}
+          ref={fileInputRef}
+          onChange={(e) => {
+            const file = e.target.files[0];
+            setActiveModal(prev => ({
+              ...prev,
+              selectedFile: file
+            }));
+          }}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
         />
         <div className="flex items-center border border-gray-300 rounded p-2">
           <span className="flex-grow text-sm text-gray-500">
-            {state.lectureNote ? state.lectureNote.name : "Select file"}
+            {activeModal.selectedFile?.name || "Select file"}
           </span>
           <span className="ml-2 px-3 py-1 bg-gray-100 rounded">Browse</span>
         </div>
@@ -661,15 +744,24 @@ function Curriculum({ sendData }) {
       <div className="flex justify-end">
         <button
           type="button"
-          onClick={() => setActiveModal({ type: null, sectionId: null })}
+          onClick={() => setActiveModal({ type: null, lessonId: null })}
           className="px-4 py-2 text-gray-600 hover:text-gray-800 mr-2"
         >
           Cancel
         </button>
         <button
           type="button"
-          onClick={handleUploadSave}
-          disabled={!state.lectureNote}
+          onClick={() => {
+            if (activeModal.selectedFile) {
+              handleFileUpload(
+                { current: { files: [activeModal.selectedFile] } }, 
+                "file", 
+                activeModal.lessonId
+              );
+              setActiveModal({ type: null, lessonId: null });
+            }
+          }}
+          disabled={!activeModal.selectedFile}
           className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50"
         >
           Upload File
@@ -679,48 +771,79 @@ function Curriculum({ sendData }) {
   </div>
 )}
 
-      {activeModal.type === "image" && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-96 max-w-full mx-4">
-            <h2 className="text-xl font-bold mb-4">Attach Video Thumbnail</h2>
-            <input
-              type="file"
-              onChange={(e) => handleFileUpload(e, "image")}
-              className="w-full p-2 border border-gray-300 rounded mb-4"
-              accept="image/*"
-            />
-            {state.previewUrl && (
-              <div className="mb-4">
-                <img
-                  src={state.previewUrl}
-                  alt="Thumbnail preview"
-                  className="w-full h-48 object-cover rounded"
-                />
-              </div>
-            )}
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={() => setActiveModal({ type: null, sectionId: null })}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 mr-2"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleUploadSave}
-                disabled={!state.selectedFile}
-                className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50"
-              >
-                Upload File
-              </button>
-            </div>
-          </div>
+{activeModal.type === "image" && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="bg-white p-6 rounded-lg shadow-xl w-96 max-w-full mx-4">
+      <h2 className="text-xl font-bold mb-4">Attach Video Thumbnail</h2>
+      <div className="relative w-full mb-4">
+        <input
+          type="file"
+          ref={imageInputRef}
+          onChange={(e) => {
+            const file = e.target.files[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                setActiveModal(prev => ({
+                  ...prev,
+                  selectedFile: file,
+                  selectedThumbnail: reader.result
+                }));
+              };
+              reader.readAsDataURL(file);
+            }
+          }}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+          accept="image/*"
+        />
+        <div className="flex items-center border border-gray-300 rounded p-2">
+          <span className="flex-grow text-sm text-gray-500">
+            {activeModal.selectedFile?.name || "Select image"}
+          </span>
+          <span className="ml-2 px-3 py-1 bg-gray-100 rounded">Browse</span>
+        </div>
+      </div>
+      {activeModal.selectedThumbnail && (
+        <div className="mb-4">
+          <img
+            src={activeModal.selectedThumbnail}
+            alt="Thumbnail preview"
+            className="w-full h-48 object-cover rounded"
+          />
         </div>
       )}
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={() => setActiveModal({ type: null, lessonId: null })}
+          className="px-4 py-2 text-gray-600 hover:text-gray-800 mr-2"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (activeModal.selectedFile) {
+              handleFileUpload(
+                { current: { files: [activeModal.selectedFile] } }, 
+                "image", 
+                activeModal.lessonId
+              );
+              setActiveModal({ type: null, lessonId: null });
+            }
+          }}
+          disabled={!activeModal.selectedFile}
+          className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50"
+        >
+          Upload File
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
-      {(activeModal.type === "description" ||
-        activeModal.type === "notes") && (
+      {activeModal.type === "description" 
+         && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg shadow-xl w-96">
             <h2 className="text-xl font-bold mb-4">
@@ -730,15 +853,9 @@ function Curriculum({ sendData }) {
             </h2>
             <textarea
               value={
-                state.description
+                activeModal.description
               }
-              onChange={(e) =>
-                updateState(
-                  
-                    { description: e.target.value }
-                    
-                )
-              }
+              onChange={(e) => handleTextSave(activeModal.lessonId, 'description', e.target.value)}
               placeholder={`Write your description here...`}
               className={`w-full p-2 border border-gray-300 rounded mb-4 h-32`}
             />
@@ -752,12 +869,12 @@ function Curriculum({ sendData }) {
               </button>
               <button
                 type="button"
-                onClick={handleTextSave}
+                onClick={() => setActiveModal({ type: null, lessonId: null })}
                 className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
               >
                 Save{" "}
                 
-                   "Description"
+                   Description
                 
               </button>
             </div>

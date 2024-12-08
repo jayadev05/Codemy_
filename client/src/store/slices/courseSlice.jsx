@@ -8,30 +8,46 @@ const courseSlice = createSlice({
   name: 'course',
   initialState,
   reducers: {
+
     addCourse: (state, action) => {
-      // action.payload will be the userData from your API response
+     
         state.course = {
         _id:action.payload._id,
+        tutorId:action.payload.tutorId,
         title:action.payload.title,
         thumbnail:action.payload.thumbnail,
         enrolleeCount:action.payload.enrolleeCount,
         ratings:action.payload.ratings,
         topic:action.payload.topic,
+        description:action.payload.description,
         language:action.payload.language,
         category:action.payload.category,
-        difficulty:action.payload.difficulty,
+        level:action.payload.level,
         price:action.payload.price,
+        lessons:action.payload.lessons,
+        enrolleeCount:action.payload.enrolleeCount,
+        averageRating:action.payload.averageRating,
+        isListed:action.payload.isListed,
+        duration:action.payload.duration,
+        durationUnit:action.payload.durationUnit,
+        createdAt:action.payload.createdAt,
+        updatedAt:action.payload.updatedAt,
+
       };
     },
+
+    updateCourse: (state, action) => {
+      return { ...state, ...action.payload };
+    },
+
    clearCourse: (state) => {
-      state.course = null;
-     
+      state.course = null; 
     }
   }
 });
 
 // Export actions
-export const { addCourse, clearCourse } = courseSlice.actions;
+export const { addCourse, clearCourse ,updateCourse} = courseSlice.actions;
 
 // Export selector
 export const selectCourse = (state) => state.course.course;

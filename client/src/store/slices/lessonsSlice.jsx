@@ -16,11 +16,11 @@ const lessonsSlice = createSlice({
     addLesson: (state, action) => {
       state.lessons.push({
         _id: action.payload.id,
-        title: action.payload.title,
-        thumbnail: action.payload.thumbnailBase64,
+        title: action.payload.lessonTitle,
+        thumbnail: action.payload.lessonThumbnail,
         video: action.payload.video,
         description: action.payload.description,
-        lectureNotes: action.payload.lectureNotes,
+        lectureNotes: action.payload.lessonNotes,
         duration:action.payload.duration,
         durationUnit:action.payload.durationUnit
       });

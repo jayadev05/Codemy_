@@ -43,26 +43,10 @@ const CourseSchema = new mongoose.Schema(
     default:0
   },
 
-  // Embedded lectures array for better performance
 
-  lectures: [{
-
-    title: String,
-
-    video: String,
-
-    duration: Number,
-
-    videoThumbnail: String,
-
-    description: String,
-
-    lectureNote: String,
-
-    createdAt: Date,
-
-    updatedAt: Date
-
+  lessons: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'lessons'
   }],
 
   createdAt: { type: Date, default: Date.now },

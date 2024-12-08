@@ -1,18 +1,25 @@
 import { Bell, Search, MoreVertical, Eye, Edit, Trash } from 'lucide-react';
 import Sidebar from "../../components/layout/tutor/Sidebar";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { selectTutor } from "../../store/tutorSlice";
 import defProfile from '../../assets/user-profile.png'
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import axios from "axios";
+import { useNavigate } from 'react-router';
+import { addCourse } from '../../store/slices/courseSlice';
 
 export default function TutorCourses() {
     const tutor = useSelector(selectTutor);
+    const navigate=useNavigate();
+    const dispatch=useDispatch()
+
     const [courses, setCourses] = useState([]);
     const [activeDropdown, setActiveDropdown] = useState(null);
-    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-    
+    const [deleteModal, setDeleteModal] = useState(false);
+    const [courseToDelete, setCourseToDelete] = useState(null);
+
+    const tutorId=tutor._id;
 
     const formatCurrency = (num) => {
         const cleanedNum = num.toString().replace(/[^\d]/g, '');
@@ -25,7 +32,7 @@ export default function TutorCourses() {
             setCourses(response.data.courses);
         } catch (error) {
             console.log(error);
-            toast.error(error.response.message || error.message)
+            toast.error(error.response?.data?.message || "Error fetching courses")
         }
     }
 
@@ -37,16 +44,63 @@ export default function TutorCourses() {
         setActiveDropdown(activeDropdown === courseId ? null : courseId);
     };
 
-    const handleDeleteClick = () => {
-        setDeleteModalOpen(true);
+    const handleViewCourse= async(id)=>{
+        try {
+            const response= await axios.get(`http://localhost:3000/course/view-course/${id}`);
+
+            dispatch(addCourse(response.data.data));
+        
+            navigate('/tutor/view-course');
+
+        } catch (error) {
+            console.log(error);
+            if(error.response){
+                toast.error(error.response?.data?.message ||"Error displaying course")
+            }
+        }
+    }
+
+    const handleEditCourse=async(id)=>{
+        try {
+            const response= await axios.get(`http://localhost:3000/course/view-course/${id}`);
+
+            dispatch(addCourse(response.data.data));
+        
+            navigate(`/tutor/edit-course/${id}`);
+
+        } catch (error) {
+            console.log(error);
+            if(error.response){
+                toast.error(error.response?.data?.message ||"Error displaying course")
+            }
+        }
+    }
+
+    const handleDeleteClick = (id,title) => {
+        setDeleteModal(true);
+        setCourseToDelete(id);
     };
 
-    const handleDeleteConfirm = (id) => {
-        // Implement delete logic here
-        console.log(`Deleting course: ${courseToDelete.title}`);
-        setDeleteModalOpen(false);
-        setCourses((prevCourses) => prevCourses.filter((course) => course._id !== id));
+    const handleDeleteConfirm = async() => {
+        try {
+            console.log(courseToDelete);
+            if(courseToDelete){
+                await axios.delete(`http://localhost:3000/course/delete-course?courseId=${courseToDelete}&tutorId=${tutorId}`);
 
+                setDeleteModalOpen(false);
+                setCourses((prevCourses) => prevCourses.filter((course) => course._id !== courseToDelete));
+                setCourseToDelete(null);
+                toast.success('Course deleted successfully');
+            }
+
+            else toast.error("unable to find course id")
+
+            
+        } catch (error) {
+            console.log(error);
+            toast.error(error.response.data.message||"Error deleting the course")
+        }
+        
     };
 
     return (
@@ -132,10 +186,12 @@ export default function TutorCourses() {
                                         {activeDropdown === course._id && (
                                             <div className="absolute  right-[-10] mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
                                                 <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-                                                    <button className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left" role="menuitem">
-                                                        <Eye className="mr-3 h-5 w-5" /> View Course
+                                                    <button onClick={()=>handleViewCourse(course._id)} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left" role="menuitem">                                                      
+                                                        <Eye className="mr-3 h-5 w-5" /> View Details
                                                     </button>
-                                                    <button className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left" role="menuitem">
+                                                    <button 
+                                                    onClick={()=>handleEditCourse(course._id)}
+                                                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left" role="menuitem">
                                                         <Edit className="mr-3 h-5 w-5" /> Edit Course
                                                     </button>
                                                     <button 
@@ -156,21 +212,21 @@ export default function TutorCourses() {
                 </div>
             </main>
 
-            {deleteModalOpen && (
+            {deleteModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
                     <div className="bg-white rounded-lg p-6 max-w-sm w-full">
                         <h2 className="text-xl font-bold mb-4">Confirm Deletion</h2>
-                        <p className="mb-4">Are you sure you want to delete the course "{courseToDelete?.title}"?</p>
+                        <p className="mb-4">Are you sure you want to delete the course ?</p>
                         <div className="flex justify-end gap-4">
                             <button 
                                 className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-                                onClick={() => setDeleteModalOpen(false)}
+                                onClick={() => setDeleteModal(false)}
                             >
                                 Cancel
                             </button>
                             <button 
                                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                                onClick={handleDeleteConfirm()}
+                                onClick={handleDeleteConfirm}
                             >
                                 Delete
                             </button>
@@ -178,6 +234,7 @@ export default function TutorCourses() {
                     </div>
                 </div>
             )}
+
         </div>
     )
 }

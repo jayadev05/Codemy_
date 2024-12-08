@@ -8,9 +8,9 @@ function BasicInfo({categories,sendData}) {
     const [topic, setTopic] = useState('');
     const [duration, setDuration] = useState('');
     const [durationUnit, setDurationUnit] = useState('Days');
-    const [selectedCategory, setSelectedCategory] = useState('');
-    const [selectedLanguage, setSelectedLanguage] = useState('');
-    const [selectedDifficulty, setSelectedDifficulty] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('default');
+    const [selectedLanguage, setSelectedLanguage] = useState('default');
+    const [selectedDifficulty, setSelectedDifficulty] = useState('default');
 
     const formData={
       title:title,
@@ -40,11 +40,7 @@ useEffect(() => {
         setSelectedLanguage(e.target.value);
       };
 
-      const calculateProgressTab1 = () => {
-        const fields = [title, selectedCategory, topic, selectedLanguage, selectedDifficulty, duration];
-        const filledFields = fields.filter(field => field !== '').length;
-        return Math.round((filledFields / fields.length) * 6);
-      };
+      
 
   return (
     <>
@@ -75,7 +71,7 @@ useEffect(() => {
                           className="w-full p-3 border rounded-lg appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
                           required
                         >
-                          <option value="">Select...</option>
+                          <option value="default">Select...</option>
                           {categories.map((cat) => (
                             <option key={cat._id} value={cat.title}>
                               {cat.title}
@@ -115,7 +111,7 @@ useEffect(() => {
                             className="w-full p-3 border rounded-lg appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
                             required
                           >
-                            <option value="">Select...</option>
+                            <option value="default">Select...</option>
                             <option value="English">English</option>
                             <option value="Hindi">Hindi</option>
                             <option value="Malayalam">Malayalam</option>
@@ -133,7 +129,7 @@ useEffect(() => {
                             className="w-full p-3 border rounded-lg appearance-none bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
                             required
                           >
-                            <option value="">Select...</option>
+                            <option value="default">Select...</option>
                             <option value="Beginner">Beginner</option>
                             <option value="Intermediate">Intermediate</option>
                             <option value="Advanced">Advanced</option>

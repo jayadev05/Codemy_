@@ -1,83 +1,126 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { useSelector } from 'react-redux'
-import { selectCourse } from '../../../store/slices/courseSlice'
-import { selectLessons } from '../../../store/slices/lessonsSlice'
+import { useState } from "react";
+import { useSelector } from "react-redux";
+import { selectCourse } from "../../../store/slices/courseSlice";
+import { selectLessons } from "../../../store/slices/lessonsSlice";
 
 export default function CoursePreview() {
+  const [activeLesson, setActiveLesson] = useState(null);
 
-  const [activeLesson, setActiveLesson] = useState(null)
-
-  const course=useSelector(selectCourse);
-  
-  const lessons=useSelector(selectLessons);
-
-  console.log("lesson state",lessons)
-
-  lessons.map((lesson,index)=> console.log(lesson.title,"lesson"))
-  
+  const course = useSelector(selectCourse);
+  const lessons = useSelector(selectLessons);
 
   // Helper function to format duration
   const formatDuration = (duration, unit) => {
-    if (unit === 'hours') return `${duration} hour${duration > 1 ? 's' : ''}`
-    if (unit === 'minutes') return `${duration} minute${duration > 1 ? 's' : ''}`
-    return `${duration} ${unit}`
-  }
+    if (unit === "hours") return `${duration} hour${duration > 1 ? "s" : ""}`;
+    if (unit === "minutes")
+      return `${duration} minute${duration > 1 ? "s" : ""}`;
+    return `${duration} ${unit}`;
+  };
+
+  const formatCurrency = (num) => {
+    const cleanedNum = num.toString().replace(/[^\d]/g, "");
+    return cleanedNum ? Number(cleanedNum).toLocaleString("en-IN") : "";
+  };
 
   return (
     <div className="bg-white shadow-lg rounded-lg overflow-hidden max-w-4xl mx-auto my-8">
       <div className="p-6">
-        <h1 className="text-3xl font-bold mb-4">{course.title}</h1>
-        <div className="flex items-center mb-4">
-          <span className="bg-blue-100 text-blue-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded">
-            {course.category}
-          </span>
-          <span className="text-gray-600 text-sm">
-            {formatDuration(course.duration, course.durationUnit)}
-          </span>
+        <div className="flex flex-col md:flex-row gap-6">
+          <div className="md:w-2/3">
+            <h1 className="text-3xl font-bold mb-4">{course?.title}</h1>
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                {course?.category}
+              </span>
+              <span className="bg-gray-100 text-gray-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                {course?.difficulty}
+              </span>
+              <span className="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                {formatDuration(
+                  course?.duration,
+                  course?.durationUnit || "minutes"
+                )}
+              </span>
+            </div>
+            <p className="text-gray-700 mb-6">{course?.description}</p>
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div>
+                <h3 className="font-semibold text-gray-700">Language</h3>
+                <p>{course?.language}</p>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-700">Topic</h3>
+                <p>{course?.topic}</p>
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-700">Lessons</h3>
+                <p>{lessons.length}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="md:w-1/3">
+            <div className="overflow-hidden rounded-lg bg-white shadow">
+              <div className="aspect-video w-full">
+                <img
+                  src={course?.thumbnail}
+                  alt="Course thumbnail"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div className="p-4">
+                <span className="inline-block rounded bg-orange-100 px-2 py-1 text-xs font-medium text-orange-800">
+                  {course?.category}
+                </span>
+                <h3 className="mt-2 line-clamp-2 font-medium">
+                  {course?.title}
+                </h3>
+                <div className="mt-2 flex items-center gap-2">
+                  <div className="flex text-orange-400">
+                    {"★".repeat(Math.floor(course?.averageRating || 0))}
+                    {"☆".repeat(5 - Math.floor(course?.averageRating || 0))}
+                  </div>
+                  <span className="text-sm text-gray-500">
+                    {course?.averageRating || 0}
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    ({course?.enrolleeCount || 0} students)
+                  </span>
+                </div>
+                <div className="mt-4 flex items-center justify-between">
+                  <span className="font-semibold">
+                    ₹{formatCurrency(course?.price)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <p className="text-gray-700 mb-4">{course.description}</p>
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div>
-            <h3 className="font-semibold text-gray-700">Language</h3>
-            <p>{course.language}</p>
-          </div>
-          <div>
-            <h3 className="font-semibold text-gray-700">Level</h3>
-            <p>{course.difficulty}</p>
-          </div>
-          <div>
-            <h3 className="font-semibold text-gray-700">Topic</h3>
-            <p>{course.topic}</p>
-          </div>
-          <div>
-            <h3 className="font-semibold text-gray-700">Price</h3>
-            <p>₹{course.price}</p>
-          </div>
-        </div>
-        <div className=" max-w-md aspect-video mb-6">
-          <img
-            src={course.thumbnail}
-            alt={course.title}
-            className="object-cover rounded-lg w-full h-full"
-          />
-        </div>
+
         <div>
           <h2 className="text-2xl font-bold mb-4">Course Content</h2>
           <div className="space-y-4">
             {lessons.map((lesson, index) => (
-            
-              <div key={lesson.id} className="border rounded-lg overflow-hidden">
+              <div
+                key={lesson?.id}
+                className="border rounded-lg overflow-hidden"
+              >
                 <button
+                  type="button"
                   className="w-full text-left px-4 py-2 bg-gray-100 hover:bg-gray-200 focus:outline-none"
-                  onClick={() => setActiveLesson(activeLesson === index ? null : index)}
+                  onClick={() =>
+                    setActiveLesson(activeLesson === index ? null : index)
+                  }
                 >
-                
                   <div className="flex justify-between items-center">
-                    <span className="font-medium">
-                      Lesson {index + 1}: {lesson.title}
-                    </span>
+                    <div className="flex items-center space-x-3">
+                      <span className="text-orange-600 font-semibold">
+                        Lesson {index + 1}:
+                      </span>
+                      <span className="font-medium">{lesson?.title}</span>
+                    </div>
                     <span className="text-sm text-gray-600">
                       {formatDuration(lesson.duration, lesson.durationUnit)}
                     </span>
@@ -85,31 +128,54 @@ export default function CoursePreview() {
                 </button>
                 {activeLesson === index && (
                   <div className="p-4 bg-white">
-                    <p className="text-gray-700 mb-4">{lesson.description}</p>
-                    {lesson.video && (
-                      <div className="aspect-w-16 aspect-h-9 mb-4">
+                    {lesson?.video && (
+                      <div className="mb-4">
                         <video
-                          src={lesson.video}
+                          src={lesson?.video}
                           controls
-                          className="w-full h-full object-cover rounded"
+                          className="w-full rounded"
+                          poster={lesson?.thumbnail}
                         >
                           Your browser does not support the video tag.
                         </video>
                       </div>
                     )}
-                    {lesson.lessonThumbnail && (
-                      <img
-                        src={lesson.lessonThumbnail}
-                        alt={`Thumbnail for ${lesson.lessonTitle}`}
-                        className="w-full h-48 object-cover rounded mb-4"
-                      />
-                    )}
-                    {lesson.lessonNotes && (
-                      <div>
-                        <h4 className="font-semibold mb-2">Lesson Notes</h4>
-                        <p className="text-gray-700">{lesson.lessonNotes}</p>
-                      </div>
-                    )}
+                    <p className="text-gray-700 mb-4">{lesson?.description}</p>
+
+                    <div className="flex items-center space-x-4">
+                      {lesson?.lectureNotes && (
+                        <a
+                          href={lesson.lectureNotes}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center text-blue-600 hover:text-blue-800"
+                        >
+                          <svg
+                            className="w-6 h-6 mr-2"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                          Lecture Notes (PDF)
+                        </a>
+                      )}
+
+                     
+
+                      {lesson?.thumbnail && !lesson?.video && (
+                        <img
+                          src={lesson?.thumbnail}
+                          alt={`Thumbnail for ${lesson?.title}`}
+                          className="w-24 h-24 object-cover rounded"
+                        />
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -118,6 +184,5 @@ export default function CoursePreview() {
         </div>
       </div>
     </div>
-  )
+  );
 }
-

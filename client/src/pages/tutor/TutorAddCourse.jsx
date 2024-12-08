@@ -18,17 +18,24 @@ import BasicInfo from "./tabs/BasicInfo";
 import AdvancedInfo from "./tabs/AdvancedInfo";
 import Curriculum from "./tabs/Curriculum";
 import CoursePreview from "../../components/layout/tutor/Preview";
-import { addCourse } from "../../store/slices/courseSlice";
-import { addLesson, clearLessons, removeLesson } from "../../store/slices/lessonsSlice";
+import { addCourse, clearCourse, selectCourse } from "../../store/slices/courseSlice";
+import { addLesson, clearLessons, removeLesson, selectLessons } from "../../store/slices/lessonsSlice";
+import { useNavigate } from "react-router";
 
 export default function AddCourse() {
+
   const tutor = useSelector(selectTutor);
+  const course =useSelector(selectCourse);
+  const lessons=useSelector(selectLessons);
+
+
   const dispatch = useDispatch();
+  const navigate=useNavigate()
 
   const [categories, setCategories] = useState([]);
 
-  const [basicInfo, setBasicInfo] = useState([]);
-  const [advanceInfo, setAdvanceInfo] = useState([]);
+  const [basicInfo, setBasicInfo] = useState({});
+  const [advanceInfo, setAdvanceInfo] = useState({});
 
   const [curriculum, setCurriculum] = useState([]); //lessons
 
@@ -65,9 +72,11 @@ export default function AddCourse() {
   const handleBasicInfoData = async (dataFromChild) => {
     setBasicInfo(dataFromChild);
   };
+
   const handleAdvanceInfoData = async (dataFromChild) => {
     setAdvanceInfo(dataFromChild);
   };
+
   const handleCurriculumData = async (dataFromChild) => {
     setCurriculum(dataFromChild);
   };
@@ -87,19 +96,25 @@ export default function AddCourse() {
     }
   };
 
+  console.log({basicInfo:basicInfo,advanceInfo:advanceInfo,curriculum:curriculum});
+
   const isCurrentTabComplete = () => {
     switch (activeTab) {
       case 0: // Basic Information
-        return true;
-      // return title !== '' &&
-      //        selectedCategory !== '' &&
-      //        topic !== '' &&
-      //        selectedLanguage !== '' &&
-      //        selectedDifficulty !== '' &&
-      //        duration !== '';
+        
+      return basicInfo.title !== '' &&
+             basicInfo.selectedCategory !== '' &&
+             basicInfo.topic !== '' &&
+             basicInfo.selectedLanguage !== '' &&
+             basicInfo.selectedDifficulty !== '' &&
+             basicInfo.duration !== '';
       case 1: // Advance Information
-        // Add logic for Advance Information tab
-        return true;
+      
+        return advanceInfo.price!=='' &&
+               advanceInfo.description!=='' &&
+               advanceInfo.thumbnail!=='' &&
+               advanceInfo.courseContent!=='' 
+        
       case 2: // Curriculum
         // Add logic for Curriculum tab
         return true;
@@ -111,15 +126,51 @@ export default function AddCourse() {
     }
   };
 
+  const calculateProgressTab1 = () => {
+ 
+    const fields = [
+      basicInfo?.title, 
+      basicInfo?.category, 
+      basicInfo?.topic, 
+      basicInfo?.language, 
+      basicInfo?.difficulty, 
+      basicInfo?.duration
+    ];
+   
+    const filledFields = fields.filter(field => 
+      field && 
+      field !== '' && 
+      field !== 'default'
+    ).length;
+ 
+    return filledFields;
+  };
+  
+  const calculateProgressTab2 = () => {
+   
+    const fields = [
+      advanceInfo?.price, 
+      advanceInfo?.description, 
+      advanceInfo?.thumbnail, 
+      advanceInfo?.courseContent
+    ];
+    
+    const filledFields = fields.filter(field => 
+      field && 
+      field !== '' && 
+      field !== 'default'
+    ).length;
+    return filledFields;
+  };
+
   const handleSaveAndNext = (e) => {
     e.preventDefault();
     if (isCurrentTabComplete()) {
       if (activeTab < tabs.length - 1) {
 
         dispatch(addCourse({ ...basicInfo, ...advanceInfo }));
+
         if(activeTab===2){
-    
-          console.log(curriculum,"curriculum asdasd");
           // dispatch(clearLessons(curriculum));
           dispatch(addLesson(...curriculum));
         }
@@ -155,6 +206,12 @@ export default function AddCourse() {
         courseData
       );
       toast.success("Course created successfully!");
+
+      dispatch(clearLessons(lessons));
+      dispatch(clearCourse(course));
+
+      navigate('/tutor/myCourses');
+
     } catch (error) {
       console.error(error);
       if (error.response) {
@@ -210,7 +267,7 @@ export default function AddCourse() {
                 >
                   <tab.icon />
                   {tab.name}
-                  {/* {index === 0 && (
+                  {index === 0 && (
                     <span
                       className={`text-xs ${
                         calculateProgressTab1() === 6 ? "text-green-500" : "text-gray-400"
@@ -218,7 +275,16 @@ export default function AddCourse() {
                     >
                       {calculateProgressTab1()}/6
                     </span>
-                  )} */}
+                  )}
+                  {index === 1 && (
+                    <span
+                      className={`text-xs ${
+                        calculateProgressTab2() === 4 ? "text-green-500" : "text-gray-400"
+                      }`}
+                    >
+                      {calculateProgressTab2()}/4
+                    </span>
+                  )}
                 </button>
               ))}
             </nav>

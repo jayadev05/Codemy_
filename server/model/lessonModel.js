@@ -5,19 +5,24 @@ const LessonSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  course: {
+  courseId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'courses',
     required: true,
   },
-  tutor: {
+  tutorId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'users',
+    ref: 'tutors',
     required: true,
   },
   duration: {
     type: Number,
     required: true,
+    default:0
+  },
+  durationUnit:{
+    type:String,
+    default:'minutes'
   },
   description: {
     type: String,

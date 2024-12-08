@@ -68,11 +68,9 @@ const Login = () => {
           background: '#111826',
           color: '#fff',
         }});
-
-        // Navigate after a short delay
-        setTimeout(() => {
-          navigate(redirectUrl || "/dashboard");
-        }, 1000);
+    
+          navigate(redirectUrl || "/");
+       
       }
     } catch (error) {
       console.error("Login error:", error);

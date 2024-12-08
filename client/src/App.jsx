@@ -25,6 +25,8 @@ import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import CategoryManagement from "./pages/admin/CategoryManagement";
 import CourseCreation from "./pages/tutor/TutorAddCourse";
 import TutorCourses from "./pages/tutor/TutorCourses";
+import TutorViewCourse from "./pages/tutor/TutorViewCourse";
+import TutorEditCourse from "./pages/tutor/TutorEditCourse";
 
 
 
@@ -65,6 +67,8 @@ function App() {
               <Route path="/tutor/settings" element={<ProtectedRoute userType="tutor"><TutorSettings /></ProtectedRoute>} />
               <Route path="/tutor/create-course" element={<ProtectedRoute userType="tutor"><CourseCreation /></ProtectedRoute>} />
               <Route path="/tutor/myCourses" element={<ProtectedRoute userType="tutor"><TutorCourses/></ProtectedRoute>} />
+              <Route path="/tutor/view-course" element={<ProtectedRoute userType="tutor"><TutorViewCourse/></ProtectedRoute>} />
+              <Route path="/tutor/edit-course/:id" element={<ProtectedRoute userType="tutor"><TutorEditCourse/></ProtectedRoute>} />
 
               {/* Catch-all route for undefined paths */}
               <Route path="*" element={<PageNotFound />} />
