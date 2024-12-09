@@ -13,9 +13,9 @@ import { toast } from "react-hot-toast";
 import defProfile from "../../assets/user-profile.png";
 import Pagination from "../../components/utils/Pagination";
 import { useDispatch, useSelector } from "react-redux";
-import { logoutUser, selectUser } from "../../store/userSlice";
+import { logoutUser, selectUser } from "../../store/slices/userSlice";
 import CertificateViewer from "../../components/utils/CertificateViewer";
-import { logoutAdmin, selectAdmin } from "../../store/adminSlice";
+import { logoutAdmin, selectAdmin } from "../../store/slices/adminSlice";
 import { useNavigate } from "react-router";
 
 

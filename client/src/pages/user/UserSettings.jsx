@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import {  Eye, EyeOff, Camera, SpaceIcon } from 'lucide-react'
 import defProfile from '../../assets/user-profile.png'
 import { useDispatch, useSelector } from 'react-redux'
-import { addUser, selectUser } from '../../store/userSlice'
+import { addUser, selectUser } from '../../store/slices/userSlice'
 import axios from 'axios';
 import Header from '../../components/layout/Header'
 import { toast } from 'react-hot-toast'
@@ -127,25 +127,96 @@ const SettingsForm = () => {
     });
   }
   
-  const handleImageUpload = async (e) => {
+  const handleFileUploadToCloudinary = async (file, fileType = 'image') => {
+    try {
+      const cloudName = 'diwjeqkca';
+      const uploadPreset = "unsigned_upload";
+      
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", uploadPreset);
+      
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Cloudinary upload error:", {
+          status: res.status,
+          statusText: res.statusText,
+          errorDetails: errorText
+        });
+        throw new Error(`Upload failed: ${res.status} ${errorText}`);
+      }
+      
+      const data = await res.json();
+      console.log("Full Cloudinary response:", data);
+      
+      // For PDFs, always use Google Docs viewer
+      if (fileType === 'file') {
+        return `https://docs.google.com/viewer?url=${encodeURIComponent(data.secure_url)}&embedded=true`;
+      }
+      
+      return data.secure_url;
+    } catch (error) {
+      console.error("Detailed Cloudinary upload error:", error);
+      alert("File upload failed. Please try again.");
+      return null;
+    }
+  };
+
+  const handleImageUpload = async (e, fileType = 'image') => {
+    
     const file = e.target.files[0];
-    if (file) {
-      if (file.size > 3 * 1024 * 1024) {
-        toast.error('Image size should be under 3MB');
-        return;
+    if (!file) {
+      console.error("No file selected");
+      return;
+    }
+    
+    // Validation options for different file types
+    const validationOptions = {
+      image: {
+        maxSize: 10 * 1024 * 1024, // 10MB
+        allowedTypes: ["image/jpeg", "image/png", "image/gif"],
+        maxSizeLabel: "10 MB",
+      },
+      // Add more file type configurations as needed
+    };
+    
+    const options = validationOptions[fileType] || validationOptions.image;
+    const { maxSize, allowedTypes, maxSizeLabel } = options;
+    
+    // File size check
+    if (file.size > maxSize) {
+      alert(`File size should be less than ${maxSizeLabel}`);
+      e.target.value = null; // Reset file input
+      return;
+    }
+    
+    // File type check
+    if (!allowedTypes.includes(file.type)) {
+      alert(`Invalid file type. Allowed types: ${allowedTypes.join(", ")}`);
+      e.target.value = null; // Reset file input
+      return;
+    }
+    
+    try {
+      const resizedFile=await resizeImage(file);
+      const fileUrl = await handleFileUploadToCloudinary(resizedFile, fileType);
+      
+      if (fileUrl) {
+        setThumbnail(fileUrl);
+        
+        setThumbnailPreview(fileUrl);
       }
-  
-      try {
-        const resizedBlob = await resizeImage(file);
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setProfileImage(reader.result);
-          setPreviewImg(reader.result);
-        };
-        reader.readAsDataURL(resizedBlob);
-      } catch (error) {
-        toast.error('Image processing failed');
-      }
+      
+      e.target.value = null;
+
+    } catch (error) {
+      console.log(error);
+      toast.error("Error uploading thumbnail");
     }
   };
 

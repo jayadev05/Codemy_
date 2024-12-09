@@ -3,7 +3,7 @@ import { Bell, Camera, ChevronDown, Search } from 'lucide-react'
 import Sidebar from '../../components/layout/tutor/Sidebar'
 import axios from "axios";
 import { useDispatch, useSelector } from 'react-redux';
-import { addTutor, selectTutor } from '../../store/tutorSlice';
+import { addTutor, selectTutor } from '../../store/slices/tutorSlice';
 import { toast } from 'react-hot-toast';
 import defProfile from "../../assets/user-profile.png"
 
@@ -140,29 +140,96 @@ export default function TutorSettings() {
     });
   }
   
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 3 * 1024 * 1024) {
-        toast.error('Image size should be under 3MB');
-        return;
+  const handleFileUploadToCloudinary = async (file, fileType = 'image') => {
+    try {
+      const cloudName = 'diwjeqkca';
+      const uploadPreset = "unsigned_upload";
+      
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", uploadPreset);
+      
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {
+        method: "POST",
+        body: formData,
+      });
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Cloudinary upload error:", {
+          status: res.status,
+          statusText: res.statusText,
+          errorDetails: errorText
+        });
+        throw new Error(`Upload failed: ${res.status} ${errorText}`);
       }
-  
-      try {
-        const resizedBlob = await resizeImage(file);
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setPersonalInfo((prev) => ({
-            ...prev,
-            profileImg: reader.result,
-          }));
+      
+      const data = await res.json();
+      console.log("Full Cloudinary response:", data);
+      
+      // For PDFs, always use Google Docs viewer
+      if (fileType === 'file') {
+        return `https://docs.google.com/viewer?url=${encodeURIComponent(data.secure_url)}&embedded=true`;
+      }
+      
+      return data.secure_url;
+    } catch (error) {
+      console.error("Detailed Cloudinary upload error:", error);
+      alert("File upload failed. Please try again.");
+      return null;
+    }
+  };
 
-          setPreviewImg(reader.result)
-        };
-        reader.readAsDataURL(resizedBlob);
-      } catch (error) {
-        toast.error('Image processing failed');
+  const handleImageUpload = async (e, fileType = 'image') => {
+    
+    const file = e.target.files[0];
+    if (!file) {
+      console.error("No file selected");
+      return;
+    }
+    
+    // Validation options for different file types
+    const validationOptions = {
+      image: {
+        maxSize: 10 * 1024 * 1024, // 10MB
+        allowedTypes: ["image/jpeg", "image/png", "image/gif"],
+        maxSizeLabel: "10 MB",
+      },
+      // Add more file type configurations as needed
+    };
+    
+    const options = validationOptions[fileType] || validationOptions.image;
+    const { maxSize, allowedTypes, maxSizeLabel } = options;
+    
+    // File size check
+    if (file.size > maxSize) {
+      alert(`File size should be less than ${maxSizeLabel}`);
+      e.target.value = null; // Reset file input
+      return;
+    }
+    
+    // File type check
+    if (!allowedTypes.includes(file.type)) {
+      alert(`Invalid file type. Allowed types: ${allowedTypes.join(", ")}`);
+      e.target.value = null; // Reset file input
+      return;
+    }
+    
+    try {
+      const resizedFile=await resizeImage(file);
+      const fileUrl = await handleFileUploadToCloudinary(resizedFile, fileType);
+      
+      if (fileUrl) {
+        setPersonalInfo(prev=>({...prev,profileImg:fileUrl}));
+        
+        setPreviewImg(fileUrl);
       }
+      
+      e.target.value = null;
+
+    } catch (error) {
+      console.log(error);
+      toast.error("Error uploading thumbnail");
     }
   };
  
@@ -236,7 +303,11 @@ export default function TutorSettings() {
       );
   
       // Success handling
-      toast.success(response.data.message || "Details Updated successfully");
+      toast.success(response.data.message || "Details Updated successfully",{style: {
+        borderRadius: '10px',
+        background: '#111826',
+        color: '#fff',
+      }});
       setPreviewImg('');
       
       // Update global state with new tutor data
@@ -248,11 +319,23 @@ export default function TutorSettings() {
   
       // Check if it's a response error
       if (error.response) {
-        toast.error(error.response.data.message || "Error updating profile");
+        toast.error(error.response.data.message || "Error updating profile",{style: {
+          borderRadius: '10px',
+          background: '#111826',
+          color: '#fff',
+        }});
       } else if (error.request) {
-        toast.error("No response from the server. Please try again.");
+        toast.error("No response from the server. Please try again.",{style: {
+          borderRadius: '10px',
+          background: '#111826',
+          color: '#fff',
+        }});
       } else {
-        toast.error("An unexpected error occurred");
+        toast.error("An unexpected error occurred",{style: {
+          borderRadius: '10px',
+          background: '#111826',
+          color: '#fff',
+        }});
       }
     }
   };
@@ -265,7 +348,11 @@ export default function TutorSettings() {
   
     try {
       const response = await axios.put("http://localhost:3000/tutor/change-password", { passwordChange });
-      toast.success(response.data.message || "Password changed successfully");
+      toast.success(response.data.message || "Password changed successfully",{style: {
+        borderRadius: '10px',
+        background: '#111826',
+        color: '#fff',
+      }});
     } catch (error) {
       console.error("Error:", error);
   
@@ -273,7 +360,11 @@ export default function TutorSettings() {
       if (error.response) {
         // Server responded with a status code other than 2xx
         const errorMessage = error.response.data.message || "An error occurred while changing the password";
-        toast.error(errorMessage);
+        toast.error(errorMessage,{style: {
+          borderRadius: '10px',
+          background: '#111826',
+          color: '#fff',
+        }});
       } else if (error.request) {
         // Request was made, but no response was received
         toast.error("No response from the server. Please try again later.");

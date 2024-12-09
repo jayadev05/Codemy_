@@ -10,7 +10,7 @@ import {
   LayoutList
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { logoutAdmin, selectAdmin } from "../../../store/adminSlice";
+import { logoutAdmin, selectAdmin } from "../../../store/slices/adminSlice";
 import defProfile from "../../../assets/user-profile.png";
 import { useNavigate } from "react-router";
 import { toast } from "react-toastify";

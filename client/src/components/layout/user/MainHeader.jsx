@@ -2,7 +2,7 @@ import axios from "axios";
 import { Heart, LogOut, Search, ShoppingCart } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import { logoutUser, selectUser } from "../../../store/userSlice";
+import { logoutUser, selectUser } from "../../../store/slices/userSlice";
 
 const MainHeader = () => {
     const dispatch=useDispatch();

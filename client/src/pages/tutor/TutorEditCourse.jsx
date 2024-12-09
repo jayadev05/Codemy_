@@ -1,74 +1,252 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState ,useCallback} from "react";
 import Sidebar from "../../components/layout/tutor/Sidebar";
 import { useDispatch, useSelector } from "react-redux";
 import { selectCourse, updateCourse } from "../../store/slices/courseSlice";
-import { Bell, ChevronDownIcon, PencilIcon, Search, TrashIcon } from "lucide-react";
-import { selectTutor } from "../../store/tutorSlice";
+import {
+  Bell,
+  ChevronDownIcon,
+  PencilIcon,
+  Search,
+  TrashIcon,
+} from "lucide-react";
+import { selectTutor } from "../../store/slices/tutorSlice";
 import defProfile from "../../assets/user-profile.png";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router";
 
 function TutorEditCourse() {
-
   const tutor = useSelector(selectTutor);
   const courseFromRedux = useSelector(selectCourse);
 
-  const dispatch=useDispatch()
-  
+  const dispatch = useDispatch();
+  const navigate=useNavigate();
+
   // Local state to manage form inputs
   const [course, setCourse] = useState({
-    title: '',
-    description: '',
-    topic: '',
-    category:'',
-    language: '',
-    level: 'Beginner',
-    price: { $numberDecimal: '0.00' },
+    title: "",
+    description: "",
+    topic: "",
+    category: "",
+    language: "",
+    level: "Beginner",
+    price: { $numberDecimal: "0.00" },
     duration: 0,
-    durationUnit: 'Days',
+    durationUnit: "Days",
     thumbnail: null,
     isListed: true,
-    tutorId:'',
-    lessons: []
+    tutorId: "",
+    lessons: [],
   });
+
+  const[preview,setPreview]=useState(null);
 
   // Sync Redux course state with local state on component mount
   useEffect(() => {
     if (courseFromRedux) {
       setCourse(courseFromRedux);
+    
     }
   }, [courseFromRedux]);
 
 
-  const handleInputChange = (e) => {
+
+  const handleInputChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
-    setCourse(prev => ({
+    setCourse((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : 
-             name === 'price' ? { $numberDecimal: value } : 
-             value
+      [name]:
+        type === "checkbox"
+          ? checked
+          : name === "price"
+          ? { $numberDecimal: value }
+          : value,
     }));
+  }, []);
+
+  const resizeImage=(file, width = 1200, height = 800)=> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+  
+          const ctx = canvas.getContext('2d');
+          
+          // Calculate scaling and cropping
+          const sourceWidth = img.width;
+          const sourceHeight = img.height;
+          const sourceAspect = sourceWidth / sourceHeight;
+          const targetAspect = width / height;
+  
+          let drawWidth, drawHeight, sx, sy;
+  
+          if (sourceAspect > targetAspect) {
+            // Image is wider than the target aspect ratio
+            drawHeight = sourceHeight;
+            drawWidth = drawHeight * targetAspect;
+            sx = (sourceWidth - drawWidth) / 2;
+            sy = 0;
+          } else {
+            // Image is taller than the target aspect ratio
+            drawWidth = sourceWidth;
+            drawHeight = drawWidth / targetAspect;
+            sx = 0;
+            sy = (sourceHeight - drawHeight) / 2;
+          }
+  
+          // Draw the cropped and scaled image
+          ctx.drawImage(
+            img,
+            sx, sy, drawWidth, drawHeight,  // Source rectangle
+            0, 0, width, height  // Destination rectangle
+          );
+  
+          canvas.toBlob((blob) => {
+            resolve(blob);
+          }, 'image/jpeg', 0.7);
+        };
+        img.onerror = (error) => {
+          reject(error);
+        };
+        img.src = event.target.result;
+      };
+      reader.onerror = (error) => {
+        reject(error);
+      };
+      reader.readAsDataURL(file);
+    });
   }
 
-
-
-  const handleSubmit =async (e) => {
-    e.preventDefault();
+  const handleFileUploadToCloudinary = async (file, fileType = "image") => {
     try {
-      
-      const response=await axios.put(`http://localhost:3000/course/edit-course/${courseFromRedux._id}`,{course})
-      
-      dispatch(updateCourse(response.data.course));
-      toast.success("Course updated successfully");
-  
+      const cloudName = "diwjeqkca";
+      const uploadPreset = "unsigned_upload";
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", uploadPreset);
+
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Cloudinary upload error:", {
+          status: res.status,
+          statusText: res.statusText,
+          errorDetails: errorText,
+        });
+        throw new Error(`Upload failed: ${res.status} ${errorText}`);
+      }
+
+      const data = await res.json();
+      console.log("Full Cloudinary response:", data);
+
+      // For PDFs, always use Google Docs viewer
+      if (fileType === "file") {
+        return `https://docs.google.com/viewer?url=${encodeURIComponent(
+          data.secure_url
+        )}&embedded=true`;
+      }
+
+      return data.secure_url;
+    } catch (error) {
+      console.error("Detailed Cloudinary upload error:", error);
+      alert("File upload failed. Please try again.");
+      return null;
+    }
+  };
+
+  const handleThumbnailChange = async (e, fileType = "image") => {
+    const file = e.target.files[0];
+    if (!file) {
+      console.error("No file selected");
+      return;
+    }
+
+    // Validation options for different file types
+    const validationOptions = {
+      image: {
+        maxSize: 10 * 1024 * 1024, // 10MB
+        allowedTypes: ["image/jpeg", "image/png", "image/gif"],
+        maxSizeLabel: "10 MB",
+      },
+      // Add more file type configurations as needed
+    };
+
+    const options = validationOptions[fileType] || validationOptions.image;
+    const { maxSize, allowedTypes, maxSizeLabel } = options;
+
+    // File size check
+    if (file.size > maxSize) {
+      alert(`File size should be less than ${maxSizeLabel}`);
+      e.target.value = null; // Reset file input
+      return;
+    }
+
+    // File type check
+    if (!allowedTypes.includes(file.type)) {
+      alert(`Invalid file type. Allowed types: ${allowedTypes.join(", ")}`);
+      e.target.value = null; // Reset file input
+      return;
+    }
+
+    try {
+      const resizedFile = await resizeImage(file);
+      const fileUrl = await handleFileUploadToCloudinary(resizedFile, fileType);
+
+      if (fileUrl) {
+        setCourse((prev) => ({ ...prev, thumbnail: fileUrl }));
+        setPreview(fileUrl);
+      }
+
+      e.target.value = null;
     } catch (error) {
       console.log(error);
-      if(error.response){
-        toast.error(error.response?.data?.message || "Error updating course");
+      toast.error("Error uploading thumbnail");
+    }
+  };
+
+  const triggerFileInput=()=>{
+    document.getElementById('thumbnailInput').click();
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.put(
+        `http://localhost:3000/course/edit-course/${courseFromRedux._id}`,
+        { course }
+      );
+
+      dispatch(updateCourse(response.data.course));
+      toast.success("Course updated successfully",{style: {
+        borderRadius: '10px',
+        background: '#111826',
+        color: '#fff',
+      }});
+      setPreview(null);
+      navigate('/tutor/myCourses')
+    } catch (error) {
+      console.log(error);
+      if (error.response) {
+        toast.error(error.response?.data?.message || "Error updating course",{style: {
+          borderRadius: '10px',
+          background: '#111826',
+          color: '#fff',
+        }});
       }
     }
-    
-  }
+  };
 
   return (
     <>
@@ -106,217 +284,276 @@ function TutorEditCourse() {
           </header>
 
           {/* View course Content */}
-            <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
-    
-        <div className="p-6">
-          <form  onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                Course Title
-              </label>
-              <input
-                type="text"
-                name="title"
-                id="title"
-                value={course.title}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                Description
-              </label>
-              <textarea
-                name="description"
-                id="description"
-                rows={3}
-                value={course.description}
-                onChange={handleInputChange}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500"
-              ></textarea>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="topic" className="block text-sm font-medium text-gray-700">
-                  Topic
-                </label>
-                <input
-                  type="text"
-                  name="topic"
-                  id="topic"
-                  value={course.topic}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="language" className="block text-sm font-medium text-gray-700">
-                  Language
-                </label>
-                <input
-                  type="text"
-                  name="language"
-                  id="language"
-                  value={course.language}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="level" className="block text-sm font-medium text-gray-700">
-                  Level
-                </label>
-                <select
-                  name="level"
-                  id="level"
-                  value={course.level}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500"
-                >
-                  <option>Beginner</option>
-                  <option>Intermediate</option>
-                  <option>Advanced</option>
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-                  Price
-                </label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 sm:text-sm">₹</span>
+          <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-6xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
+              <div className="p-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div>
+                    <label
+                      htmlFor="title"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Course Title
+                    </label>
+                    <input
+                      type="text"
+                      name="title"
+                      id="title"
+                      value={course.title}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500"
+                    />
                   </div>
-                  <input
-                    type="number"
-                    name="price"
-                    id="price"
-                    value={course.price.$numberDecimal}
-                    onChange={handleInputChange}
-                    className="block w-full pl-7 pr-12 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500"
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
 
-              <div>
-                <label htmlFor="duration" className="block text-sm font-medium text-gray-700">
-                  Duration
-                </label>
-                <div className="mt-1 flex rounded-md shadow-sm">
-                  <input
-                    type="number"
-                    name="duration"
-                    id="duration"
-                    value={course.duration}
-                    onChange={handleInputChange}
-                    className="flex-1 block w-full border border-gray-300 rounded-l-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500"
-                  />
-                  <select
-                    name="durationUnit"
-                    value={course.durationUnit}
-                    onChange={handleInputChange}
-                    className="flex-shrink-0 inline-flex items-center py-2 px-4 border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm rounded-r-md hover:bg-gray-100 focus:outline-none focus:ring-orange-500 focus:border-orange-500"
-                  >
-                    <option>Days</option>
-                    <option>Weeks</option>
-                    <option>Months</option>
-                  </select>
-                </div>
-              </div>
-            </div>
+                  <div>
+                    <label
+                      htmlFor="description"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Description
+                    </label>
+                    <textarea
+                      name="description"
+                      id="description"
+                      rows={3}
+                      value={course.description}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500"
+                    ></textarea>
+                  </div>
 
-            <div>
-              <label htmlFor="thumbnail" className="block text-sm font-medium text-gray-700">
-                Thumbnail
-              </label>
-              <div className="mt-1 flex items-center">
-                <div className="w-64 aspect-video rounded-lg overflow-hidden bg-gray-100 border-2 border-dashed border-gray-300">
-                  {course.thumbnail ? (
-                    <img src={course.thumbnail} alt="Course thumbnail" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <svg className="h-12 w-12 text-gray-300" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
-                      </svg>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label
+                        htmlFor="topic"
+                        className="block text-sm font-medium text-gray-700"
+                      >
+                        Topic
+                      </label>
+                      <input
+                        type="text"
+                        name="topic"
+                        id="topic"
+                        value={course.topic}
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500"
+                      />
                     </div>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  className="ml-5 bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
-                >
-                  Change
-                </button>
-              </div>
-            </div>
 
-            <div className="flex items-center">
-              <input
-                id="isListed"
-                name="isListed"
-                type="checkbox"
-                checked={course.isListed}
-                onChange={handleInputChange}
-                className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
-              />
-              <label htmlFor="isListed" className="ml-2 block text-sm text-gray-900">
-                List this course publicly
-              </label>
-            </div>
-
-            <div>
-              <h3 className="text-lg leading-6 font-medium text-gray-900">Lessons</h3>
-              <div className="mt-2 border-t border-gray-200 pt-4">
-                {course.lessons.map((lesson, index) => (
-                  <div key={index} className="flex items-center justify-between py-2">
-                    <div className="flex items-center">
-                      <span className="text-sm font-medium text-gray-900">Lesson {index + 1}</span>
+                    <div>
+                      <label
+                        htmlFor="level"
+                        className="block text-sm font-medium text-gray-700"
+                      >
+                        Language
+                      </label>
+                      <select
+                        name="language"
+                        id="language"
+                        value={course.language}
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500"
+                      >
+                        <option>English</option>
+                        <option>Hindi</option>
+                        <option>Malayalam</option>
+                      </select>
                     </div>
-                    <div className="flex items-center">
-                      <button type="button" className="text-orange-600 hover:text-orange-800">
-                        <PencilIcon className="h-5 w-5" />
-                      </button>
-                      <button type="button" className="ml-2 text-red-600 hover:text-red-800">
-                        <TrashIcon className="h-5 w-5" />
-                      </button>
+
+                    <div>
+                      <label
+                        htmlFor="level"
+                        className="block text-sm font-medium text-gray-700"
+                      >
+                        Level
+                      </label>
+                      <select
+                        name="level"
+                        id="level"
+                        value={course.level}
+                        onChange={handleInputChange}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500"
+                      >
+                        <option>Beginner</option>
+                        <option>Intermediate</option>
+                        <option>Advanced</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="price"
+                        className="block text-sm font-medium text-gray-700"
+                      >
+                        Price
+                      </label>
+                      <div className="mt-1 relative rounded-md shadow-sm">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <span className="text-gray-500 sm:text-sm">₹</span>
+                        </div>
+                        <input
+                          type="number"
+                          name="price"
+                          id="price"
+                          value={course.price.$numberDecimal}
+                          onChange={handleInputChange}
+                          className="block w-full pl-7 pr-12 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500"
+                          placeholder="0.00"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="duration"
+                        className="block text-sm font-medium text-gray-700"
+                      >
+                        Duration
+                      </label>
+                      <div className="mt-1 flex rounded-md shadow-sm">
+                        <input
+                          type="number"
+                          name="duration"
+                          id="duration"
+                          value={course.duration}
+                          onChange={handleInputChange}
+                          className="flex-1 block w-full border border-gray-300 rounded-l-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500"
+                        />
+                        <select
+                          name="durationUnit"
+                          value={course.durationUnit}
+                          onChange={handleInputChange}
+                          className="flex-shrink-0 inline-flex items-center py-2 px-4 border border-l-0 border-gray-300 bg-gray-50 text-gray-500 text-sm rounded-r-md hover:bg-gray-100 focus:outline-none focus:ring-orange-500 focus:border-orange-500"
+                        >
+                          <option>Days</option>
+                          <option>Hours</option>
+                       
+                        </select>
+                      </div>
                     </div>
                   </div>
-                ))}
-                <button
-                  type="button"
-                  className="mt-4 flex items-center text-sm font-medium text-orange-600 hover:text-orange-800"
-                >
-                  <ChevronDownIcon className="h-5 w-5 mr-1" />
-                  Add Lesson
-                </button>
+
+                  <div>
+                    <label
+                      htmlFor="thumbnail"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Thumbnail {preview && <span className="text-orange-600">(preview)</span>}
+                    </label>
+                    <div className="mt-1 flex items-center">
+                      <div className="w-64 aspect-video rounded-lg overflow-hidden bg-gray-100 border-2 border-dashed border-gray-300">
+                        {course.thumbnail ? (
+                          <img
+                            src={course.thumbnail}
+                            alt="Course thumbnail"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center h-full">
+                            <svg
+                              className="h-12 w-12 text-gray-300"
+                              fill="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                     
+                      {/* Hidden file input */}
+        <input
+          type="file"
+          id="thumbnailInput"
+          accept="image/*"
+          className="hidden"
+          onChange={handleThumbnailChange}
+        />
+        
+        <button 
+          type="button" 
+          onClick={triggerFileInput}
+          className="ml-5 bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+        >
+          Change
+        </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      id="isListed"
+                      name="isListed"
+                      type="checkbox"
+                      checked={course.isListed}
+                      onChange={handleInputChange}
+                      className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                    />
+                    <label
+                      htmlFor="isListed"
+                      className="ml-2 block text-sm text-gray-900"
+                    >
+                      List this course publicly
+                    </label>
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg leading-6 font-medium text-gray-900">
+                      Lessons
+                    </h3>
+                    <div className="mt-2 border-t border-gray-200 pt-4">
+                      {course.lessons.map((lesson, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between py-2"
+                        >
+                          <div className="flex items-center">
+                            <span className="text-sm font-medium text-gray-900">
+                              Lesson {index + 1}
+                            </span>
+                          </div>
+                          <div className="flex items-center">
+                            <button
+                              type="button"
+                              className="text-orange-600 hover:text-orange-800"
+                            >
+                              <PencilIcon className="h-5 w-5" />
+                            </button>
+                            <button
+                              type="button"
+                              className="ml-2 text-red-600 hover:text-red-800"
+                            >
+                              <TrashIcon className="h-5 w-5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        className="mt-4 flex items-center text-sm font-medium text-orange-600 hover:text-orange-800"
+                      >
+                        <ChevronDownIcon className="h-5 w-5 mr-1" />
+                        Add Lesson
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      type="submit"
+                      className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
-
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                className="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
-              >
-                Save Changes
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-           </div>
+          </div>
         </main>
       </div>
     </>
   );
-
 }
-
 
 export default TutorEditCourse;

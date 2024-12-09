@@ -1,6 +1,6 @@
 const express = require("express")
 const adminRoute = express.Router()
-const { logoutAdmin,getCertificates,forgotPassword,existsCheck,approveTutor,submitInstructorApplication,getInstructorApplications,getTutors,reviewInstructorApplication,resetPassword,getUsers,listUser,unlistUser,unlisTtutor,lisTtutor, getCategories, addCategory, updateCategory, deleteCategory} = require("../../controller/adminController")
+const { logoutAdmin,getCertificates,forgotPassword,existsCheck,approveTutor,submitInstructorApplication,getInstructorApplications,getTutors,reviewInstructorApplication,resetPassword,getUsers,listUser,unlistUser,unlisTtutor,lisTtutor, getCategories, addCategory, updateCategory, deleteCategory, listCourse, unlistCourse} = require("../../controller/adminController")
 const handleTutorUpload = require('../../middleware/multer');
 const verifyUser = require("../../middleware/authMiddleware");
 
@@ -23,6 +23,8 @@ adminRoute.put("/listuser/:id",listUser)
 adminRoute.put("/unlistuser/:id",unlistUser)
 adminRoute.put("/listtutor/:id",lisTtutor)
 adminRoute.put("/unlisttutor/:id",unlisTtutor)
+adminRoute.put("/unlistCourse/:id",unlistCourse)
+adminRoute.put("/listCourse/:id",listCourse)
 adminRoute.put("/update-category/:id",updateCategory)
 
 adminRoute.patch('/approve-tutor/:applicationId',approveTutor)

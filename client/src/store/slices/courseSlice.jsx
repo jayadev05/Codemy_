@@ -25,7 +25,6 @@ const courseSlice = createSlice({
         level:action.payload.level,
         price:action.payload.price,
         lessons:action.payload.lessons,
-        enrolleeCount:action.payload.enrolleeCount,
         averageRating:action.payload.averageRating,
         isListed:action.payload.isListed,
         duration:action.payload.duration,

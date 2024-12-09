@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useCallback } from "react";
 import {
   Bell,
   ChevronDown,
@@ -11,7 +11,7 @@ import {
 import Sidebar from "../../components/layout/tutor/Sidebar";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
-import { selectTutor } from "../../store/tutorSlice";
+import { selectTutor } from "../../store/slices/tutorSlice";
 import defProfile from "../../assets/user-profile.png";
 import { toast } from "react-hot-toast";
 import BasicInfo from "./tabs/BasicInfo";
@@ -25,19 +25,36 @@ import { useNavigate } from "react-router";
 export default function AddCourse() {
 
   const tutor = useSelector(selectTutor);
-  const course =useSelector(selectCourse);
-  const lessons=useSelector(selectLessons);
+  const existingCourse =useSelector(selectCourse);
+ 
 
 
   const dispatch = useDispatch();
   const navigate=useNavigate()
 
-  const [categories, setCategories] = useState([]);
+ 
 
-  const [basicInfo, setBasicInfo] = useState({});
-  const [advanceInfo, setAdvanceInfo] = useState({});
+  const [courseData, setCourseData] = useState({
+    basicInfo: existingCourse?.basicInfo || {
+      title: '',
+      category: '',
+      topic: '',
+      language: '',
+      difficulty: '',
+      duration: '',
+      durationUnit:'Day'
+    },
+    advanceInfo: existingCourse?.advanceInfo || {
+      price: '',
+      description: '',
+      thumbnail: '',
+      courseContent: ''
+    },
+    curriculum: Array.isArray(existingCourse?.curriculum) ? existingCourse.curriculum : []
+  });
 
-  const [curriculum, setCurriculum] = useState([]); //lessons
+  const payload={...courseData.basicInfo,...courseData.advanceInfo,lessons:courseData.curriculum,tutorId:tutor._id};
+  console.log("payload:",payload);
 
  
   const [activeTab, setActiveTab] = useState(0);
@@ -49,9 +66,11 @@ export default function AddCourse() {
     { name: "Publish Course", icon: CirclePlay },
   ];
 
+
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    dispatch(addCourse(courseData));
+  }, [courseData, dispatch]);
+
 
   const fetchCategories = async () => {
     try {
@@ -69,17 +88,43 @@ export default function AddCourse() {
     }
   };
 
-  const handleBasicInfoData = async (dataFromChild) => {
-    setBasicInfo(dataFromChild);
+  const updateCourseData = (section, newData) => {
+    setCourseData(prevData => ({
+      ...prevData,
+      [section]: {
+        ...prevData[section],
+        ...newData
+      }
+    }));
   };
 
-  const handleAdvanceInfoData = async (dataFromChild) => {
-    setAdvanceInfo(dataFromChild);
+  const handleBasicInfoData = (dataFromChild) => {
+    updateCourseData('basicInfo', dataFromChild);
   };
 
-  const handleCurriculumData = async (dataFromChild) => {
-    setCurriculum(dataFromChild);
+  const handleAdvanceInfoData = (dataFromChild) => {
+    updateCourseData('advanceInfo', dataFromChild);
   };
+
+
+const handleCurriculumData = useCallback((dataFromChild) => {
+  // Ensure we're not updating if the data is the same
+  const curriculumArray = Array.isArray(dataFromChild) 
+    ? dataFromChild 
+    : (dataFromChild?.curriculum || []);
+
+  // Only update if there's a meaningful change
+  setCourseData(prevData => {
+    const curriculumChanged = JSON.stringify(prevData.curriculum) !== JSON.stringify(curriculumArray);
+    
+    return curriculumChanged 
+      ? {
+          ...prevData,
+          curriculum: curriculumArray
+        }
+      : prevData;
+  });
+}, []);
 
   const handleTabChange = (index) => {
     if (isCurrentTabComplete()) {
@@ -96,45 +141,68 @@ export default function AddCourse() {
     }
   };
 
-  console.log({basicInfo:basicInfo,advanceInfo:advanceInfo,curriculum:curriculum});
+  console.log({basicInfo:courseData.basicInfo,advanceInfo:courseData.advanceInfo,curriculum:courseData.curriculum});
+
+  const validateBasicInfo = () => {
+    const { title, category, topic, language, difficulty, duration } = courseData.basicInfo;
+    return !!(title && category && topic && language && difficulty && duration);
+  };
+  
+  const validateAdvanceInfo = () => {
+    const { price, description, thumbnail, courseContent } = courseData.advanceInfo;
+    return !!(price && description && thumbnail && courseContent);
+  };
+  
+  const validateCurriculum = () => {
+    console.group('Curriculum Validation');
+    console.log('Curriculum Raw Data:', courseData.curriculum);
+    
+    // Ensure we convert any object-like array to a true array
+    const curriculumArray = Array.isArray(courseData.curriculum) 
+      ? courseData.curriculum 
+      : Object.values(courseData.curriculum || {});
+  
+    console.log('Processed Curriculum Array:', curriculumArray);
+    console.log('Is Array:', Array.isArray(curriculumArray));
+    console.log('Length:', curriculumArray.length);
+    
+    const isValid = curriculumArray.length > 0 && 
+      curriculumArray.some(lesson => 
+        lesson.lessonTitle && 
+        lesson.lessonTitle.trim() !== 'Lesson Name'
+      );
+    
+    console.log('Is Valid:', isValid);
+    console.groupEnd();
+    
+    return isValid;
+  };
 
   const isCurrentTabComplete = () => {
     switch (activeTab) {
-      case 0: // Basic Information
-        
-      return basicInfo.title !== '' &&
-             basicInfo.selectedCategory !== '' &&
-             basicInfo.topic !== '' &&
-             basicInfo.selectedLanguage !== '' &&
-             basicInfo.selectedDifficulty !== '' &&
-             basicInfo.duration !== '';
-      case 1: // Advance Information
-      
-        return advanceInfo.price!=='' &&
-               advanceInfo.description!=='' &&
-               advanceInfo.thumbnail!=='' &&
-               advanceInfo.courseContent!=='' 
-        
-      case 2: // Curriculum
-        // Add logic for Curriculum tab
+      case 0: 
+        console.log('Basic Info:', courseData.basicInfo);
+        return validateBasicInfo();
+      case 1: 
+        console.log('Advance Info:', courseData.advanceInfo);
+        return validateAdvanceInfo();
+      case 2: 
+        console.log('Curriculum:', courseData.curriculum);
+        return validateCurriculum();
+      default: 
         return true;
-      case 3: // Publish Course
-        // Add logic for Publish Course tab
-        return true;
-      default:
-        return false;
     }
   };
 
   const calculateProgressTab1 = () => {
  
     const fields = [
-      basicInfo?.title, 
-      basicInfo?.category, 
-      basicInfo?.topic, 
-      basicInfo?.language, 
-      basicInfo?.difficulty, 
-      basicInfo?.duration
+      courseData.basicInfo?.title, 
+      courseData.basicInfo?.category, 
+      courseData.basicInfo?.topic, 
+      courseData.basicInfo?.language, 
+      courseData.basicInfo?.difficulty, 
+      courseData.basicInfo?.duration
     ];
    
     const filledFields = fields.filter(field => 
@@ -149,10 +217,10 @@ export default function AddCourse() {
   const calculateProgressTab2 = () => {
    
     const fields = [
-      advanceInfo?.price, 
-      advanceInfo?.description, 
-      advanceInfo?.thumbnail, 
-      advanceInfo?.courseContent
+      courseData.advanceInfo?.price, 
+      courseData.advanceInfo?.description, 
+      courseData.advanceInfo?.thumbnail, 
+      courseData.advanceInfo?.courseContent
     ];
     
     const filledFields = fields.filter(field => 
@@ -164,22 +232,23 @@ export default function AddCourse() {
   };
 
   const handleSaveAndNext = (e) => {
+
     e.preventDefault();
+
     if (isCurrentTabComplete()) {
+
+      if(activeTab===2){
+        dispatch(addCourse(payload));
+      }
+
       if (activeTab < tabs.length - 1) {
-
-        dispatch(addCourse({ ...basicInfo, ...advanceInfo }));
-
-        if(activeTab===2){
-          // dispatch(clearLessons(curriculum));
-          dispatch(addLesson(...curriculum));
-        }
-
         setActiveTab(activeTab + 1);
+
       } else {
         // This is now the final submission
         handleFinalSubmit();
       }
+
     } else {
       toast("Please fill all fields before proceeding.", {
         icon: "✍️",
@@ -193,29 +262,31 @@ export default function AddCourse() {
   };
 
   const handleFinalSubmit = async () => {
-    const courseData = {
-      basicInfo: basicInfo,
-      advancedInfo: advanceInfo,
-      curriculum: curriculum,
-      tutorId: tutor._id,
-    };
+   
 
     try {
       const response = await axios.post(
         "http://localhost:3000/course/create-course",
-        courseData
+        payload
       );
-      toast.success("Course created successfully!");
+      toast.success("Course created successfully!",{style: {
+        borderRadius: '10px',
+        background: '#111826',
+        color: '#fff',
+      }});
 
-      dispatch(clearLessons(lessons));
-      dispatch(clearCourse(course));
+      dispatch(clearCourse(existingCourse));
 
       navigate('/tutor/myCourses');
 
     } catch (error) {
       console.error(error);
       if (error.response) {
-        toast.error(error.response.data.message || "Failed to create course");
+        toast.error(error.response.data.message || "Failed to create course",{style: {
+          borderRadius: '10px',
+          background: '#111826',
+          color: '#fff',
+        }});
       }
     }
   };
@@ -299,17 +370,21 @@ export default function AddCourse() {
               <form className="space-y-6" onSubmit={handleSaveAndNext}>
                 {activeTab === 0 && (
                   <BasicInfo
-                    categories={categories}
+                  initialData={courseData.basicInfo}
                     sendData={handleBasicInfoData}
                   />
                 )}
 
                 {activeTab === 1 && (
-                  <AdvancedInfo sendData={handleAdvanceInfoData} />
+                  <AdvancedInfo 
+                  initialData={courseData.advanceInfo}
+                  sendData={handleAdvanceInfoData} />
                 )}
 
                 {activeTab === 2 && (
-                  <Curriculum sendData={handleCurriculumData} />
+                  <Curriculum 
+                  initialData={courseData.curriculum}
+                  sendData={handleCurriculumData} />
                 )}
 
                 {activeTab === 3 && (

@@ -9,7 +9,8 @@ export default function CoursePreview() {
   const [activeLesson, setActiveLesson] = useState(null);
 
   const course = useSelector(selectCourse);
-  const lessons = useSelector(selectLessons);
+  console.log("course in state",course);
+  
 
   // Helper function to format duration
   const formatDuration = (duration, unit) => {
@@ -20,7 +21,7 @@ export default function CoursePreview() {
   };
 
   const formatCurrency = (num) => {
-    const cleanedNum = num.toString().replace(/[^\d]/g, "");
+    const cleanedNum = num?.toString().replace(/[^\d]/g, "");
     return cleanedNum ? Number(cleanedNum).toLocaleString("en-IN") : "";
   };
 
@@ -56,7 +57,7 @@ export default function CoursePreview() {
               </div>
               <div>
                 <h3 className="font-semibold text-gray-700">Lessons</h3>
-                <p>{lessons.length}</p>
+                <p>{course.lessons.length}</p>
               </div>
             </div>
           </div>
@@ -102,7 +103,7 @@ export default function CoursePreview() {
         <div>
           <h2 className="text-2xl font-bold mb-4">Course Content</h2>
           <div className="space-y-4">
-            {lessons.map((lesson, index) => (
+            {course.lessons.map((lesson, index) => (
               <div
                 key={lesson?.id}
                 className="border rounded-lg overflow-hidden"
@@ -119,7 +120,7 @@ export default function CoursePreview() {
                       <span className="text-orange-600 font-semibold">
                         Lesson {index + 1}:
                       </span>
-                      <span className="font-medium">{lesson?.title}</span>
+                      <span className="font-medium">{lesson?.lessonTitle}</span>
                     </div>
                     <span className="text-sm text-gray-600">
                       {formatDuration(lesson.duration, lesson.durationUnit)}
@@ -134,7 +135,7 @@ export default function CoursePreview() {
                           src={lesson?.video}
                           controls
                           className="w-full rounded"
-                          poster={lesson?.thumbnail}
+                          poster={lesson?.lessonThumbnail}
                         >
                           Your browser does not support the video tag.
                         </video>
@@ -143,9 +144,9 @@ export default function CoursePreview() {
                     <p className="text-gray-700 mb-4">{lesson?.description}</p>
 
                     <div className="flex items-center space-x-4">
-                      {lesson?.lectureNotes && (
+                      {lesson?.lessonNotes && (
                         <a
-                          href={lesson.lectureNotes}
+                          href={lesson.lessonNotes}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center text-blue-600 hover:text-blue-800"
@@ -168,10 +169,10 @@ export default function CoursePreview() {
 
                      
 
-                      {lesson?.thumbnail && !lesson?.video && (
+                      {lesson?.lessonThumbnail && !lesson?.video && (
                         <img
-                          src={lesson?.thumbnail}
-                          alt={`Thumbnail for ${lesson?.title}`}
+                          src={lesson?.lessonThumbnail}
+                          alt={`Thumbnail for ${lesson?.lessonTitle}`}
                           className="w-24 h-24 object-cover rounded"
                         />
                       )}

@@ -2,6 +2,7 @@
 const User = require("../model/userModel");
 const Tutor = require("../model/tutorModel");
 const Admin = require("../model/adminModel");
+const Course=require('../model/courseModel')
 const InstructorApplication = require("../model/tutorApplication");
 const Category = require('../model/categoryModel')
 const mongoose = require('mongoose');
@@ -742,6 +743,57 @@ const deleteCategory = async (req, res) => {
   }
 };
 
+const listCourse = async (req, res) => {
+  const { id } = req.params; // Destructure the ID from req.params
+
+  if (!id) {
+    return res.status(400).json({ message: "Course ID is missing or inappropriate" });
+  }
+
+  try {
+    // Update the course to set `isActive` to true
+    const course = await Course.findByIdAndUpdate(id, { isListed: true }, { new: true });
+
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" }); // Handle case where course does not exist
+    }
+
+    res.status(200).json({ message: "Course listed successfully", course });
+
+  } catch (error) {
+    console.error("Error listing course:", error);
+    res.status(500).json({ message: "Failed to list course" });
+  }
+};
+
+const unlistCourse = async (req, res) => {
+  const { id } = req.params; // Destructure the ID from req.params
+  console.log("course id",id);
+  if (!id) {
+    return res.status(400).json({ message: "Course ID is missing or inappropriate" });
+  }
+
+  try {
+    // Update the course to set `isActive` to true
+    const course = await Course.findByIdAndUpdate(id, { isListed: false }, { new: true });
+
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" }); // Handle case where course does not exist
+    }
+
+    res.status(200).json({ message: "Course unlisted successfully", course });
+
+  } catch (error) {
+    console.error("Error listing course:", error);
+    res.status(500).json({ message: "Failed to unlist course" });
+  }
+};
+
+
+
+
+
+
 
 
 module.exports = {
@@ -763,5 +815,7 @@ module.exports = {
   getCategories,
   addCategory,
   updateCategory,
-  deleteCategory
+  deleteCategory,
+  listCourse,
+  unlistCourse
 };

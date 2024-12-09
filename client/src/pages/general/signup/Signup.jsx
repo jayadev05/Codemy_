@@ -9,7 +9,7 @@ import { toast } from 'react-hot-toast';
 import 'react-toastify/dist/ReactToastify.css';
 import EmailVerify from "./emailVerify";
 import { useDispatch } from 'react-redux';
-import { addUser } from '../../../store/userSlice'
+import { addUser } from '../../../store/slices/userSlice'
 
 export default function Signup() {
   const navigate = useNavigate();

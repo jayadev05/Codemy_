@@ -43,6 +43,10 @@ const tutorSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.Decimal128,
     default: 0
   },
+  amountWithdrawn: {
+    type: mongoose.Schema.Types.Decimal128,
+    default: 0
+  },
   credentials: [{
     certificate: {
       type: String, // File path to the certificate

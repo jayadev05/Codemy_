@@ -3,7 +3,7 @@ import Sidebar from "../../components/layout/tutor/Sidebar";
 import { useSelector } from "react-redux";
 import { selectCourse } from "../../store/slices/courseSlice";
 import { Bell, Search } from "lucide-react";
-import { selectTutor } from "../../store/tutorSlice";
+import { selectTutor } from "../../store/slices/tutorSlice";
 import defProfile from "../../assets/user-profile.png";
 
 function TutorViewCourse() {

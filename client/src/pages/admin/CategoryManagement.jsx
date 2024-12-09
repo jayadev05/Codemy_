@@ -6,7 +6,7 @@ import { toast, Toaster } from 'react-hot-toast'
 import Swal from 'sweetalert2'
 import Sidebar from '../../components/layout/admin/Sidebar'
 import { useDispatch, useSelector } from 'react-redux'
-import { logoutAdmin, selectAdmin } from '../../store/adminSlice'
+import { logoutAdmin, selectAdmin } from '../../store/slices/adminSlice'
 import axios from 'axios'
 import { useNavigate } from 'react-router'
 import Pagination from '../../components/utils/Pagination'
@@ -150,7 +150,10 @@ export default function CategoryManagement() {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
+      <div className="sticky top-0 h-screen">
       <Sidebar activeSection="Category"/>
+      </div>
+      
       <main className="flex-1">
         <header className="flex items-center justify-between border-b bg-white px-6 py-4">
           <div>
@@ -200,8 +203,8 @@ export default function CategoryManagement() {
           </div>
         </header>
         
-        <div className="space-y-6 mt-6 px-12">
-          <div className="flex justify-between items-center">
+        <div className="space-y-6 mt-12 px-12">
+          <div className="flex max-w-6xl mx-auto justify-between items-center">
             <div className="relative w-64">
               <input
                 type="text"
@@ -220,14 +223,14 @@ export default function CategoryManagement() {
             </button>
           </div>
 
-          <div className="bg-white shadow-md rounded-lg lg:min-h-[500px] overflow-hidden">
+          <div className="bg-white shadow-md max-w-6xl mx-auto rounded-lg lg:min-h-[500px] overflow-hidden">
             <table className="w-full">
               <thead className="bg-gray-50 ">
                 <tr className=' border border-b-gray-300'>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sl. No.</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category Name</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                  <th className="px-12 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -241,16 +244,17 @@ export default function CategoryManagement() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{index + 1 + (currentPage - 1) * itemsPerPage}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{category.title}</td>
                       <td className="px-6 py-4 text-sm text-gray-500">{category.description}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium ">
+                        
                         <button
                           onClick={() => handleEdit(category)}
-                          className="text-blue-600 hover:text-blue-900 mr-4"
+                          className="bg-blue-500 px-3 py-1 text-xs font-medium text-white hover:bg-blue-600 me-3"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleDelete(category._id)}
-                          className="text-red-600 hover:text-red-900"
+                          className="px-3 py-1 text-xs font-medium text-white hover:bg-red-600 bg-red-500"
                         >
                           Delete
                         </button>
@@ -264,6 +268,7 @@ export default function CategoryManagement() {
 
           <Pagination className='flex items-center justify-between' dataPerPage={itemsPerPage} totalData={filteredCategories.length} currentPage={currentPage} setCurrentPage={setCurrentPage} />
         </div>
+
       </main>
 
       {/* Add Category Modal */}

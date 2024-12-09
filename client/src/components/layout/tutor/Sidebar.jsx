@@ -11,8 +11,8 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import defProfile from "../../../assets/user-profile.png";
 import { useNavigate } from "react-router";
-import { toast } from "react-toastify";
-import { logoutTutor, selectTutor } from "../../../store/tutorSlice";
+import { toast } from "react-hot-toast";
+import { logoutTutor, selectTutor } from "../../../store/slices/tutorSlice";
 import axios from 'axios'
 import logo from '../../../assets/logo_cap.png'
 

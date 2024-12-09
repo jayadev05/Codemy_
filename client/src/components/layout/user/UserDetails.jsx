@@ -1,5 +1,5 @@
 import { useSelector } from "react-redux";
-import { selectUser } from "../../../store/userSlice";
+import { selectUser } from "../../../store/slices/userSlice";
 import defProfile from '../../../assets/user-profile.png'
 
 const UserProfile = () => {

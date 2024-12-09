@@ -15,7 +15,7 @@ import cat7 from "../../assets/cat-7.png";
 import cat8 from "../../assets/cat-8.png";
 import { useNavigate } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
-import { addUser, selectUser, logoutUser } from "../../store/userSlice";
+import { addUser, selectUser, logoutUser } from "../../store/slices/userSlice";
 import defProfile from "../../assets/user-profile.png";
 import Footer from "../../components/layout/Footer";
 import { InstructorModal } from "../general/signup/InstructorSignUp";

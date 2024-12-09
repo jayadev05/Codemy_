@@ -3,7 +3,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "rec
 import { BookOpen,  Star, Users, Search, Bell } from 'lucide-react';
 import Sidebar from '../../components/layout/tutor/Sidebar';
 import { useDispatch, useSelector } from 'react-redux';
-import { logoutTutor, selectTutor } from '../../store/tutorSlice';
+import { logoutTutor, selectTutor } from '../../store/slices/tutorSlice';
 import defprofile from '../../assets/user-profile.png'
 import { useNavigate } from 'react-router';
 import { toast } from 'react-hot-toast';

@@ -1,8 +1,8 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
-import { selectUser } from '../../store/userSlice';
-import { selectTutor } from '../../store/tutorSlice';
-import { selectAdmin } from '../../store/adminSlice';
+import { selectUser } from '../../store/slices/userSlice';
+import { selectTutor } from '../../store/slices/tutorSlice';
+import { selectAdmin } from '../../store/slices/adminSlice';
 import { Navigate } from 'react-router-dom';
 
 function ProtectedRoute({ children, userType }) {

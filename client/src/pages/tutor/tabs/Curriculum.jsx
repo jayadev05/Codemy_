@@ -1,15 +1,16 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { selectTutor } from "../../../store/tutorSlice";
+import { selectTutor } from "../../../store/slices/tutorSlice";
 import { selectCourse } from "../../../store/slices/courseSlice";
+import axios from "axios";
 
-function Curriculum({ sendData }) {
-  // State for lessons with more comprehensive structure
+const Curriculum=({ initialData ,sendData })=> {
+ 
   const tutor=useSelector(selectTutor);
   const course=useSelector(selectCourse);
  
 
-  const [lessons, setLessons] = useState([
+  const [lessons, setLessons] = useState(initialData?.length > 0 ? initialData : [
     {
       id: 1,
       lessonTitle: "Lesson Title",
@@ -19,9 +20,9 @@ function Curriculum({ sendData }) {
       lessonNotes: '',
       selectedThumbnail: '',
       lessonThumbnail: '',
-      duration:0,
-      durationUnit:'minute',
-      tutorId:tutor._id
+      duration: 0,
+      durationUnit: 'minute',
+      tutorId: tutor._id
     }
   ]);
 
@@ -31,26 +32,27 @@ function Curriculum({ sendData }) {
     lessonId: null
   });
 
+  const [progress, setProgress] = useState(0);
+  console.log("progress",progress);
+
   const videoInputRef = useRef(null);
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
 
 
-  // Send data effect
   useEffect(() => {
-
     // Only send data if there are meaningful changes
     if (lessons.some(lesson => 
-      lesson.lessonThumbnail || 
-      lesson.description || 
-      lesson.lessonNotes || 
-      lesson.video || 
-      lesson.lessonTitle ||
-      lesson.duration||
-      lesson.durationUnit
+      lesson.lessonTitle && 
+      lesson.lessonTitle.trim() !== 'Lesson Name' && 
+      (
+        lesson.description || 
+        lesson.video || 
+        lesson.lessonNotes || 
+        lesson.duration > 0
+      )
     )) {
       sendData(lessons);
-     
     }
   }, [lessons, sendData]);
 
@@ -75,33 +77,28 @@ function Curriculum({ sendData }) {
         formData.append("file", file);
         formData.append("upload_preset", uploadPreset);
 
-        const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {
-            method: "POST",
-            body: formData,
+        const res = await axios.post(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, formData, {
+            onUploadProgress: (progressEvent) => {
+                const percentCompleted = Math.round(
+                    (progressEvent.loaded * 100) / progressEvent.total
+                );
+
+                // Add progress state setter if needed
+                setProgress(percentCompleted);
+            }
         });
-
-        if (!res.ok) {
-            const errorText = await res.text();
-            console.error("Cloudinary upload error:", {
-                status: res.status,
-                statusText: res.statusText,
-                errorDetails: errorText
-            });
-            throw new Error(`Upload failed: ${res.status} ${errorText}`);
-        }
-
-        const data = await res.json();
-        console.log("Full Cloudinary response:", data);
 
         // For PDFs, always use Google Docs viewer
         if (fileType === 'file') {
-            return `https://docs.google.com/viewer?url=${encodeURIComponent(data.secure_url)}&embedded=true`;
+            return `https://docs.google.com/viewer?url=${encodeURIComponent(res.data.secure_url)}&embedded=true`;
         }
 
-        return data.secure_url;
+        return res.data.secure_url;
+
     } catch (error) {
         console.error("Detailed Cloudinary upload error:", error);
-        alert("File upload failed. Please try again.");
+        toast.error("File upload failed. Please try again.");
+        setProgress(0);
         return null;
     }
 };
@@ -164,7 +161,7 @@ function Curriculum({ sendData }) {
     switch (fileType) {
       case "video":
       case "image":
-        const fileUrl = await handleFileUploadToCloudinary(file);
+        const fileUrl = await handleFileUploadToCloudinary(file,fileType);
         if (fileUrl) {
           updateLesson(lessonId, {
             [fileType === "video" ? "video" : "lessonThumbnail"]: fileUrl,
@@ -177,7 +174,7 @@ function Curriculum({ sendData }) {
         }
         break;
       case "file":
-        const docUrl = await handleFileUploadToCloudinary(file);
+        const docUrl = await handleFileUploadToCloudinary(file,fileType);
         updateLesson(lessonId, {
           lessonNotes: docUrl,
           isExpanded: true,
@@ -203,13 +200,16 @@ function Curriculum({ sendData }) {
       ...prevLessons,
       {
         id: Math.max(...prevLessons.map(l => l.id), 0) + 1,
-        lessonTitle: "Lesson Name",
-        isExpanded: false,
-        description: "",
-        video: null,
-        lessonNotes: null,
-        selectedThumbnail: null,
-        lessonThumbnail: null,
+      lessonTitle: "Lesson Title",
+      isExpanded: false,
+      description: "",
+      video: '',
+      lessonNotes: '',
+      selectedThumbnail: '',
+      lessonThumbnail: '',
+      duration: 0,
+      durationUnit: 'minute',
+      tutorId: tutor._id
         
       }
     ]);
@@ -223,15 +223,13 @@ function Curriculum({ sendData }) {
   };
 
   // Toggle lesson expansion
-  const toggleLesson = (lessonId) => {
-    setLessons((prevLessons) =>
-      prevLessons.map((lesson) =>
-        lesson.id === lessonId
-          ? { ...lesson, isExpanded: !lesson.isExpanded }
-          : lesson
-      )
-    );
-  };
+  const toggleLesson = useCallback((lessonId) => {
+    setLessons(prev => prev.map(lesson => 
+      lesson.id === lessonId 
+        ? { ...lesson, isExpanded: !lesson.isExpanded } 
+        : lesson
+    ));
+  }, []);
   
   // Handle text save for title and description
   const handleTextSave = (lessonId, type, value) => {
@@ -460,7 +458,6 @@ function Curriculum({ sendData }) {
                 </div>
               )}
 
-              
               {/* Description */}
               {lesson.description && (
                 <div className="bg-white p-3 rounded-md shadow-sm flex items-center justify-between">
@@ -491,11 +488,14 @@ function Curriculum({ sendData }) {
                 
               )}
 
+
             </div>
           )}
         </div>
       ))}
 
+
+     
       <button
         type="button"
         onClick={addLesson}
@@ -684,15 +684,26 @@ function Curriculum({ sendData }) {
       <p className="text-sm text-gray-500 mb-4">
         Note: All files must be at least 720p and less than 4.0 GB.
       </p>
+      {progress > 0 && progress < 100 && (
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+                    <div 
+                      className="bg-orange-600 h-2.5 rounded-full transition-all duration-300 ease-in-out" 
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                )}
       <div className="flex justify-end">
         <button
           type="button"
-          onClick={() => setActiveModal({ type: null, lessonId: null })}
+          onClick={() => {setProgress(0); setActiveModal({ type: null, lessonId: null })}}
           className="px-4 py-2 text-gray-600 hover:text-gray-800 mr-2"
         >
           Cancel
         </button>
-        <button
+        
+      {progress===100?(<button 
+      onClick={()=>setActiveModal({ type: null, lessonId: null })}
+      className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50">Done</button>):(<button
           type="button"
           onClick={() => {
             if (activeModal.selectedFile) {
@@ -701,14 +712,16 @@ function Curriculum({ sendData }) {
                 "video", 
                 activeModal.lessonId
               );
-              setActiveModal({ type: null, lessonId: null });
+
+
             }
           }}
-          disabled={!activeModal.selectedFile}
+          disabled={!activeModal.selectedFile || progress>0}
           className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50"
         >
-          Upload Video
-        </button>
+          {progress > 0 ? `Uploading ${progress}%` : 'Upload Video'}
+       
+        </button>)}
       </div>
     </div>
   </div>

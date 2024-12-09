@@ -1,7 +1,6 @@
 import React from 'react'
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../../components/layout/Header'
-import Footer from '../../components/layout/Footer'
 import MainHeader from '../../components/layout/user/MainHeader';
 import UserProfile from '../../components/layout/user/UserDetails';
 import Tabs from '../../components/layout/user/Tabs';
@@ -108,7 +107,7 @@ export default function UserDashboard() {
       <footer className="bg-white mt-auto fixed bottom-0 right-0 left-0 ">
     <div className=" mx-auto py-4 px-4 sm:px-6 lg:px-8">
       <div className="flex flex-col sm:flex-row justify-between items-center">
-        <p className="text-sm text-gray-500 mb-2 sm:mb-0">© 2021 - Eduguard. Designed by Templatecookie. All rights reserved.</p>
+        <p className="text-sm text-gray-500 mb-2 sm:mb-0">© 2021 - Codemy. All rights reserved.</p>
         <div className="flex space-x-6">
           <a href="#" className="text-sm text-gray-500 hover:text-gray-900">
             FAQs

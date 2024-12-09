@@ -6,13 +6,17 @@ const Category = require("../model/categoryModel");
 const mongoose = require('mongoose');
 
 const getCourses = async (req, res) => {
+
   try {
-    const courses = await Course.find();
-    res.status(200).json({ courses });
+    // Fetch courses and populate tutor name
+    const courses = await Course.find().populate("tutorId", "fullName");
+
+    res.status(200).json({ courses }); 
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).json({ message: "Failed to fetch courses" });
   }
+
 };
 
 const getCoursesByTutorId = async (req, res) => { 
@@ -110,22 +114,22 @@ const getCoursesByStudentId = async (req, res) => {
 };
 
 const createCourse = async (req, res) => {
-  const { basicInfo, advancedInfo, curriculum, tutorId } = req.body;
-  const {
+
+  const { 
     title,
     topic,
     duration,
     durationUnit,
     category,
     language,
-    difficulty,
-  } = basicInfo;
-  const { 
+    difficulty, 
     thumbnail,
     description,
     courseContent,
     price,
-  } = advancedInfo;
+    lessons,
+     tutorId } = req.body;
+  
 
   try {
     // Find the category
@@ -151,15 +155,15 @@ const createCourse = async (req, res) => {
     const savedCourse = await course.save();
 
     // If curriculum exists, process and save lessons
-    if (curriculum && curriculum.length > 0) {
-      // Map curriculum to lessons with the new course ID
-      const lessons = curriculum.map(lesson => ({
+    if (lessons && lessons.length > 0) {
+      
+      const updatedLessons = lessons.map(lesson => ({
         ...lesson,
         courseId: savedCourse._id,
       }));
 
       // Save all lessons
-      const savedLessons = await Lesson.insertMany(lessons);
+      const savedLessons = await Lesson.insertMany(updatedLessons);
 
       //save lessons ref in course
       savedCourse.lessons = savedLessons.map(lesson => lesson._id);
@@ -287,7 +291,7 @@ const editCourse = async (req, res) => {
 const deleteCourse = async (req, res) => {
   try {
     console.log("req recieved");
-   console.log(req);
+   console.log(req.query);
    const { courseId, tutorId } = req.query;
 
     const course = await Course.findById(courseId);

@@ -4,17 +4,20 @@ import { X } from 'lucide-react';
 import useCurrencyFormat from '../../../hooks/UseCurrencyFormat';
 import toast from 'react-hot-toast';
 
-function AdvancedInfo({sendData}) {
-    const [description, setDescription] = useState("");
-    const [thumbnail, setThumbnail] = useState(null);
-    const [thumbnailPreview, setThumbnailPreview] = useState(null);
-    const [courseContent, setCourseContent] = useState('');
+function AdvancedInfo({initialData ,sendData}) {
 
+  const [description, setDescription] = useState(initialData?.description || "");
+  const [thumbnail, setThumbnail] = useState(initialData?.thumbnail || null);
+  const [thumbnailPreview, setThumbnailPreview] = useState(initialData?.thumbnail || null);
+  const [courseContent, setCourseContent] = useState(initialData?.courseContent || '');
+  const [progress, setProgress] = useState(0); 
+  console.log("progress",progress);
+  
     const { 
       value: price, 
       displayValue: formattedPrice, 
       handleChange: handlePriceChange 
-  } = useCurrencyFormat();
+  } = useCurrencyFormat(initialData?.price || '');
 
     
     // function to resize image
@@ -108,100 +111,88 @@ function AdvancedInfo({sendData}) {
     const handleFileUploadToCloudinary = async (file, fileType = 'image') => {
       try {
         const cloudName = 'diwjeqkca';
-        const uploadPreset = "unsigned_upload";
+        const uploadPreset = 'unsigned_upload';
         
         const formData = new FormData();
-        formData.append("file", file);
-        formData.append("upload_preset", uploadPreset);
+        formData.append('file', file);
+        formData.append('upload_preset', uploadPreset);
+    
         
-        const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {
-          method: "POST",
-          body: formData,
+        const res = await axios.post(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+         
         });
-        
-        if (!res.ok) {
-          const errorText = await res.text();
-          console.error("Cloudinary upload error:", {
-            status: res.status,
-            statusText: res.statusText,
-            errorDetails: errorText
-          });
-          throw new Error(`Upload failed: ${res.status} ${errorText}`);
-        }
-        
-        const data = await res.json();
-        console.log("Full Cloudinary response:", data);
-        
+    
+        console.log("Cloudinary upload response:", res.data);
+    
         // For PDFs, always use Google Docs viewer
         if (fileType === 'file') {
-          return `https://docs.google.com/viewer?url=${encodeURIComponent(data.secure_url)}&embedded=true`;
+          return `https://docs.google.com/viewer?url=${encodeURIComponent(res.data.secure_url)}&embedded=true`;
         }
-        
-        return data.secure_url;
+    
+        return res.data.secure_url;
       } catch (error) {
         console.error("Detailed Cloudinary upload error:", error);
         alert("File upload failed. Please try again.");
         return null;
       }
     };
+    
 
     const handleImageUpload = async (e, fileType = 'image') => {
-      
       const file = e.target.files[0];
       if (!file) {
-        console.error("No file selected");
+        console.error('No file selected');
         return;
       }
-      
-      // Validation options for different file types
+    
+      // Validation for file type and size (as before)
       const validationOptions = {
         image: {
           maxSize: 10 * 1024 * 1024, // 10MB
-          allowedTypes: ["image/jpeg", "image/png", "image/gif"],
-          maxSizeLabel: "10 MB",
+          allowedTypes: ['image/jpeg', 'image/png', 'image/gif'],
+          maxSizeLabel: '10 MB',
         },
-        // Add more file type configurations as needed
       };
-      
+    
       const options = validationOptions[fileType] || validationOptions.image;
       const { maxSize, allowedTypes, maxSizeLabel } = options;
-      
+    
       // File size check
       if (file.size > maxSize) {
         alert(`File size should be less than ${maxSizeLabel}`);
         e.target.value = null; // Reset file input
         return;
       }
-      
+    
       // File type check
       if (!allowedTypes.includes(file.type)) {
-        alert(`Invalid file type. Allowed types: ${allowedTypes.join(", ")}`);
+        alert(`Invalid file type. Allowed types: ${allowedTypes.join(', ')}`);
         e.target.value = null; // Reset file input
         return;
       }
-      
+    
       try {
-        const resizedFile=await resizeImage(file);
-        const fileUrl = await handleFileUploadToCloudinary(resizedFile, fileType);
-        
+        const resizedFile = await resizeImage(file);
+        const fileUrl = await handleFileUploadToCloudinary(resizedFile, fileType, setProgress);
+    
         if (fileUrl) {
           setThumbnail(fileUrl);
-          
           setThumbnailPreview(fileUrl);
         }
-        
         e.target.value = null;
-
       } catch (error) {
         console.log(error);
-        toast.error("Error uploading thumbnail");
+        toast.error('Error uploading thumbnail');
       }
     };
+    
     
     // Remove thumbnail
     const removeThumbnail = () => {
       setThumbnail(null);
       setThumbnailPreview(null);
+      setProgress(0)
     };
 
     // Prepare form data for parent component
@@ -252,6 +243,7 @@ function AdvancedInfo({sendData}) {
                 >
                   Upload Image
                 </label>
+                
               </div>
             )}
           </div>

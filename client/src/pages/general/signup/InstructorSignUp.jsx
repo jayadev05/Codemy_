@@ -3,7 +3,7 @@ import { X, Upload } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
-import { selectUser } from '../../../store/userSlice';
+import { selectUser } from '../../../store/slices/userSlice';
 
 export function InstructorModal({ onClose }) {
 

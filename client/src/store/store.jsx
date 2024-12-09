@@ -11,9 +11,9 @@ import {
 } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 
-import userSlice from './userSlice';
-import tutorSlice from './tutorSlice';
-import adminSlice from './adminSlice';
+import userSlice from './slices/userSlice';
+import tutorSlice from './slices/tutorSlice';
+import adminSlice from './slices/adminSlice';
 import courseSlice from './slices/courseSlice';
 import lessonsSlice from './slices/lessonsSlice';
 

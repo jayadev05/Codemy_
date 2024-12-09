@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import Pagination from "../../components/utils/Pagination";
 import { useDispatch, useSelector } from "react-redux";
-import { logoutAdmin, selectAdmin } from "../../store/adminSlice";
+import { logoutAdmin, selectAdmin } from "../../store/slices/adminSlice";
 
 const StudentManagement = () => {
   const admin=useSelector(selectAdmin);

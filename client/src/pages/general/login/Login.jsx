@@ -6,10 +6,10 @@ import google_logo from "../../../assets/google_icon.png";
 import { useNavigate } from "react-router";
 import { toast } from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
-import { addUser, selectUser } from "../../../store/userSlice";
+import { addUser, selectUser } from "../../../store/slices/userSlice";
 import { useGoogleLogin } from "@react-oauth/google";
-import { addTutor } from "../../../store/tutorSlice";
-import { addAdmin } from "../../../store/adminSlice";
+import { addTutor } from "../../../store/slices/tutorSlice";
+import { addAdmin } from "../../../store/slices/adminSlice";
 
 const Login = () => {
   const dispatch = useDispatch();
