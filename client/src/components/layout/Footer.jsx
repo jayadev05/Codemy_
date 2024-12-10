@@ -18,7 +18,7 @@ function Footer() {
                 students around the world.
               </h2>
               <div className="flex gap-4">
-                <button className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700">
+                <button className="bg-indigo-700 text-white px-6 py-2 rounded-lg hover:bg-indigo-800">
                   Join The Family
                 </button>
                 <button className="border border-white px-6 py-2 rounded-lg hover:bg-white/10">
@@ -53,8 +53,7 @@ function Footer() {
                   <div className="text-2xl font-bold flex items-center gap-2"><img src={logo} alt="" /> Codemy</div>
                 </div>
                 <p className="text-gray-400 mb-6">
-                  Aliquam rhoncus ligula est, non pulvinar elit venenatis nec.
-                  Donec mattis odio ar
+                  Learn on your schedule. Expert instructores. Course for all levels
                 </p>
                 <div className="flex gap-4">
                   <a href="#" className="hover:text-indigo-500">
@@ -202,7 +201,7 @@ function Footer() {
               <div className="flex items-center gap-4">
                 <a
                   href="#"
-                  className="flex items-center gap-2 bg-black px-4 py-2 rounded-lg hover:bg-gray-900"
+                  className="flex items-center gap-2 bg-orange-600 px-4 py-2 rounded-lg hover:bg-gray-900"
                 >
                   <img src={appleLogo} alt="App Store" className="h-8 me-4" />
                   <div>
@@ -212,7 +211,7 @@ function Footer() {
                 </a>
                 <a
                   href="#"
-                  className="flex items-center gap-2 bg-black px-4 py-2 rounded-lg hover:bg-gray-900"
+                  className="flex items-center gap-2 bg-orange-600 px-4 py-2 rounded-lg hover:bg-gray-900"
                 >
                   <img
                     src={googlePlayStoreLogo}
@@ -224,13 +223,10 @@ function Footer() {
                     <div className="text-sm font-semibold">Play Store</div>
                   </div>
                 </a>
-                <select className="bg-black text-white text-sm rounded-lg px-3 py-2 appearance-none cursor-pointer hover:bg-gray-900">
-                  <option>English</option>
-                  <option>Spanish</option>
-                  <option>French</option>
-                </select>
+                
               </div>
             </div>
+            
           </div>
         </div>
       </footer>

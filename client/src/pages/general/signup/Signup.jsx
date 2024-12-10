@@ -41,6 +41,7 @@ const NAME_REGEX = /^[a-zA-Z\s]{5,50}$/;
 const USERNAME_REGEX = /^(?!.*_{2,})[a-zA-Z0-9_]{5,16}$/;
 
 const validateForm = () => {
+
   const newErrors = {};
 
   // First Name Validation
@@ -88,6 +89,8 @@ const validateForm = () => {
   }
 
   setErrors(newErrors);
+
+
   return Object.keys(newErrors).length === 0;
 };
 
@@ -148,7 +151,10 @@ const validateForm = () => {
   };
 
   const handleSubmit = async (e) => {
+
     e.preventDefault();
+
+
     if (!validateForm()) return;
   
     try {
@@ -243,7 +249,7 @@ const validateForm = () => {
                     placeholder="First name..."
                     className={`w-full rounded-md border ${errors.firstName ? 'border-red-500' : 'border-gray-300'} px-3 py-2 text-sm`}
                   />
-                  {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>}
+                  {errors.firstName  && <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>}
                 </div>
                 
                 <div className="space-y-2">

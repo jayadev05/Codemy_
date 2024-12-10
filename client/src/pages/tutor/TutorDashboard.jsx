@@ -4,7 +4,7 @@ import { BookOpen,  Star, Users, Search, Bell } from 'lucide-react';
 import Sidebar from '../../components/layout/tutor/Sidebar';
 import { useDispatch, useSelector } from 'react-redux';
 import { logoutTutor, selectTutor } from '../../store/slices/tutorSlice';
-import defprofile from '../../assets/user-profile.png'
+import defProfile from '../../assets/user-profile.png'
 import { useNavigate } from 'react-router';
 import { toast } from 'react-hot-toast';
 
@@ -61,7 +61,7 @@ const Dashboard = () => {
             <button className="p-2 rounded-full hover:bg-gray-100">
               <Bell className="h-5 w-5" />
             </button>
-            <img crossOrigin="anonymous" src={tutor.profileImg || defProfile} className="w-12 h-12 rounded-full" alt="" />
+            <img  referrerPolicy="no-referrer" crossOrigin="anonymous" src={tutor.profileImg || defProfile} className="w-12 h-12 rounded-full" alt="" />
 
            
            

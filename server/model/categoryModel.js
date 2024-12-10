@@ -16,7 +16,7 @@ const CategorySchema = new mongoose.Schema(
       }],
       tutors: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'tutor',
+        ref: 'Tutor',
       }],
       isVisible: {
         type: Boolean,
@@ -28,6 +28,6 @@ const CategorySchema = new mongoose.Schema(
 )
 
 
-const Category = mongoose.model("categories",CategorySchema)
+const Category = mongoose.model("Category",CategorySchema);
 
 module.exports= Category

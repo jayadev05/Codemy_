@@ -14,12 +14,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { selectTutor } from "../../store/slices/tutorSlice";
 import defProfile from "../../assets/user-profile.png";
 import { toast } from "react-hot-toast";
-import BasicInfo from "./tabs/BasicInfo";
-import AdvancedInfo from "./tabs/AdvancedInfo";
-import Curriculum from "./tabs/Curriculum";
+import BasicInfo from "../../components/layout/tutor/courseInfoTabs/BasicInfo";
+import AdvancedInfo from "../../components/layout/tutor/courseInfoTabs/AdvancedInfo";
+import Curriculum from "../../components/layout/tutor/courseInfoTabs/Curriculum";
 import CoursePreview from "../../components/layout/tutor/Preview";
 import { addCourse, clearCourse, selectCourse } from "../../store/slices/courseSlice";
-import { addLesson, clearLessons, removeLesson, selectLessons } from "../../store/slices/lessonsSlice";
 import { useNavigate } from "react-router";
 
 export default function AddCourse() {

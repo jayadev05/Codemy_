@@ -20,7 +20,7 @@ function Header({ showModal,isLoggedIn }) {
              Home
             </NavLink>
             <NavLink
-              to="/courses"
+              to="/all-courses"
               className={({ isActive }) =>
                 `text-sm font-medium hover:text-gray-300 cursor-pointer ${
                   isActive ? "border-t-2 border-orange-400 text-white" : ""

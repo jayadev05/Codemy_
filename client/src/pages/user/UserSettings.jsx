@@ -9,6 +9,7 @@ import { toast } from 'react-hot-toast'
 import MainHeader from '../../components/layout/user/MainHeader'
 import UserProfile from '../../components/layout/user/UserDetails'
 import Tabs from '../../components/layout/user/Tabs'
+import SecondaryFooter from '../../components/layout/user/SecondaryFooter'
 
 
 
@@ -356,6 +357,7 @@ const SettingsForm = () => {
           <div className="flex items-center space-x-4 mb-4">
             <div className="relative w-20 h-20">
               <img
+               referrerPolicy="no-referrer"
               crossOrigin='anonymous'
                 src={ previewImg? previewImg:( user?.profileImg || defProfile)}
                 alt="Profile"
@@ -545,24 +547,7 @@ const SettingsForm = () => {
       
       
     </div>
-    <footer className="bg-white mt-auto fixed bottom-0 right-0 left-0 ">
-    <div className=" mx-auto py-4 px-4 sm:px-6 lg:px-8">
-      <div className="flex flex-col sm:flex-row justify-between items-center">
-        <p className="text-sm text-gray-500 mb-2 sm:mb-0">© 2021 - Eduguard. Designed by Templatecookie. All rights reserved.</p>
-        <div className="flex space-x-6">
-          <a href="#" className="text-sm text-gray-500 hover:text-gray-900">
-            FAQs
-          </a>
-          <a href="#" className="text-sm text-gray-500 hover:text-gray-900">
-            Privacy Policy
-          </a>
-          <a href="#" className="text-sm text-gray-500 hover:text-gray-900">
-            Terms & Condition
-          </a>
-        </div>
-      </div>
-    </div>
-  </footer>
+   <SecondaryFooter/>
   </>
   );
 };

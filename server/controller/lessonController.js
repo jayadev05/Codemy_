@@ -1,28 +1,108 @@
-const Lesson=require("../model/lessonModel");
+const Lesson = require("../model/lessonModel");
+const Course=require('../model/courseModel');
+const mongoose = require('mongoose');
 
+const getLessons = async (req, res) => {
 
+  const { courseId } = req.params;
+
+	console.log(courseId)
+
+  if (!courseId) {
+    return res
+      .status(404)
+      .json({ message: "Lesson ID is missing or inappropriate" });
+  }
+
+  try {
+    const lessons = await Lesson.find({ courseId });
+		console.log("lessons in get lessons",lessons)
+    if (!lessons) {
+      return res.status(404).json({ message: "Lesson not found" });
+    }
+    return res.status(200).json(lessons);
+
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ message: "An error occurred while fetching the lesson" });
+  }
+};
 
 const updateLesson = async (req, res) => {
 	const { ...updatedData } = req.body;
-	const { lessonId } = req.params;
-	try {
-		console.log(updatedData, "lesson id", lessonId);
+	const { lessonId } = req.params; 
 
-		const lesson = await Lesson.findOneAndUpdate(
-			{ lessonId },
-			updatedData,
-			{ new: true, upsert: true }
-		);
-		if (lesson) {
-			return res
-				.status(200)
-				.json({ message: "Lecture updated successfully!", lesson });
+	console.log(updatedData,"updateddata")
+	console.log(lessonId,"lessonId")
+
+	try {
+		const lesson = await Lesson.findByIdAndUpdate(lessonId, updatedData, {
+			new: true,
+		});
+		console.log(lesson,"lesson")
+
+		if (!lesson) {
+			return res.status(404).json({ message: "Lesson not found" });
 		}
+
+		return res.status(200).json({ 
+			message: "Lesson updated successfully!", 
+			lesson 
+		});
+
 	} catch (error) {
-		console.log("Lecture Updating Error: ", error);
+		console.error("Lesson Updating Error: ", error);
+		return res.status(500).json({ 
+			message: "Error updating lesson", 
+			error: error.message 
+		});
 	}
+};
+
+const deleteLesson = async (req, res) => {
+  try {
+    const { courseId, lessonId } = req.query;
+    
+    // Ensure IDs are converted to proper MongoDB ObjectId
+    const courseObjectId = new mongoose.Types.ObjectId(courseId);
+    const lessonObjectId = new mongoose.Types.ObjectId(lessonId);
+
+    console.log("courseId", courseId);
+    console.log("lessonId", lessonId);
+
+    // Find the lesson by ID
+    const lesson = await Lesson.findById(lessonObjectId);
+    if (!lesson) {
+      return res.status(404).json({ message: "Lesson not found" });
+    }
+
+    console.log("lesson", lesson);
+
+    // Check if the lesson belongs to the course
+    if (lesson.courseId.toString() !== courseObjectId.toString()) {
+      return res
+        .status(403)
+        .json({ message: "Unauthorized to delete this lesson" });
+    }
+
+    // Delete the lesson
+    await Lesson.findByIdAndDelete(lessonObjectId);
+
+    // Remove the lesson ID from the course's lessons array
+    await Course.findByIdAndUpdate(courseObjectId, {
+      $pull: { lessons: lessonObjectId },
+    });
+
+    res.status(200).json({ message: "Lesson deleted successfully" });
+  } catch (error) {
+    console.error("Error in deleteLesson:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
 };
 
 
 
-module.exports={updateLesson};
+
+module.exports = { updateLesson ,getLessons,deleteLesson};

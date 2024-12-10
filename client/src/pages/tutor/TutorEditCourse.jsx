@@ -14,6 +14,7 @@ import defProfile from "../../assets/user-profile.png";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router";
+import LessonEditModal from "../../components/layout/tutor/LessonEditModal";
 
 function TutorEditCourse() {
   const tutor = useSelector(selectTutor);
@@ -39,7 +40,15 @@ function TutorEditCourse() {
     lessons: [],
   });
 
+  const [lessons, setLessons] = useState([]);
+  const [lessonToDelete,setLessontoDelete]=useState('');
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedLesson, setSelectedLesson] = useState(null);
+  const [deleteModalOpen,setDeleteModalOpen]=useState(false);
   const[preview,setPreview]=useState(null);
+
+  console.log("lesson in page",lessons)
+
 
   // Sync Redux course state with local state on component mount
   useEffect(() => {
@@ -49,7 +58,24 @@ function TutorEditCourse() {
     }
   }, [courseFromRedux]);
 
+  useEffect(()=>{
+    fetchLessons()
+  },[]);
 
+
+ const fetchLessons=async()=>{
+  try {
+    
+    const response=await axios.get(`http://localhost:3000/course/get-lessons/${courseFromRedux._id}`);
+  
+    setLessons(response.data);
+   
+
+  } catch (error) {
+    console.log(error);
+  }
+
+ } 
 
   const handleInputChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
@@ -121,43 +147,38 @@ function TutorEditCourse() {
     });
   }
 
-  const handleFileUploadToCloudinary = async (file, fileType = "image") => {
+  const handleFileUploadToCloudinary = async (file, fileType = 'image') => {
     try {
-      const cloudName = "diwjeqkca";
+      const cloudName = 'diwjeqkca';
       const uploadPreset = "unsigned_upload";
-
+      
       const formData = new FormData();
       formData.append("file", file);
       formData.append("upload_preset", uploadPreset);
-
-      const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudName}/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
+      
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/upload`, {
+        method: "POST",
+        body: formData,
+      });
+      
       if (!res.ok) {
         const errorText = await res.text();
         console.error("Cloudinary upload error:", {
           status: res.status,
           statusText: res.statusText,
-          errorDetails: errorText,
+          errorDetails: errorText
         });
         throw new Error(`Upload failed: ${res.status} ${errorText}`);
       }
-
+      
       const data = await res.json();
       console.log("Full Cloudinary response:", data);
-
+      
       // For PDFs, always use Google Docs viewer
-      if (fileType === "file") {
-        return `https://docs.google.com/viewer?url=${encodeURIComponent(
-          data.secure_url
-        )}&embedded=true`;
+      if (fileType === 'file') {
+        return `https://docs.google.com/viewer?url=${encodeURIComponent(data.secure_url)}&embedded=true`;
       }
-
+      
       return data.secure_url;
     } catch (error) {
       console.error("Detailed Cloudinary upload error:", error);
@@ -166,13 +187,14 @@ function TutorEditCourse() {
     }
   };
 
-  const handleThumbnailChange = async (e, fileType = "image") => {
+  const handleThumbnailChange = async (e, fileType = 'image') => {
+    
     const file = e.target.files[0];
     if (!file) {
       console.error("No file selected");
       return;
     }
-
+    
     // Validation options for different file types
     const validationOptions = {
       image: {
@@ -182,34 +204,36 @@ function TutorEditCourse() {
       },
       // Add more file type configurations as needed
     };
-
+    
     const options = validationOptions[fileType] || validationOptions.image;
     const { maxSize, allowedTypes, maxSizeLabel } = options;
-
+    
     // File size check
     if (file.size > maxSize) {
       alert(`File size should be less than ${maxSizeLabel}`);
       e.target.value = null; // Reset file input
       return;
     }
-
+    
     // File type check
     if (!allowedTypes.includes(file.type)) {
       alert(`Invalid file type. Allowed types: ${allowedTypes.join(", ")}`);
       e.target.value = null; // Reset file input
       return;
     }
-
+    
     try {
-      const resizedFile = await resizeImage(file);
+      const resizedFile=await resizeImage(file);
       const fileUrl = await handleFileUploadToCloudinary(resizedFile, fileType);
-
+      
       if (fileUrl) {
-        setCourse((prev) => ({ ...prev, thumbnail: fileUrl }));
+        setCourse(prev=>({...prev,thumbnail:fileUrl}));
+        
         setPreview(fileUrl);
       }
-
+      
       e.target.value = null;
+
     } catch (error) {
       console.log(error);
       toast.error("Error uploading thumbnail");
@@ -248,6 +272,42 @@ function TutorEditCourse() {
     }
   };
 
+  const handleLessonDelete=(id)=>{
+    setDeleteModalOpen(true);
+    setLessontoDelete(id)
+  }
+
+  const confirmLessonDelete=async()=>{
+    try {
+      if(lessonToDelete){
+        
+        const response=await axios.delete(`http://localhost:3000/course/delete-lesson?lessonId=${lessonToDelete}&courseId=${courseFromRedux._id}`)
+
+        setLessons((prevLessons)=>prevLessons.filter((lesson)=>lesson._id!==lessonToDelete));
+        setDeleteModalOpen(false)
+        toast.success('Lesson deleted successfully');
+     
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error(error.response.data.message)
+    }
+  }
+
+  const handleLessonEdit = (lesson) => {
+    setSelectedLesson(lesson);
+    setEditModalOpen(true);
+  };
+
+  const handleLessonUpdate = (updatedLesson) => {
+    // Update the lessons array with the updated lesson
+    setLessons(prevLessons => 
+      prevLessons.map(lesson => 
+        lesson._id === updatedLesson._id ? updatedLesson : lesson
+      )
+    );
+  };
+
   return (
     <>
       <div className="min-h-screen bg-gray-100 flex">
@@ -275,6 +335,7 @@ function TutorEditCourse() {
                 <Bell className="h-5 w-5" />
               </button>
               <img
+               referrerPolicy="no-referrer"
                 crossOrigin="anonymous"
                 src={tutor.profileImg || defProfile}
                 className="w-12 h-12 rounded-full"
@@ -502,24 +563,26 @@ function TutorEditCourse() {
                       Lessons
                     </h3>
                     <div className="mt-2 border-t border-gray-200 pt-4">
-                      {course.lessons.map((lesson, index) => (
+                      {lessons.map((lesson, index) => (
                         <div
                           key={index}
                           className="flex items-center justify-between py-2"
                         >
                           <div className="flex items-center">
                             <span className="text-sm font-medium text-gray-900">
-                              Lesson {index + 1}
+                              Lesson {index + 1} : {lesson.lessonTitle}
                             </span>
                           </div>
                           <div className="flex items-center">
                             <button
+                            onClick={()=>handleLessonEdit(lesson)}
                               type="button"
                               className="text-orange-600 hover:text-orange-800"
                             >
                               <PencilIcon className="h-5 w-5" />
                             </button>
                             <button
+                            onClick={()=>handleLessonDelete(lesson._id)}
                               type="button"
                               className="ml-2 text-red-600 hover:text-red-800"
                             >
@@ -528,6 +591,7 @@ function TutorEditCourse() {
                           </div>
                         </div>
                       ))}
+
                       <button
                         type="button"
                         className="mt-4 flex items-center text-sm font-medium text-orange-600 hover:text-orange-800"
@@ -550,7 +614,39 @@ function TutorEditCourse() {
               </div>
             </div>
           </div>
+
         </main>
+        {deleteModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+            <h2 className="text-xl font-bold mb-4">Confirm Deletion</h2>
+            <p className="mb-4">Are you sure you want to delete the lesson ?</p>
+            <div className="flex justify-end gap-4">
+              <button
+                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                onClick={() => setDeleteModalOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                onClick={confirmLessonDelete}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+       {/* Lesson Edit Modal */}
+       <LessonEditModal
+          isOpen={editModalOpen}
+          onClose={() => setEditModalOpen(false)}
+          lesson={selectedLesson}
+          courseId={courseFromRedux._id}
+          onLessonUpdate={handleLessonUpdate}
+        />
       </div>
     </>
   );

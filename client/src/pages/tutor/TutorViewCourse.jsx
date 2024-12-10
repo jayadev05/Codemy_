@@ -62,6 +62,7 @@ function TutorViewCourse() {
                 <Bell className="h-5 w-5" />
               </button>
               <img
+               referrerPolicy="no-referrer"
                 crossOrigin="anonymous"
                 src={tutor.profileImg || defProfile}
                 className="w-12 h-12 rounded-full"

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Sidebar from '../../components/layout/admin/Sidebar';
+
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import defProfile from "../../assets/user-profile.png";
@@ -15,6 +15,7 @@ import {
 import Pagination from "../../components/utils/Pagination";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutAdmin, selectAdmin } from "../../store/slices/adminSlice";
+import Sidebar from "../../components/layout/admin/sidebar";
 
 const StudentManagement = () => {
   const admin=useSelector(selectAdmin);
@@ -257,7 +258,7 @@ const StudentManagement = () => {
                           <div className="flex items-center">
                             <img
                               crossorigin="anonymous"
-                            
+                             referrerPolicy="no-referrer"
                               src={student.profileImg || defProfile}
                               alt={student.fullName}
                               className="h-10 w-10 rounded-full mr-3 object-cover"
@@ -350,6 +351,7 @@ const StudentManagement = () => {
               {selectedStudent.profileImg && (
                 <div className="flex justify-center mb-4">
                   <img
+                   referrerPolicy="no-referrer"
                   crossOrigin="anonymous"
                     src={selectedStudent.profileImg}
                     alt={`${selectedStudent.fullName}'s profile`}

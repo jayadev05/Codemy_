@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import axios from 'axios';
 import { X } from 'lucide-react';
-import useCurrencyFormat from '../../../hooks/UseCurrencyFormat';
+import useCurrencyFormat from '../../../../hooks/UseCurrencyFormat';
 import toast from 'react-hot-toast';
 
 function AdvancedInfo({initialData ,sendData}) {

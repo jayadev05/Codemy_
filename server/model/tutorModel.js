@@ -49,7 +49,7 @@ const tutorSchema = new mongoose.Schema({
   },
   credentials: [{
     certificate: {
-      type: String, // File path to the certificate
+      type: String, 
       default: ''
     },
     experience: {

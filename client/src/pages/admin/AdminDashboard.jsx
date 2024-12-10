@@ -2,7 +2,7 @@
 
 import { Bell, ChevronDown, Search } from "lucide-react";
 import { useEffect, useState } from "react";
-import Sidebar from "../../components/layout/admin/Sidebar";
+
 import { useDispatch, useSelector } from "react-redux";
 import { logoutAdmin, selectAdmin } from "../../store/slices/adminSlice";
 import { useNavigate } from "react-router";
@@ -10,6 +10,7 @@ import defProfile from "../../assets/user-profile.png";
 import Pagination from "../../components/utils/Pagination";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import Sidebar from "../../components/layout/admin/sidebar";
 
 export default function Dashboard() {
   const [courseFilter, setCourseFilter] = useState("all");
@@ -43,6 +44,7 @@ export default function Dashboard() {
     try {
       
       const response = await axios.get('http://localhost:3000/course/get-courses');
+
       setCourses(response.data.courses);
       
 
@@ -83,6 +85,7 @@ export default function Dashboard() {
 
   const handleToggleList = async (id, isListed) => {
     try {
+      
       const endpoint = isListed ? "unlistCourse" : "listCourse";
       const response = await axios.put(`http://localhost:3000/admin/${endpoint}/${id}`);
   
@@ -103,7 +106,6 @@ export default function Dashboard() {
     }
   };
   
-
   const handleDeleteClick = (id,tutorId) => {
     setDeleteModalOpen(true);
     setCourseToDelete({id:id,tutorId:tutorId});
@@ -132,17 +134,18 @@ const handleDeleteConfirm = async() => {
     
 };
 
-  const filteredCourses =
-    courseFilter === "all"
-      ? courses
-      : courses.filter((course) => course.status === courseFilter);
 
-  const filteredItems = paginateData(filteredCourses);
+
+  const filteredItems = paginateData(courses);
 
   return (
     <div className="flex min-h-screen bg-gray-50 ">
       {/* Sidebar */}
+
+      <div className="sticky top-0 h-screen">
       <Sidebar activeSection="Dashboard" />
+      </div>
+      
 
       {/* Main Content */}
       <main className="flex-1 ">
@@ -204,6 +207,7 @@ const handleDeleteConfirm = async() => {
 
         {/* Dashboard Content */}
         <div className="space-y-6 mt-6 px-12">
+
           {/* Stats Grid */}
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {stats.map((stat, index) => (
@@ -224,7 +228,7 @@ const handleDeleteConfirm = async() => {
           </div>
 
           {/* Courses Table */}
-          <div className="rounded-lg bg-white p-6 shadow lg:min-h-[500px] ">
+          <div className="rounded-lg bg-white p-6 shadow lg:min-h-[400px] ">
             <div className="mb-6 flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <h2 className="text-lg font-bold text-gray-900 ">
@@ -235,9 +239,9 @@ const handleDeleteConfirm = async() => {
                   onChange={(e) => setCourseFilter(e.target.value)}
                   className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm "
                 >
-                  <option value="all">All Courses</option>
-                  <option value="active">Latest</option>
-                  <option value="draft">Top Sellers</option>
+                  <option value="">All Courses</option>
+                  <option value="latest">Latest</option>
+                  <option value="trending">Trending</option>
                 </select>
               </div>
             </div>
@@ -254,30 +258,28 @@ const handleDeleteConfirm = async() => {
                   </tr>
                 </thead>
                
-                <tbody className="divide-y divide-gray-200 ">  
+                <tbody className="divide-y  divide-gray-300 ">  
                 { filteredItems.length===0?<span className="text-orange-400">No Courses to show</span>:
                   filteredItems.map((course) => (
-                    <tr key={course._id} className="text-sm">
+                    <tr key={course._id} className="text-md">
                       <td className="py-4 pl-2">
                         <div className="flex items-center gap-3">
                           <img
                             src={course.thumbnail}
                             alt={course.title}
-                            width={48}
-                            height={36}
-                            className="rounded object-cover"
+                            className="rounded object-cover aspect-video max-w-[120px]"
                           />
-                          <span className="font-medium text-gray-900 ">
+                          <span className="font-medium text-gray-900 w-2/3 ">
                             {course.title}
                           </span>
                         </div>
                       </td>
-                      <td className="py-4 text-gray-600 ">
+                      <td className="py-8 px-2 text-gray-600 ">
                         {course.tutorId.fullName}
                       </td>
-                      <td className="py-4 text-gray-600 ">{course.enrolleeCount}</td>
+                      <td className="py-4 px-3 text-gray-600 ">{course.enrolleeCount}</td>
                       <td className="py-4 text-gray-900 ">₹{course.price.$numberDecimal}</td>
-                      <td className="py-4 text-gray-900">
+                      <td className="py-4 px-2 text-gray-900">
                         ₹{course.enrolleeCount * course.price.$numberDecimal}
                       </td>
 
@@ -304,12 +306,13 @@ const handleDeleteConfirm = async() => {
           </div>
           <Pagination
             className="flex items-center justify-between"
-            totalData={filteredItems.length}
+            totalData={courses.length}
             dataPerPage={coursesPerPage}
             currentPage={currentPage}
             setCurrentPage={handlePageChange}
           />
         </div>
+
       </main>
 
       {deleteModalOpen && (

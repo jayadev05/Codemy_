@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react'
 import { Bell, ChevronLeft, ChevronRight, Plus, Search, X } from 'lucide-react'
 import { toast, Toaster } from 'react-hot-toast'
 import Swal from 'sweetalert2'
-import Sidebar from '../../components/layout/admin/Sidebar'
+
 import { useDispatch, useSelector } from 'react-redux'
 import { logoutAdmin, selectAdmin } from '../../store/slices/adminSlice'
 import axios from 'axios'
 import { useNavigate } from 'react-router'
 import Pagination from '../../components/utils/Pagination'
+import Sidebar from '../../components/layout/admin/sidebar'
 
 export default function CategoryManagement() {
   const admin = useSelector(selectAdmin);

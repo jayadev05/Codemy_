@@ -4,6 +4,8 @@ import Header from '../../components/layout/Header'
 import MainHeader from '../../components/layout/user/MainHeader';
 import UserProfile from '../../components/layout/user/UserDetails';
 import Tabs from '../../components/layout/user/Tabs';
+import SecondaryFooter from '../../components/layout/user/SecondaryFooter';
+import { Heart, Play } from 'lucide-react';
 
 
 
@@ -60,13 +62,11 @@ const Courses = () => {
       image: "/placeholder.svg?height=200&width=300"
     }
   ]
-  
-  
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container px-12 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-semibold">Courses (8)</h3>
+        <h3 className="text-xl font-semibold">Courses ({courses.length})</h3>
         <div className="flex space-x-4">
           <input
             type="text"
@@ -80,14 +80,72 @@ const Courses = () => {
           ))}
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {courses.map((course, index) => (
-          <CourseCard key={index} {...course} />
+          <div
+            key={index}
+            className="flex flex-col overflow-hidden rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out"
+          >
+            <div className="relative aspect-[3/2] w-full">
+              <img
+                src={course.image}
+                alt={`${course.title} thumbnail`}
+                className="h-full w-full object-cover"
+              />
+              <button
+                className="absolute top-2 right-2 p-2 bg-white bg-opacity-70 rounded-full hover:bg-opacity-100 transition-all duration-300"
+                aria-label="Add to wishlist"
+              >
+               
+              </button>
+            </div>
+            <div className="flex flex-col flex-grow p-4">
+              <h3 className="text-lg font-semibold line-clamp-2 text-gray-900 flex-grow">
+                {course.title}
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">
+                {course.description}
+              </p>
+
+              {/* Progress Section */}
+              <div className="mt-3">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-gray-600">
+                    Course Progress
+                  </span>
+                  <span className="text-sm font-medium text-gray-800">
+                    {course.progress}%
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div 
+                    className="bg-orange-600 h-2.5 rounded-full" 
+                    style={{ width: `${course.progress}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* Start/Continue Course Button */}
+              <div className="mt-4">
+                {course.progress === 0 ? (
+                  <button className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition-colors flex items-center justify-center">
+                    <Play className="mr-2 w-5 h-5" /> Start Course
+                  </button>
+                ) : (
+                  <button className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition-colors flex items-center justify-center">
+                    <Play className="mr-2 w-5 h-5" /> Continue Course
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
         ))}
       </div>
     </div>
   )
 }
+
+
 
 
 
@@ -104,24 +162,7 @@ export default function UserDashboard() {
         <Courses />
       
       </main>
-      <footer className="bg-white mt-auto fixed bottom-0 right-0 left-0 ">
-    <div className=" mx-auto py-4 px-4 sm:px-6 lg:px-8">
-      <div className="flex flex-col sm:flex-row justify-between items-center">
-        <p className="text-sm text-gray-500 mb-2 sm:mb-0">© 2021 - Codemy. All rights reserved.</p>
-        <div className="flex space-x-6">
-          <a href="#" className="text-sm text-gray-500 hover:text-gray-900">
-            FAQs
-          </a>
-          <a href="#" className="text-sm text-gray-500 hover:text-gray-900">
-            Privacy Policy
-          </a>
-          <a href="#" className="text-sm text-gray-500 hover:text-gray-900">
-            Terms & Condition
-          </a>
-        </div>
-      </div>
-    </div>
-  </footer>
+      <SecondaryFooter/>
     </div>
   )
 }

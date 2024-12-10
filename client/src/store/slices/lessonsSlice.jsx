@@ -20,7 +20,7 @@ const lessonsSlice = createSlice({
         thumbnail: action.payload.lessonThumbnail,
         video: action.payload.video,
         description: action.payload.description,
-        lectureNotes: action.payload.lessonNotes,
+        lessonNotes: action.payload.lessonNotes,
         duration:action.payload.duration,
         durationUnit:action.payload.durationUnit
       });

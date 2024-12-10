@@ -413,6 +413,7 @@ export default function TutorSettings() {
               <div className="mt-4 flex items-center space-x-4">
               <div className="relative w-20 h-20">
               <img
+               referrerPolicy="no-referrer"
               crossOrigin='anonymous'
                 src={  previewImg?previewImg:( tutor?.profileImg || defProfile)}
                 alt="Profile"

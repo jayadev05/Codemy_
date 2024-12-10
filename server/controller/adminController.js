@@ -541,7 +541,6 @@ const existsCheck = async (req, res) => {
           phoneExists
       });
 
-      // Determine the most appropriate message
       let message = 'No conflicts found';
       if (userNameExists) message = 'Username is already in use';
       else if (phoneExists) message = 'Phone is already in use';
@@ -744,18 +743,18 @@ const deleteCategory = async (req, res) => {
 };
 
 const listCourse = async (req, res) => {
-  const { id } = req.params; // Destructure the ID from req.params
+  const { id } = req.params; 
 
   if (!id) {
     return res.status(400).json({ message: "Course ID is missing or inappropriate" });
   }
 
   try {
-    // Update the course to set `isActive` to true
+   
     const course = await Course.findByIdAndUpdate(id, { isListed: true }, { new: true });
 
     if (!course) {
-      return res.status(404).json({ message: "Course not found" }); // Handle case where course does not exist
+      return res.status(404).json({ message: "Course not found" }); 
     }
 
     res.status(200).json({ message: "Course listed successfully", course });
@@ -767,18 +766,18 @@ const listCourse = async (req, res) => {
 };
 
 const unlistCourse = async (req, res) => {
-  const { id } = req.params; // Destructure the ID from req.params
+  const { id } = req.params; 
   console.log("course id",id);
   if (!id) {
-    return res.status(400).json({ message: "Course ID is missing or inappropriate" });
+    return res.status(400).json({ message: "Course ID is missing or not in proper format" });
   }
 
   try {
-    // Update the course to set `isActive` to true
+    
     const course = await Course.findByIdAndUpdate(id, { isListed: false }, { new: true });
 
     if (!course) {
-      return res.status(404).json({ message: "Course not found" }); // Handle case where course does not exist
+      return res.status(404).json({ message: "Course not found" }); 
     }
 
     res.status(200).json({ message: "Course unlisted successfully", course });

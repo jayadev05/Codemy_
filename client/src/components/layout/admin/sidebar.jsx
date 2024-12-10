@@ -91,6 +91,7 @@ const Sidebar = ({ activeSection }) => {
       <div className="flex flex-col items-center gap-2 p-6">
         <div className="h-14 w-14 overflow-hidden rounded-full bg-gray-800">
           <img
+          referrerPolicy="no-referrer"
           crossOrigin="anonymous"
             src={admin?.profileImg || defProfile}
             alt="Admin avatar"
