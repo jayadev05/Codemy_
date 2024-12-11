@@ -71,22 +71,6 @@ export default function AddCourse() {
   }, [courseData, dispatch]);
 
 
-  const fetchCategories = async () => {
-    try {
-      const response = await axios.get(
-        "http://localhost:3000/admin/get-categories"
-      );
-      setCategories(response.data);
-    } catch (error) {
-      console.log(error);
-      if (error.response) {
-        toast.error(
-          error.response.data.message || "Failed to fetch category data"
-        );
-      }
-    }
-  };
-
   const updateCourseData = (section, newData) => {
     setCourseData(prevData => ({
       ...prevData,
@@ -107,13 +91,15 @@ export default function AddCourse() {
 
 
 const handleCurriculumData = useCallback((dataFromChild) => {
+
   // Ensure we're not updating if the data is the same
   const curriculumArray = Array.isArray(dataFromChild) 
     ? dataFromChild 
     : (dataFromChild?.curriculum || []);
 
-  // Only update if there's a meaningful change
+  
   setCourseData(prevData => {
+
     const curriculumChanged = JSON.stringify(prevData.curriculum) !== JSON.stringify(curriculumArray);
     
     return curriculumChanged 
@@ -140,7 +126,6 @@ const handleCurriculumData = useCallback((dataFromChild) => {
     }
   };
 
-  console.log({basicInfo:courseData.basicInfo,advanceInfo:courseData.advanceInfo,curriculum:courseData.curriculum});
 
   const validateBasicInfo = () => {
     const { title, category, topic, language, difficulty, duration } = courseData.basicInfo;
@@ -153,30 +138,34 @@ const handleCurriculumData = useCallback((dataFromChild) => {
   };
   
   const validateCurriculum = () => {
-    console.group('Curriculum Validation');
-    console.log('Curriculum Raw Data:', courseData.curriculum);
-    
-    // Ensure we convert any object-like array to a true array
-    const curriculumArray = Array.isArray(courseData.curriculum) 
-      ? courseData.curriculum 
+    const curriculumArray = Array.isArray(courseData.curriculum)
+      ? courseData.curriculum
       : Object.values(courseData.curriculum || {});
   
-    console.log('Processed Curriculum Array:', curriculumArray);
-    console.log('Is Array:', Array.isArray(curriculumArray));
-    console.log('Length:', curriculumArray.length);
-    
-    const isValid = curriculumArray.length > 0 && 
-      curriculumArray.some(lesson => 
+    // Check if there are any lessons
+    if (curriculumArray.length === 0) {
+      return false;
+    }
+  
+    // Validate each lesson
+    const isValid = curriculumArray.every(lesson => {
+      return (
+        // Validate lesson title
         lesson.lessonTitle && 
-        lesson.lessonTitle.trim() !== 'Lesson Name'
+        lesson.lessonTitle.trim() !== '' &&
+        lesson.lessonTitle.trim().toLowerCase() !== 'lesson name' &&
+        (lesson.video) &&
+        (lesson.description && lesson.description.trim() !== '')
       );
-    
-    console.log('Is Valid:', isValid);
-    console.groupEnd();
-    
+    });
+  
+    console.log('Curriculum Validation:', {
+      totalLessons: curriculumArray.length,
+      isValid
+    });
+  
     return isValid;
   };
-
   const isCurrentTabComplete = () => {
     switch (activeTab) {
       case 0: 

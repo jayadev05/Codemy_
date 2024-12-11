@@ -127,11 +127,11 @@ const login = async (req, res) => {
     const userId = accountToAuthenticate._id;
     const userType = admin ? "admin" : (user ? "user" : "tutor");
 
-    
+    const payload={id:userId,type:userType};
 
     try {
-      genarateAccessToken(res, userId, userType);
-      genarateRefreshToken(res,userId, userType);
+      genarateAccessToken(res, payload);
+      genarateRefreshToken(res,payload);
 
         
 
@@ -230,10 +230,11 @@ const googleLogin = async (req, res, next) => {
         await currentUser.save();
       }
      
+      const payload={id:currentUser._id,type:accType}
   
       // Generate tokens
-      genarateAccessToken(res, currentUser._id,accType);
-      genarateRefreshToken(res, currentUser._id,accType);
+      genarateAccessToken(res, payload);
+      genarateRefreshToken(res, payload);
   
 
       const responseData = {
@@ -337,7 +338,7 @@ const googleLogin = async (req, res, next) => {
 const updateUser = async (req, res) => {
     try {
       console.log(req.body);
-        const { email, firstName, lastName, phone, profileImg } = req.body;
+        const { email, firstName, userName,lastName, phone, profileImg } = req.body;
       const fullName=`${firstName} ${lastName}`
 
         const user = await User.findOne({email});
@@ -350,6 +351,7 @@ const updateUser = async (req, res) => {
             ...(fullName && { fullName }), 
             ...(email && { email }), 
             ...(phone && { phone }),
+            ...(userName && { userName }),
             ...(profileImg && { profileImg })
         };
         

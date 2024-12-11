@@ -1,20 +1,21 @@
 const jwt = require("jsonwebtoken");
 
-function genarateRefreshToken(res, userId, userType) {
+function genarateRefreshToken(res, payload) {
   try {
-      const payload = { id: userId, type: userType };
-
+   
       const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
           expiresIn: "14d",
       });
 
+    console.log("refresh token:",refreshToken)
       
       res.cookie("refreshToken", refreshToken, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
-          sameSite: 'strict',
+          sameSite: 'lax',
           maxAge: 14 * 24 * 60 * 60 * 1000, // 14 days
       });
+
 
      
 

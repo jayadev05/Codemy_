@@ -252,6 +252,7 @@ const Curriculum = ({ initialData, sendData }) => {
       image: { selectedThumbnail: null, lessonThumbnail: null },
       file: { lessonNotes: null },
       description: { description: null },
+      duration:{duration:null}
     };
 
     updateLesson(lessonId, resetMap[contentType] || {});
@@ -554,6 +555,7 @@ const Curriculum = ({ initialData, sendData }) => {
           <div className="bg-white p-6 rounded-lg shadow-xl w-96">
             <h2 className="text-xl font-bold mb-4">Add Content</h2>
             <div className="space-y-2">
+             
               <div className="flex items-center justify-between">
                 <button
                   type="button"
@@ -579,6 +581,42 @@ const Curriculum = ({ initialData, sendData }) => {
                     type="button"
                     onClick={() =>
                       handleRemoveContent(activeModal.lessonId, "video")
+                    }
+                    className="ml-2 text-red-500 hover:text-red-700"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setActiveModal({
+                      type: "duration",
+                      lessonId: activeModal.lessonId,
+                    })
+                  }
+                  className={`w-full p-2 text-left hover:bg-gray-100 rounded ${
+                    lessons.find((l) => l.id === activeModal.lessonId)?.duration
+                      ? "opacity-50 cursor-not-allowed"
+                      : ""
+                  }`}
+                  disabled={
+                    !!lessons.find((l) => l.id === activeModal.lessonId)
+                      ?.duration
+                  }
+                >
+                  Add Lesson Duration
+                </button>
+                
+                {lessons.find((l) => l.id === activeModal.lessonId)
+                  ?.duration && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleRemoveContent(activeModal.lessonId, "duration")
                     }
                     className="ml-2 text-red-500 hover:text-red-700"
                   >
@@ -998,6 +1036,83 @@ const Curriculum = ({ initialData, sendData }) => {
               >
                 Save Description
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeModal.type === "duration" && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-96">
+            <h2 className="text-xl font-bold mb-4">Add Lesson Duration</h2>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="duration" className="block mb-2">
+                  Duration
+                </label>
+                <input
+                  type="number"
+                  id="duration"
+                  value={
+                    lessons.find((l) => l.id === activeModal.lessonId)
+                      ?.duration || ""
+                  }
+                  onChange={(e) => {
+                    const updatedLessons = lessons.map((lesson) =>
+                      lesson.id === activeModal.lessonId
+                        ? { ...lesson, duration: Number(e.target.value) }
+                        : lesson
+                    );
+                    setLessons(updatedLessons);
+                  }}
+                  min="0"
+                  className="w-full p-2 border rounded"
+                  placeholder="Enter duration"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="durationUnit" className="block mb-2">
+                  Duration Unit
+                </label>
+                <select
+                  id="durationUnit"
+                  value={
+                    lessons.find((l) => l.id === activeModal.lessonId)
+                      ?.durationUnit || "minute"
+                  }
+                  onChange={(e) => {
+                    const updatedLessons = lessons.map((lesson) =>
+                      lesson.id === activeModal.lessonId
+                        ? { ...lesson, durationUnit: e.target.value }
+                        : lesson
+                    );
+                    setLessons(updatedLessons);
+                  }}
+                  className="w-full p-2 border rounded"
+                >
+                  <option value="minute">Minutes</option>
+                  <option value="hour">Hours</option>
+                
+                </select>
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveModal({ type: null, lessonId: null })}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveModal({ type: null, lessonId: null })}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                >
+                  Save
+                </button>
+              </div>
             </div>
           </div>
         </div>

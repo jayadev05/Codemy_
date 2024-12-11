@@ -30,6 +30,84 @@ const getLessons = async (req, res) => {
   }
 };
 
+const addLesson=async(req,res)=>{
+  try {
+
+    const { 
+      lessonTitle, 
+      description, 
+      video, 
+      lessonNotes, 
+      lessonThumbnail, 
+      duration, 
+      durationUnit,
+      tutorId ,
+      courseId
+    } = req.body;
+
+    console.log(req.body)
+
+    
+    if (!courseId || !tutorId) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Course ID and tutor ID are required' 
+      });
+    }
+
+  
+    const newLesson = new Lesson({
+      lessonTitle,
+      description: description || '',
+      video: video || '',
+      lessonNotes: lessonNotes || null,
+      lessonThumbnail: lessonThumbnail || null,
+      duration: duration || 0,
+      durationUnit: durationUnit || 'minute',
+      tutorId,
+      courseId
+    });
+
+  
+    const savedLesson = await newLesson.save();
+
+    const updatedCourse = await Course.findByIdAndUpdate(
+      courseId,
+      { $push: { lessons: savedLesson._id } },
+      { new: true }
+    );
+
+   
+    res.status(201).json({
+      success: true,
+      message: 'Lesson added successfully',
+      lesson: savedLesson,
+      course:updatedCourse
+    });
+
+  } catch (error) {
+  
+    console.error('Error adding lesson:', error);
+    
+   s
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation Error',
+        errors: Object.values(error.errors).map(err => err.message)
+      });
+    }
+
+  
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error.message
+    });
+  }
+
+}
+
 const updateLesson = async (req, res) => {
 	const { ...updatedData } = req.body;
 	const { lessonId } = req.params; 
@@ -105,4 +183,4 @@ const deleteLesson = async (req, res) => {
 
 
 
-module.exports = { updateLesson ,getLessons,deleteLesson};
+module.exports = { updateLesson ,getLessons,deleteLesson,addLesson};

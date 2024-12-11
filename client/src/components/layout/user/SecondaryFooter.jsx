@@ -3,7 +3,7 @@ import logo from '../../../assets/logo_cap.png'
 
 function SecondaryFooter() {
   return (
-    <footer className="bg-gray-900 text-white">
+    <footer id='footer' className="bg-gray-900 text-white">
         <div className="w-full px-4 sm:px-6 lg:px-8 py-10 ">
           <div className="grid ms-24 grid-cols-1 md:grid-cols-4 gap-24">
             <div>

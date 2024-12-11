@@ -3,39 +3,55 @@ const Tutor = require("../model/tutorModel");
 const Lesson = require("../model/lessonModel");
 const Course = require("../model/courseModel");
 const Category = require("../model/categoryModel");
+const Wishlist = require('../model/wishlistModel');
 const mongoose = require("mongoose");
 
+
 const getBasicCourseInfo = async (req, res) => {
-  const { search, sortBy, filter } = req.query;
-
-  console.log("search", search, "sort", sortBy);
-
-  let query = { isListed: true };
-
-  if (search) {
-    query.title = { $regex: search, $options: "i" };
-  }
+  const { search, sortBy, categories, ratings, levels, priceRange, page, limit } = req.query;
+  
 
   try {
+    let query = { isListed: true };
+    
+    // Search filter
+    if (search) {
+      query.title = { $regex: search, $options: "i" };
+    }
+    
+   
+    
+    // Calculate skip value for pagination
+    const skip = (page - 1) * limit;
+    
+    // Get total count for pagination
+    const totalCourses = await Course.countDocuments(query);
+    
+    // Fetch courses with pagination
     let courses = await Course.find(query)
       .populate("tutorId", "fullName profileImg")
       .populate("categoryId", "title")
-      .select(
-        "title description price topic courseContent categoryId tutorId createdAt language level thumbnail isListed ratings averageRating duration durationUnit enrolleeCount"
-      );
-
+      .select("title description price topic courseContent categoryId tutorId createdAt language level thumbnail isListed ratings averageRating duration durationUnit enrolleeCount")
+      .skip(skip)
+      .limit(limit);
+    
     // Apply sorting
     if (sortBy === "latest") {
-      courses = courses.sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-      );
+      courses = courses.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     } else if (sortBy === "trending") {
       courses = courses.sort((a, b) => b.enrolleeCount - a.enrolleeCount);
     } else if (sortBy === "popular") {
       courses = courses.sort((a, b) => b.averageRating - a.averageRating);
     }
-
-    res.status(200).json({ courses });
+    
+    // Calculate if there are more courses
+    const hasMore = skip + courses.length < totalCourses;
+    
+    res.status(200).json({
+      courses,
+      hasMore,    // This is the key addition
+      total: totalCourses
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Failed to fetch courses" });
@@ -44,10 +60,18 @@ const getBasicCourseInfo = async (req, res) => {
 
 const getCourses = async (req, res) => {
   try {
-    // Fetch courses and populate tutor name
-    const courses = await Course.find()
+
+    const {sortBy}=req.query;
+
+
+    let courses = await Course.find()
       .populate("tutorId", "fullName profileImg")
       .populate("categoryId", "title");
+
+      if(sortBy){
+        if(sortBy==='trending') courses=courses.sort((a,b)=>b.enrolleeCount-a.enrolleeCount);
+        if(sortBy==='latest') courses=courses.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+      }
 
     res.status(200).json({ courses });
   } catch (error) {
@@ -294,6 +318,106 @@ const deleteCourse = async (req, res) => {
   }
 };
 
+const addToWishlist = async (req, res) => {
+  try {
+    const { userId, courseId } = req.body;
+
+    // Validate input
+    if (!userId || !courseId) {
+      return res.status(400).json({ message: "UserId and CourseId are required" });
+    }
+
+    let wishlist = await Wishlist.findOne({ userId });
+
+    if (!wishlist) {
+      // Create a new wishlist if it doesn't exist
+      wishlist = new Wishlist({
+        userId,
+        courses: [{ courseId, addedAt: new Date() }],
+      });
+    } else {
+      // Check if the course is already in the wishlist
+      const isAlreadyInWishlist = wishlist.courses.some(
+        (course) => course.courseId.toString() === courseId
+      );
+
+      if (isAlreadyInWishlist) {
+        return res.status(400).json({ message: "Course already in wishlist" });
+      }
+
+      // Add the new course
+      wishlist.courses.push({ courseId, addedAt: new Date() });
+    }
+
+    // Save the wishlist
+    await wishlist.save();
+    res.status(200).json({ message: "Added to wishlist successfully" });
+  } catch (error) {
+    console.error("Error adding to wishlist:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const getWishlist = async (req, res) => {
+  
+  try {
+    const { userId } = req.query;
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    // Find the wishlist for the given user and populate course details
+    const wishlist = await Wishlist.findOne({ userId })
+      .populate({
+        path: "courses.courseId",
+        select: "title description price thumbnail averageRating",
+      });
+
+    if (!wishlist) {
+      return res.status(404).json({ message: "Wishlist not found" });
+    }
+
+    res.status(200).json({ wishlist: wishlist.courses });
+  } catch (error) {
+    console.error("Error fetching wishlist:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
+const removeFromWishlist = async (req,res ) => {
+  try {
+    
+    const{userId,courseId}=req.query;
+
+    const wishlist = await Wishlist.findOne({ userId });
+
+    if (!wishlist) {
+      return res.status(404).json({ message: "wishlist not found" });
+    }
+
+    const updatedCourses = wishlist.courses.filter(
+      (course) => course.courseId.toString() !== courseId
+    );
+
+    if (updatedCourses.length === wishlist.courses.length) {
+      return res.status(404).json({ message: "Course not found in wishlist" });
+    }
+
+    wishlist.courses = updatedCourses;
+    await wishlist.save();
+
+    res.status(200).json({message:"Removed from wishlist successfully"});
+
+  } catch (error) {
+    console.error("Error removing from wishlist:", error);
+   res.status(500).json({message:"Failed to remove item form wishlist"})
+  }
+};
+
+
+
 module.exports = {
   getBasicCourseInfo,
   getCourses,
@@ -303,4 +427,7 @@ module.exports = {
   deleteCourse,
   viewCourse,
   editCourse,
+  addToWishlist,
+  removeFromWishlist,
+  getWishlist
 };

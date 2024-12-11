@@ -24,6 +24,9 @@ export default function CategoryManagement() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [newCategory, setNewCategory] = useState({ title: '', description: '' })
   const [editCategory, setEditCategory] = useState({ _id: '', title: '', description: '' })
+
+
+
   const itemsPerPage = 5
 
   useEffect(() => {
@@ -65,8 +68,26 @@ export default function CategoryManagement() {
     setIsEditModalOpen(true)
   }
 
+  const validateInfo=()=>{
+    const newErrors={};
+
+    if(!editCategory.title.trim().length<8){
+      newErrors.title="Please enter a title of atleast 8 characters"
+    }
+
+    setError(newErrors);
+
+    return Object.keys(newErrors).length===0;
+  }
+
   const handleSaveEdit = async () => {
-    console.log("editCategory",editCategory);
+
+ 
+    
+
+   if(editCategory.title && editCategory.description){
+
+
     try {
       // Assuming you have an API endpoint for updating categories
       await axios.put(`http://localhost:3000/admin/update-category/${editCategory._id}`, editCategory);
@@ -81,6 +102,10 @@ export default function CategoryManagement() {
       console.error('Error updating category:', error)
       toast.error('Failed to update category')
     }
+  }
+  else {
+    toast.error("Please fill in all fields")
+  }
   }
 
   const onLogout=()=>{
@@ -133,6 +158,9 @@ export default function CategoryManagement() {
   };
 
   const handleAddCategory = async () => {
+
+    
+
     if (newCategory.title && newCategory.description) {
       try {
         const response = await axios.post('http://localhost:3000/admin/add-category', newCategory);
@@ -288,13 +316,18 @@ export default function CategoryManagement() {
               value={newCategory.title}
               onChange={(e) => setNewCategory({ ...newCategory, title: e.target.value })}
               className="w-full mb-4 px-4 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              required
+              minLength={6}
             />
+            
             <textarea
               placeholder="Category Description"
               value={newCategory.description}
               onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
               className="w-full mb-4 px-4 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               rows={4}
+              required
+              minLength={12}
             />
             <div className="flex justify-end">
               <button
@@ -324,7 +357,12 @@ export default function CategoryManagement() {
               value={editCategory.title}
               onChange={(e) => setEditCategory({ ...editCategory, title: e.target.value })}
               className="w-full mb-4 px-4 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              required
+              minLength={6}
             />
+
+            
+            
             <textarea
               placeholder="Category Description"
               value={editCategory.description}

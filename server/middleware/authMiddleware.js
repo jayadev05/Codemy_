@@ -9,6 +9,8 @@ const verifyUser = async (req, res, next) => {
     const accessToken = req.cookies.accessToken;
     const refreshToken = req.cookies.refreshToken;
 
+
+
     console.log("Received Tokens:", {
         accessToken: accessToken ,
         refreshToken: refreshToken 
@@ -22,7 +24,7 @@ const verifyUser = async (req, res, next) => {
                 }
                 return res.status(401).json({ message: "User not authorized, invalid access token" });
             }
-            req.userDetails = decoded; 
+            req.user = decoded; 
             next();
         });
     } else {
@@ -55,7 +57,7 @@ const handleRefreshToken = async (refreshToken, req, res, next) => {
             maxAge: 10 * 60 * 1000, 
         });
 
-        req.userDetails = decoded; 
+        req.user = decoded; 
         next();
     } catch (err) {
         console.error("Refresh token verification failed:", err);

@@ -1,21 +1,22 @@
 const jwt = require("jsonwebtoken");
 
-function genarateAccessToken(res, userId, userType) {
+function genarateAccessToken(res, payload) {
   try {
-      const payload = { id: userId, type: userType };
-
+      
       const token = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
           expiresIn: "10m",
       });
 
-      console.log(token )
+      console.log("access token:",token )
       
       res.cookie("accessToken", token, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
-          sameSite: 'strict',
+          sameSite: 'lax',
           maxAge: 10 * 60 * 1000, // 10 minutes
       });
+
+      
 
      
 

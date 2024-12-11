@@ -16,6 +16,7 @@ import tutorSlice from './slices/tutorSlice';
 import adminSlice from './slices/adminSlice';
 import courseSlice from './slices/courseSlice';
 import lessonsSlice from './slices/lessonsSlice';
+import wishlistSlice from './slices/wishlistSlice'
 
 // Create persist configs for each reducer
 const userPersistConfig = {
@@ -44,6 +45,10 @@ const lessonsPersistConfig = {
   key: 'lessons',
   storage,
 };
+const wishlistPersistConfig = {
+  key: 'wishlist',
+  storage,
+};
 
 // Wrap reducers with persistReducer
 const persistedUserReducer = persistReducer(userPersistConfig, userSlice);
@@ -51,6 +56,7 @@ const persistedTutorReducer = persistReducer(tutorPersistConfig, tutorSlice);
 const persistedAdminReducer = persistReducer(adminPersistConfig, adminSlice);
 const persistedCourseReducer = persistReducer(coursePersistConfig, courseSlice);
 const persistedLessonsReducer = persistReducer(lessonsPersistConfig, lessonsSlice);
+const persistedWishlistReducer = persistReducer(wishlistPersistConfig, wishlistSlice);
 
 const store = configureStore({
   reducer: {
@@ -59,6 +65,7 @@ const store = configureStore({
     admin: persistedAdminReducer,
     course: persistedCourseReducer,
     lessons: persistedLessonsReducer,
+    wishlist:persistedWishlistReducer
   },
   middleware: (getDefaultMiddleware) => 
     getDefaultMiddleware({

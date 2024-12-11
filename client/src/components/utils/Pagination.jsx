@@ -39,7 +39,7 @@ function Pagination({ totalData, dataPerPage, currentPage, setCurrentPage, class
    const pageNumbers = generatePageNumbers();
 
    return (
-     <div className={`flex items-center gap-2 ${className}`}>
+     <div className={`flex items-center gap-5 ${className}`}>
        <button 
          disabled={currentPage === 1} 
          className='px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50' 

@@ -43,6 +43,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-100 flex">
       {/* Sidebar */}
+      
    <Sidebar activeSection={"Dashboard"}/>
 
       {/* Main Content */}

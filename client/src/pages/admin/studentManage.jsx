@@ -16,10 +16,12 @@ import Pagination from "../../components/utils/Pagination";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutAdmin, selectAdmin } from "../../store/slices/adminSlice";
 import Sidebar from "../../components/layout/admin/sidebar";
+import { useNavigate } from "react-router";
 
 const StudentManagement = () => {
   const admin=useSelector(selectAdmin);
   const dispatch=useDispatch()
+  const navigate=useNavigate()
 
   const [searchTerm, setSearchTerm] = useState("");
   const [students, setStudents] = useState([]);
@@ -104,7 +106,7 @@ const StudentManagement = () => {
         ? `http://localhost:3000/admin/listuser/${id}` 
         : `http://localhost:3000/admin/unlistuser/${id}`;
   
-      const result = await axios.put(endpoint);
+      const result = await axios.put(endpoint,{withCredentials:true});
       
       // Update the student state to reflect the new status
 
@@ -171,7 +173,7 @@ const StudentManagement = () => {
                 />
 
                 {/* Dropdown menu */}
-                <div className="absolute right-0  w-48 bg-white rounded-md shadow-lg py-1 border hidden group-hover:block">
+                <div className="absolute right-0 z-10  w-48 bg-white rounded-md shadow-lg py-1 border hidden group-hover:block">
                   <div className="px-4 py-2 border-b">
                     <p className="text-sm font-medium text-gray-900">
                       {admin?.userName}
@@ -182,13 +184,13 @@ const StudentManagement = () => {
                   </div>
 
                   <a
-                    href="/user/profile"
+                  
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     Profile
                   </a>
                   <a
-                    href="/user/settings"
+                
                     className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     Settings
@@ -327,7 +329,10 @@ const StudentManagement = () => {
 
               </div>
             </div>
+            <div className="flex justify-center">
             <Pagination className="flex items-center justify-between mt-3" totalData={filteredStudents.length} dataPerPage={dataPerPage} currentPage={currentPage} setCurrentPage={handlePageChange}/>
+
+            </div>
 
           </div>
         </main>

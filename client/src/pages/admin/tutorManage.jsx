@@ -776,6 +776,7 @@ const TutorManagement = () => {
                 </div>
               )}
             </div>
+            <div className="flex justify-center">
             <Pagination
               className="flex items-center justify-between mt-3"
               totalData={filteredItems.length}
@@ -783,6 +784,8 @@ const TutorManagement = () => {
               currentPage={currentPage}
               setCurrentPage={handlePageChange}
             />
+            </div>
+           
           </div>
         </main>
       </div>

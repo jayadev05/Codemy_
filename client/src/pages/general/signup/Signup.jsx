@@ -133,10 +133,10 @@ const validateForm = () => {
         return;
       }
       
-
       const response = await axios.post('http://localhost:3000/user/sendotp', {
         email: formData.email
       });
+
       
       if (response.data.success) {
         setOtpSent(true);

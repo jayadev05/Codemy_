@@ -28,6 +28,7 @@ import TutorCourses from "./pages/tutor/TutorCourses";
 import TutorViewCourse from "./pages/tutor/TutorViewCourse";
 import TutorEditCourse from "./pages/tutor/TutorEditCourse";
 import CourseListing from "./pages/user/AllCourses";
+import WishlistPage from "./pages/user/Wishlist";
 
 
 
@@ -63,6 +64,7 @@ function App() {
               {/* //user routes */}
               <Route path="/user/profile" element={<ProtectedRoute userType="user"><UserProfile /></ProtectedRoute>} />
               <Route path="/user/settings" element={<ProtectedRoute userType="user"><SettingsPage /></ProtectedRoute>} />
+              <Route path="/user/wishlist" element={<ProtectedRoute userType="user"><WishlistPage /></ProtectedRoute>} />
               <Route path="/all-courses" element={<CourseListing />}></Route>
 
               {/* tutor routes */}

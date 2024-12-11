@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 import axios from "axios";
 import { useNavigate } from "react-router";
 import { addCourse } from "../../store/slices/courseSlice";
+import Pagination from "../../components/utils/Pagination";
 
 export default function TutorCourses() {
   const tutor = useSelector(selectTutor);
@@ -20,6 +21,10 @@ export default function TutorCourses() {
   const [courseToDelete, setCourseToDelete] = useState(null);
   const [sortBy, setSortBy] = useState('latest');
   const tutorId = tutor._id;
+
+
+  const [currentPage,setCurrentPage]=useState(1);
+  const coursesPerPage=4;
 
   const formatCurrency = (num) => {
     const cleanedNum = num.toString().replace(/[^\d]/g, "");
@@ -111,9 +116,25 @@ export default function TutorCourses() {
     setSortBy(e.target.value);
   } 
 
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const paginateData = (data) => {
+    const startIndex = currentPage * coursesPerPage - coursesPerPage;
+    const endIndex = startIndex + coursesPerPage;
+    return data.slice(startIndex, endIndex);
+  };
+
+  const filteredItems=paginateData(courses)
+
   return (
     <div className="min-h-screen bg-gray-100 flex">
-      <Sidebar activeSection={"My Courses"} />
+
+<div className="sticky top-0 h-screen">
+<Sidebar activeSection={"My Courses"} />
+</div>
+    
       <main className="w-full">
         <header className="flex items-center justify-between border-b bg-white px-6 py-4 ">
           <div>
@@ -163,8 +184,8 @@ export default function TutorCourses() {
           </select>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mx-24">
-          {courses.map((course) => (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mx-24 mb-12">
+          {filteredItems.map((course) => (
             <div
               key={course._id}
               className="overflow-hidden rounded-lg bg-white shadow"
@@ -249,14 +270,30 @@ export default function TutorCourses() {
                             <Trash className="mr-3 h-5 w-5" /> Delete Course
                           </button>
                         </div>
+                   
+            
                       </div>
                     )}
+
+
                   </div>
                 </div>
               </div>
             </div>
           ))}
         </div>
+          <div className="flex justify-center">
+          <Pagination
+            className="flex items-center "
+            totalData={courses.length}
+            dataPerPage={coursesPerPage}
+            currentPage={currentPage}
+            setCurrentPage={handlePageChange}
+          />
+          </div>
+        
+        
+
       </main>
 
       {deleteModal && (

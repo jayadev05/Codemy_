@@ -13,13 +13,13 @@ import { toast } from "react-hot-toast";
 import Sidebar from "../../components/layout/admin/sidebar";
 
 export default function Dashboard() {
-  const [courseFilter, setCourseFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [coursesPerPage] = useState(3);
 
   const [courses, setCourses] = useState([]);
   const [courseToDelete, setCourseToDelete] = useState({})
   const [deleteModalOpen, setDeleteModalOpen] = useState()
+  const [sortBy,setSortBy]=useState('all');
 
   const admin = useSelector(selectAdmin);
 
@@ -36,14 +36,14 @@ export default function Dashboard() {
 
   useEffect(()=>{
     fetchCourses();
-  },[])
+  },[sortBy])
 
   console.log("courses",courses);
 
   const fetchCourses=async()=>{
     try {
       
-      const response = await axios.get('http://localhost:3000/course/get-courses');
+      const response = await axios.get('http://localhost:3000/course/get-courses',{params:{sortBy}});
 
       setCourses(response.data.courses);
       
@@ -235,11 +235,11 @@ const handleDeleteConfirm = async() => {
                   Active Courses
                 </h2>
                 <select
-                  value={courseFilter}
-                  onChange={(e) => setCourseFilter(e.target.value)}
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
                   className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm "
                 >
-                  <option value="">All Courses</option>
+                  <option value="all">All Courses</option>
                   <option value="latest">Latest</option>
                   <option value="trending">Trending</option>
                 </select>
@@ -304,6 +304,7 @@ const handleDeleteConfirm = async() => {
               </table>
             </div>
           </div>
+          <div className="flex justify-center">
           <Pagination
             className="flex items-center justify-between"
             totalData={courses.length}
@@ -311,6 +312,8 @@ const handleDeleteConfirm = async() => {
             currentPage={currentPage}
             setCurrentPage={handlePageChange}
           />
+          </div>
+         
         </div>
 
       </main>
