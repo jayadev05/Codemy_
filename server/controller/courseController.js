@@ -44,24 +44,21 @@ const getBasicCourseInfo = async (req, res) => {
       }
   }
 
+
   // Course Listing
   try {
-      // Validate and set pagination
+    
       const pageNumber = Number(page) || 1;
       const limitNumber = Number(limit) || 10;
       const skip = (pageNumber - 1) * limitNumber;
 
-      // Build query
+    
       let query = { isListed: true };
 
-      // Search filter
       if (search) {
           query.title = { $regex: search, $options: "i" };
       }
 
-      
-
-      // Determine sorting
       let sortOptions = { createdAt: -1 }; // default to latest
       if (sortBy === "trending") {
           sortOptions = { enrolleeCount: -1 };
@@ -72,7 +69,7 @@ const getBasicCourseInfo = async (req, res) => {
       // Get total count for pagination
       const totalCourses = await Course.countDocuments(query);
 
-      // Fetch courses with pagination and sorting
+      // 
       const courses = await Course.find(query)
           .populate("tutorId", "fullName profileImg")
           .populate("categoryId", "title")
@@ -128,6 +125,8 @@ const getCoursesByTutorId = async (req, res) => {
   try {
     const { tutorId } = req.params;
     const { sortBy } = req.query;
+
+    if(!tutorId) return res.status(400).json({message:"Tutorid is missing / innapropriate"});
 
     const query = {};
 
@@ -427,7 +426,6 @@ const getWishlist = async (req, res) => {
   }
 };
 
-
 const removeFromWishlist = async (req,res ) => {
   try {
     
@@ -457,6 +455,8 @@ const removeFromWishlist = async (req,res ) => {
    res.status(500).json({message:"Failed to remove item form wishlist"})
   }
 };
+
+
 
 
 

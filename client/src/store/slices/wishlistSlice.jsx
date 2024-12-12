@@ -4,11 +4,10 @@ const wishlistSlice = createSlice({
   name: 'wishlist',
   initialState: {
     items: [],
-    loading: false,
-    error: null,
   },
   reducers: {
     addToWishlist: (state, action) => {
+
       // Ensure no duplicates
       const existingItem = state.items.find(
         item => item.courseId._id === action.payload
@@ -16,13 +15,16 @@ const wishlistSlice = createSlice({
       if (!existingItem) {
         state.items.push(action.payload);
       }
+
     },
+
     removeFromWishlist: (state, action) => {
     
       state.items = state.items.filter(
         item => item.courseId._id !== action.payload
       );
     },
+
     setWishlistItems: (state, action) => {
       state.items = action.payload;
     },
