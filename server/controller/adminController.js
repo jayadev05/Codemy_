@@ -526,8 +526,9 @@ const existsCheck = async (req, res) => {
           ]).then(results => results.some(result => result));
       }
 
-      // Fallback to email check if no specific checks are requested
-      if (!username && !phone && email) {
+      
+
+      if (email) {
           emailExists = await Promise.all([
               checkExistence(User, 'email', email),
               checkExistence(Tutor, 'email', email),

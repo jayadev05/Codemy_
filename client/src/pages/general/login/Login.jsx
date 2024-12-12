@@ -95,9 +95,9 @@ const Login = () => {
           code: authResult.code,
         });
 
-        const { data } = response; 
+       
       
-        if(data.data.user.isActive===false){
+        if(response.data.data.CurrentUser?.isActive===false){
           setIsLoading(false);
           toast.error("Your account is blocked. Please contact support",{style: {
             borderRadius: '10px',
@@ -116,20 +116,20 @@ const Login = () => {
           }});
 
           
-          const accType = data.data.user.accType;
+          const accType = response.data.data.accType;
           
 
           if (accType === "admin") {
               
-            dispatch(addAdmin(data.data.user));
+            dispatch(addAdmin(response.data.data.currentUser));
             navigate("/admin/dashboard"); 
             // Redirect to admin dashboard
           } else if(accType==="tutor") {
-            dispatch(addTutor(data.data.user));
+            dispatch(addTutor(response.data.data.currentUser));
             navigate("/tutor/dashboard"); // Redirect to user/tutor home
           }
           else {
-            dispatch(addUser(data.data.user));
+            dispatch(addUser(response.data.data.currentUser));
             navigate("/")
           }
 

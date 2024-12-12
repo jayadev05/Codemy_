@@ -46,6 +46,17 @@ export default function CourseListing() {
   },[])
 
 
+  const handleCourseView= (courseId)=>{
+    try {
+      
+      navigate(`/course/details/${courseId}`);
+
+    } catch (error) {
+      console.log(error);
+      toast.error( error.message || 'Failed to view course')
+    }
+  }
+
   const handleScroll =()=>{
     console.log('height',document.documentElement.scrollHeight)
     console.log('top',document.documentElement.scrollTop)
@@ -481,24 +492,29 @@ export default function CourseListing() {
           <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-12">
             {courses.map((course) => (
               <div
+              
                 key={course._id}
                 className="flex flex-col overflow-hidden rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out"
               >
                 <div className="relative aspect-[3/2] w-full">
                   <img
+                  onClick={()=>handleCourseView(course._id)}
                     src={course.thumbnail}
                     alt={`${course.title} thumbnail`}
                     className="h-full w-full object-cover"
                   />
-                  <button
+                  {user &&   <button
                     onClick={() => handleWishlist(course._id)}
                     className="absolute top-2 right-2 p-2 bg-white bg-opacity-70 rounded-full hover:bg-opacity-100 transition-all duration-300"
                     aria-label="Add to wishlist"
                   >
                     <Heart className="w-5 h-5 text-gray-600 hover:text-red-500 transition-colors duration-300" />
-                  </button>
+                  </button> }
+                
                 </div>
-                <div className="flex flex-col flex-grow p-4">
+                <div
+                onClick={()=>handleCourseView(course._id)}
+                 className="flex flex-col flex-grow p-4">
                   <span className="inline-block self-start rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-800">
                     {course.categoryId.title}
                   </span>

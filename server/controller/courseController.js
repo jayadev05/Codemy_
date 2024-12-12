@@ -8,53 +8,95 @@ const mongoose = require("mongoose");
 
 
 const getBasicCourseInfo = async (req, res) => {
-  const { search, sortBy, categories, ratings, levels, priceRange, page, limit } = req.query;
+  const { 
+      search, 
+      sortBy, 
+      page, 
+      limit, 
+      courseId
+  } = req.query;
+
+ 
   
 
+  // Single Course Retrieval
+  if (courseId) {
+      try {
+          const course = await Course.findById(courseId)
+              .populate("tutorId", "fullName profileImg jobTitle bio")
+              .populate("categoryId", "title")
+              .select("title description price topic lessons courseContent categoryId tutorId createdAt language level thumbnail isListed ratings averageRating duration durationUnit enrolleeCount");
+
+          if (!course) {
+              return res.status(404).json({ message: "Course not found" });
+          }
+
+          return res.status(200).json({ 
+              message: "Course details found successfully", 
+              course 
+          });
+      } catch (error) {
+          console.error('Single course fetch error:', error);
+          return res.status(500).json({ 
+              message: "Internal server error",
+              error: error.message 
+          });
+      }
+  }
+
+  // Course Listing
   try {
-    let query = { isListed: true };
-    
-    // Search filter
-    if (search) {
-      query.title = { $regex: search, $options: "i" };
-    }
-    
-   
-    
-    // Calculate skip value for pagination
-    const skip = (page - 1) * limit;
-    
-    // Get total count for pagination
-    const totalCourses = await Course.countDocuments(query);
-    
-    // Fetch courses with pagination
-    let courses = await Course.find(query)
-      .populate("tutorId", "fullName profileImg")
-      .populate("categoryId", "title")
-      .select("title description price topic courseContent categoryId tutorId createdAt language level thumbnail isListed ratings averageRating duration durationUnit enrolleeCount")
-      .skip(skip)
-      .limit(limit);
-    
-    // Apply sorting
-    if (sortBy === "latest") {
-      courses = courses.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    } else if (sortBy === "trending") {
-      courses = courses.sort((a, b) => b.enrolleeCount - a.enrolleeCount);
-    } else if (sortBy === "popular") {
-      courses = courses.sort((a, b) => b.averageRating - a.averageRating);
-    }
-    
-    // Calculate if there are more courses
-    const hasMore = skip + courses.length < totalCourses;
-    
-    res.status(200).json({
-      courses,
-      hasMore,    // This is the key addition
-      total: totalCourses
-    });
+      // Validate and set pagination
+      const pageNumber = Number(page) || 1;
+      const limitNumber = Number(limit) || 10;
+      const skip = (pageNumber - 1) * limitNumber;
+
+      // Build query
+      let query = { isListed: true };
+
+      // Search filter
+      if (search) {
+          query.title = { $regex: search, $options: "i" };
+      }
+
+      
+
+      // Determine sorting
+      let sortOptions = { createdAt: -1 }; // default to latest
+      if (sortBy === "trending") {
+          sortOptions = { enrolleeCount: -1 };
+      } else if (sortBy === "popular") {
+          sortOptions = { averageRating: -1 };
+      }
+
+      // Get total count for pagination
+      const totalCourses = await Course.countDocuments(query);
+
+      // Fetch courses with pagination and sorting
+      const courses = await Course.find(query)
+          .populate("tutorId", "fullName profileImg")
+          .populate("categoryId", "title")
+          .select("title description price topic courseContent categoryId tutorId createdAt language level thumbnail isListed ratings averageRating duration durationUnit enrolleeCount")
+          .skip(skip)
+          .limit(limitNumber)
+          .sort(sortOptions);
+
+      // Determine if there are more courses
+      const hasMore = skip + courses.length < totalCourses;
+
+      res.status(200).json({
+          courses,
+          hasMore,
+          total: totalCourses,
+          currentPage: pageNumber,
+          totalPages: Math.ceil(totalCourses / limitNumber)
+      });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to fetch courses" });
+      console.error('Courses fetch error:', error);
+      res.status(500).json({ 
+          message: "Failed to fetch courses",
+          error: error.message 
+      });
   }
 };
 

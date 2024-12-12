@@ -20,7 +20,10 @@ import { BookOpen, Users, Heart } from "lucide-react";
 import { toast } from "react-hot-toast";
 import axios from "axios";
 import Header from "../../components/layout/Header";
-import { addToWishlist, setWishlistItems } from "../../store/slices/wishlistSlice";
+import {
+  addToWishlist,
+  setWishlistItems,
+} from "../../store/slices/wishlistSlice";
 
 const categories = [
   { name: "Label", courses: "21,245", bgColor: "bg-blue-100", img: cat1 },
@@ -57,11 +60,11 @@ export default function Home() {
   ];
 
   const [courses, setCourses] = useState([]);
-  const [wishlist,setWishlist]=useState([])
+  const [wishlist, setWishlist] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  console.log(wishlist,"asdasdadasd");
+  console.log(wishlist, "asdasdadasd");
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -91,9 +94,17 @@ export default function Home() {
       );
       setWishlist(response.data.wishlist);
       dispatch(setWishlistItems(response.data.wishlist));
-
     } catch (error) {
       console.log(error);
+    }
+  };
+
+  const handleCourseView = (courseId) => {
+    try {
+      navigate(`/course/details/${courseId}`);
+    } catch (error) {
+      console.log(error);
+      toast.error(error.message || "Failed to view course");
     }
   };
 
@@ -113,7 +124,6 @@ export default function Home() {
         dispatch(addToWishlist(response.data.wishlist));
 
         fetchWishlist();
-
       } else {
         toast.error(response.data.message);
       }
@@ -198,7 +208,10 @@ export default function Home() {
               <button className="px-1 py-2 rounded-md">
                 <i className="ri-notification-2-line"></i>
               </button>
-              <button onClick={()=>navigate('/user/wishlist')} className="relative px-1 py-2 rounded-md">
+              <button
+                onClick={() => navigate("/user/wishlist")}
+                className="relative px-1 py-2 rounded-md"
+              >
                 <i className="ri-heart-line text-xl"></i>
 
                 {/* Badge for wishlist count */}
@@ -334,19 +347,25 @@ export default function Home() {
                   >
                     <div className="relative aspect-[3/2] w-full">
                       <img
+                        onClick={() => handleCourseView(course._id)}
                         src={course.thumbnail}
                         alt={`${course.title} thumbnail`}
                         className="h-full w-full object-cover"
                       />
-                      <button
-                      onClick={()=>handleWishlist(course._id)}
+{user &&  <button
+                        onClick={() => handleWishlist(course._id)}
                         className="absolute top-2 right-2 p-2 bg-white bg-opacity-70 rounded-full hover:bg-opacity-100 transition-all duration-300"
                         aria-label="Add to wishlist"
                       >
-                        <Heart  className="w-5 h-5 text-gray-600 hover:text-red-500 transition-colors duration-300" />
-                      </button>
+                        <Heart className="w-5 h-5 text-gray-600 hover:text-red-500 transition-colors duration-300" />
+                      </button>}
+                     
+
                     </div>
-                    <div className="flex flex-col flex-grow p-4">
+                    <div
+                      onClick={() => handleCourseView(course._id)}
+                      className="flex flex-col flex-grow p-4"
+                    >
                       <span className="inline-block self-start rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-800">
                         {course.categoryId.title}
                       </span>

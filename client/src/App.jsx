@@ -27,8 +27,9 @@ import CourseCreation from "./pages/tutor/TutorAddCourse";
 import TutorCourses from "./pages/tutor/TutorCourses";
 import TutorViewCourse from "./pages/tutor/TutorViewCourse";
 import TutorEditCourse from "./pages/tutor/TutorEditCourse";
-import CourseListing from "./pages/user/AllCourses";
+import CourseListing from "./pages/course/AllCourses";
 import WishlistPage from "./pages/user/Wishlist";
+import CourseDetails from "./pages/course/CourseDetails";
 
 
 
@@ -46,7 +47,7 @@ function App() {
 
               {/* generic routes */}
               <Route path="/signup" element={<SignUp/>} />
-              <Route path="/login" element={<Login/>} />
+              <Route path="/login" element={<ProtectedRoute isLoginPage><Login /></ProtectedRoute>} />
               <Route path="/" element={<Home/>} />
               <Route path="/reset-password/:token" element={<ResetPassword/>} />
               <Route path="/forgot-password" element={<ForgotPassword/>} />
@@ -65,7 +66,7 @@ function App() {
               <Route path="/user/profile" element={<ProtectedRoute userType="user"><UserProfile /></ProtectedRoute>} />
               <Route path="/user/settings" element={<ProtectedRoute userType="user"><SettingsPage /></ProtectedRoute>} />
               <Route path="/user/wishlist" element={<ProtectedRoute userType="user"><WishlistPage /></ProtectedRoute>} />
-              <Route path="/all-courses" element={<CourseListing />}></Route>
+             
 
               {/* tutor routes */}
               <Route path="/tutor/dashboard" element={<ProtectedRoute userType="tutor"><TutorDashboard /></ProtectedRoute>} />
@@ -74,7 +75,11 @@ function App() {
               <Route path="/tutor/myCourses" element={<ProtectedRoute userType="tutor"><TutorCourses/></ProtectedRoute>} />
               <Route path="/tutor/view-course" element={<ProtectedRoute userType="tutor"><TutorViewCourse/></ProtectedRoute>} />
               <Route path="/tutor/edit-course/:id" element={<ProtectedRoute userType="tutor"><TutorEditCourse/></ProtectedRoute>} />
-              
+
+              {/* course routes */}
+              <Route path="/all-courses" element={<CourseListing />}></Route>
+              <Route path="/course/details/:courseId" element={<CourseDetails />} />
+
 
               {/* Catch-all route for undefined paths */}
               <Route path="*" element={<PageNotFound />} />

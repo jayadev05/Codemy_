@@ -7,6 +7,10 @@ const adminSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    profileImg:{
+      type:String,
+      default:null
+    },
     userName: {
       type: String,
       required: true,

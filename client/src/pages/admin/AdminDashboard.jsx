@@ -69,10 +69,10 @@ export default function Dashboard() {
       await axios.post("http://localhost:3000/admin/logout");
 
       dispatch(logoutAdmin(admin));
-
+      toast.success("Logged out successfully");
       navigate("/login");
 
-      toast.success("Logged out successfully");
+     
     } catch (error) {
       console.log(error.message);
       toast.error(error.message || "Error Logging out user");
@@ -288,7 +288,7 @@ const handleDeleteConfirm = async() => {
                           <button
 
                           onClick={()=>handleToggleList(course._id,course.isListed)}
-                          className={`${course.isListed?"bg-blue-500 hover:bg-blue-600" :"bg-green-500 hover:bg-green-600"} px-3 py-1 text-xs font-medium text-white  `}>
+                          className={`${course.isListed?"bg-blue-500 hover:bg-blue-600" :"bg-green-500 hover:bg-green-600"} px-4 py-2 text-sm font-medium text-white  `}>
                             {course.isListed?"Unlist":"List"}
                           </button>
                           <button

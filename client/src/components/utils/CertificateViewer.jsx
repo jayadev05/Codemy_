@@ -116,7 +116,7 @@ const CertificateViewer = ({ certificate }) => {
             <img
               src={fileUrl}
               alt="Certificate"
-              className="max-w-full max-h-[500px] object-contain rounded-lg"
+              className="max-w-full max-h-[450px] object-contain rounded-lg"
             />
             <a 
               href={fileUrl}

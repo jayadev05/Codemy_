@@ -10,9 +10,11 @@ import MainHeader from "../../components/layout/user/MainHeader";
 import UserProfile from "../../components/layout/user/UserDetails";
 import Tabs from "../../components/layout/user/Tabs";
 import SecondaryFooter from "../../components/layout/user/SecondaryFooter";
+import { selectWishlist } from "../../store/slices/wishlistSlice";
 
 const SettingsForm = () => {
   const user = useSelector(selectUser);
+  
 
   const dispatch = useDispatch();
 
@@ -641,10 +643,11 @@ const SettingsForm = () => {
 };
 
 export default function SettingsPage() {
+  const wishlist=useSelector(selectWishlist)
   return (
     <div className="bg-gray-100 min-h-screen flex flex-col">
       <Header />
-      <MainHeader />
+      <MainHeader wishlist={wishlist}/>
       <main className="flex-grow">
         <UserProfile />
         <Tabs />

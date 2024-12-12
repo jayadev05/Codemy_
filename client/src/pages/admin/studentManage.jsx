@@ -25,7 +25,7 @@ const StudentManagement = () => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [students, setStudents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -36,14 +36,14 @@ const StudentManagement = () => {
 
   const fetchStudents = async () => {
     try {
-      setLoading(true);
+    
       const response = await axios.get("http://localhost:3000/admin/get-students",{withCredentials:true});
       console.log("response data length ",response.data.students.length);
       setStudents(response.data.students || []);
-      setLoading(false);
+      
     } catch (err) {
       setError("Failed to fetch students");
-      setLoading(false);
+     
       console.error(err);
       toast.error("Failed to load students");
     }

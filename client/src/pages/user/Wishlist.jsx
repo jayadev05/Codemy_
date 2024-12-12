@@ -7,7 +7,7 @@ import MainHeader from '../../components/layout/user/MainHeader';
 import UserProfile from '../../components/layout/user/UserDetails';
 import Tabs from '../../components/layout/user/Tabs';
 import SecondaryFooter from '../../components/layout/user/SecondaryFooter';
-import { addToWishlist, removeFromWishlist } from '../../store/slices/wishlistSlice';
+import { addToWishlist, removeFromWishlist, selectWishlist } from '../../store/slices/wishlistSlice';
 import { useNavigate } from 'react-router';
 import { selectUser } from '../../store/slices/userSlice';
 import toast from 'react-hot-toast';
@@ -19,9 +19,10 @@ const WishlistPage = () => {
   const dispatch = useDispatch();
   const navigate=useNavigate();
 
-  const wishlistItems = useSelector((state) => state.wishlist.items);
+  const wishlistItems = useSelector(selectWishlist);
 
-  console.log("wishlist items",wishlistItems)
+  console.log('wishlist items',wishlistItems)
+
 
   const handleRemoveItem = async(productId) => {
     try {
@@ -51,7 +52,7 @@ const WishlistPage = () => {
   );
 
   const WishlistItem = ({ product }) => (
-    <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm mb-3">
+    <div className="flex items-center justify-between  p-4 bg-white rounded-lg shadow-sm mb-3">
       <div className="flex items-center space-x-4">
         <img 
           src={product.image} 
@@ -111,8 +112,8 @@ const WishlistPage = () => {
   return (
     <div className="bg-gray-100 min-h-screen flex flex-col">
       <Header />
-      <MainHeader />
-      <main className="flex-grow">
+      <MainHeader wishlist={wishlistItems} />
+      <main className="flex-grow h-screen ">
         <UserProfile />
         <Tabs />
         <WishlistContent />

@@ -9,7 +9,7 @@ function SecondaryFooter() {
             <div>
               <div className='flex gap-3 items-center '>
               <img src={logo} alt="" />
-              <h3 className="text-2xl font-bold text-orange-500 align-middle">Codemy</h3>
+              <h3 className="text-2xl font-bold text-white align-middle">Codemy</h3>
               </div>
               
               <p className="text-sm text-gray-400">

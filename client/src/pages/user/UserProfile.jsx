@@ -6,6 +6,8 @@ import UserProfile from '../../components/layout/user/UserDetails';
 import Tabs from '../../components/layout/user/Tabs';
 import SecondaryFooter from '../../components/layout/user/SecondaryFooter';
 import { Heart, Play } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import { selectWishlist } from '../../store/slices/wishlistSlice';
 
 
 
@@ -151,11 +153,12 @@ const Courses = () => {
 
 export default function UserDashboard() {
   
+ const wishlist=useSelector(selectWishlist)
 
   return (
     <div className="bg-gray-100 min-h-screen  flex flex-col">
       <Header/>
-      <MainHeader />
+      <MainHeader wishlist={wishlist} />
       <main className="flex-grow mb-4">
         <UserProfile />
         <Tabs />
