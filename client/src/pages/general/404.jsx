@@ -3,6 +3,7 @@ import {useNavigate} from 'react-router-dom'
 import logo from '../../assets/logo_cap.png'
 import ErrorImg from '../../assets/404.png'
 import Header from '../../components/layout/Header'
+import SecondaryFooter from '../../components/layout/user/SecondaryFooter'
 
 function PageNotFound() {
 
@@ -66,9 +67,20 @@ function PageNotFound() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center p-4">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between">
-          <div className="md:w-1/2 text-center md:text-left mb-8 md:mb-0">
+      <main className="flex-1 flex items-center justify-center px-4 ">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between  ">
+
+
+        <div className="md:w-1/2">
+            <img 
+              src={ErrorImg}
+              alt="404 Illustration" 
+              className="max-w-full h-auto"
+            />
+          </div>
+
+
+          <div className="md:w-1/3 text-center md:text-left  md:mb-0">
             <h1 className="text-7xl font-light text-gray-600 mb-4">Error 404</h1>
             <h2 className="text-3xl font-bold mb-4">Oops! page not found</h2>
             <p className="text-gray-600 mb-8 max-w-md">
@@ -87,27 +99,14 @@ function PageNotFound() {
               Go to Login Page
             </button>
           </div>
-          <div className="md:w-1/2">
-            <img 
-              src={ErrorImg}
-              alt="404 Illustration" 
-              className="max-w-full h-auto"
-            />
-          </div>
+
+          
+
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="border-t px-4 py-4">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-sm text-gray-600">
-          <div>© 2024 - Designed by Templatecookie. All rights reserved</div>
-          <div className="flex space-x-4 mt-4 md:mt-0">
-            <a href="#" className="hover:text-gray-900">FAQs</a>
-            <a href="#" className="hover:text-gray-900">Privacy Policy</a>
-            <a href="#" className="hover:text-gray-900">Terms & Condition</a>
-          </div>
-        </div>
-      </footer>
+     <SecondaryFooter/>
     </div>
     </>
     

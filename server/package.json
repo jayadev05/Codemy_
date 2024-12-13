@@ -36,6 +36,8 @@
     "nodemon": "^3.1.7",
     "otp-generator": "^4.0.1",
     "pdfjs-dist": "^4.9.124",
-    "redux-persist": "^6.0.0"
+    "razorpay": "^2.9.5",
+    "redux-persist": "^6.0.0",
+    "redux-thunk": "^3.1.0"
   }
 }

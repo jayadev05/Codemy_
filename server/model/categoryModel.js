@@ -12,7 +12,7 @@ const CategorySchema = new mongoose.Schema(
       },
       courses: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'courses',
+        ref: 'Course',
       }],
       tutors: [{
         type: mongoose.Schema.Types.ObjectId,

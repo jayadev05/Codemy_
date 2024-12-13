@@ -7,14 +7,14 @@ const wishlistSchema = new Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "user",
+      ref: "User",
       required: true,
     },
     courses: [
       {
         courseId: {
           type: mongoose.Schema.Types.ObjectId,
-          ref: "courses",
+          ref: "Course",
           required: true,
         },
         addedAt: {

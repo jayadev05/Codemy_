@@ -66,7 +66,15 @@ function UnauthorizedPage() {
       {/* Main Content */}
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between">
-          <div className="md:w-1/2 text-center md:text-left mb-8 md:mb-0">
+
+        <div className="md:w-1/2">
+            <img 
+              src={UnauthorizedImg}
+              alt="401 Unauthorized Illustration" 
+              className="max-w-full h-auto"
+            />
+          </div>
+          <div className="md:w-1/3 text-center md:text-left mb-8 md:mb-0">
             <h1 className="text-7xl font-light text-gray-600 mb-4">Error 403</h1>
             <h2 className="text-3xl font-bold mb-4">Page Forbidden</h2>
             <p className="text-gray-600 mb-8 max-w-md">
@@ -85,13 +93,7 @@ function UnauthorizedPage() {
               Go to Login Page
             </button>
           </div>
-          <div className="md:w-1/2">
-            <img 
-              src={UnauthorizedImg}
-              alt="401 Unauthorized Illustration" 
-              className="max-w-full h-auto"
-            />
-          </div>
+       
         </div>
       </main>
 

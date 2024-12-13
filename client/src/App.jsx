@@ -30,6 +30,7 @@ import TutorEditCourse from "./pages/tutor/TutorEditCourse";
 import CourseListing from "./pages/course/AllCourses";
 import WishlistPage from "./pages/user/Wishlist";
 import CourseDetails from "./pages/course/CourseDetails";
+import Cart from "./pages/user/Cart";
 
 
 
@@ -66,6 +67,7 @@ function App() {
               <Route path="/user/profile" element={<ProtectedRoute userType="user"><UserProfile /></ProtectedRoute>} />
               <Route path="/user/settings" element={<ProtectedRoute userType="user"><SettingsPage /></ProtectedRoute>} />
               <Route path="/user/wishlist" element={<ProtectedRoute userType="user"><WishlistPage /></ProtectedRoute>} />
+              <Route path="/user/cart" element={<ProtectedRoute userType="user"><Cart /></ProtectedRoute>} />
              
 
               {/* tutor routes */}

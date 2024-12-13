@@ -24,6 +24,8 @@ import {
   addToWishlist,
   setWishlistItems,
 } from "../../store/slices/wishlistSlice";
+import MainHeader from "../../components/layout/user/MainHeader";
+import { addToCart, selectCart } from "../../store/slices/cartSlice";
 
 const categories = [
   { name: "Label", courses: "21,245", bgColor: "bg-blue-100", img: cat1 },
@@ -64,6 +66,8 @@ export default function Home() {
   const [showModal, setShowModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const cart=useSelector(selectCart);
+
   console.log(wishlist, "asdasdadasd");
 
   const navigate = useNavigate();
@@ -83,6 +87,32 @@ export default function Home() {
       setCourses(response.data.courses);
     } catch (error) {
       console.log(error);
+    }
+  };
+
+  const handleAddToCart = async (courseId, price) => {
+    try {
+    
+      const response = await axios.post('http://localhost:3000/course/addToCart', { 
+        courseId, 
+        userId: user._id 
+      });
+  
+     dispatch(addToCart({ courseId, price }));
+  
+     toast.success("Item added to cart successfully",{icon: "🛒",style: {
+      borderRadius: '10px',
+      background: '#111826',
+      color: '#fff',
+    }})
+  
+    } catch (error) {
+    
+      console.error('Failed to add to cart', error);
+      if(error.response)
+      toast.error(error.response.data.message || "Failed to add to cart",{icon:"🕴️",style:{borderRadius: '10px',
+        background: '#111826',
+        color: '#fff',}})
     }
   };
 
@@ -154,123 +184,7 @@ export default function Home() {
     <>
       <Header showModal={setShowModal} isLoggedIn={isLoggedIn} />
       <div className="min-h-screen bg-white">
-        <nav
-          className={`sticky z-10 top-0 flex items-center justify-between px-6 py-4 bg-white border-b md:py-3 ${
-            showModal ? "relative z-[-0]" : ""
-          }`}
-        >
-          <div className="flex items-center gap-8">
-            <a
-              href="/"
-              className="flex items-center text-2xl font-semibold text-[#1d2026]"
-            >
-              <img
-                src={logo}
-                alt="Codemy Logo"
-                width={30}
-                height={30}
-                className="mr-2"
-              />
-              Codemy
-            </a>
-            <div className="relative hidden md:block">
-              <input
-                type="text"
-                placeholder="What do you want to learn..."
-                className="w-[300px] pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <Search
-                className="absolute top-2.5 left-3 text-[#1d2026]"
-                size={20}
-              />
-            </div>
-          </div>
-
-          {!user ? (
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate("/signup")}
-                className="px-4 py-2 text-orange-500 rounded-md transition-colors hover:text-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
-                Create Account
-              </button>
-              <button
-                onClick={() => navigate("/login")}
-                className="px-4 py-2 text-white bg-orange-500 rounded-md transition-colors hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
-                Sign In
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-4">
-              <button className="px-1 py-2 rounded-md">
-                <i className="ri-notification-2-line"></i>
-              </button>
-              <button
-                onClick={() => navigate("/user/wishlist")}
-                className="relative px-1 py-2 rounded-md"
-              >
-                <i className="ri-heart-line text-xl"></i>
-
-                {/* Badge for wishlist count */}
-
-                {wishlist.length > 0 && (
-                  <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs font-bold rounded-full px-[6px] py-[1px]">
-                    {wishlist.length}
-                  </span>
-                )}
-              </button>
-              <button className="px-1 py-2 rounded-md">
-                <i className="ri-shopping-cart-line"></i>
-              </button>
-              <p>{user.userName}</p>
-
-              {/* Dropdown container */}
-              <div className="relative group">
-                <img
-                  referrerPolicy="no-referrer"
-                  crossOrigin="anonymous"
-                  className="h-10 w-10 rounded-full cursor-pointer hover:ring-2 hover:ring-orange-500"
-                  src={user.profileImg || defProfile}
-                  alt=""
-                />
-
-                {/* Dropdown menu */}
-                <div className="absolute right-0  w-48 bg-white rounded-md shadow-lg py-1 border hidden group-hover:block">
-                  <div className="px-4 py-2 border-b">
-                    <p className="text-sm font-medium text-gray-900">
-                      {user.userName}
-                    </p>
-                    <p className="text-sm text-gray-500 truncate">
-                      {user.email}
-                    </p>
-                  </div>
-
-                  <a
-                    href="/user/profile"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    Profile
-                  </a>
-                  <a
-                    href="/user/settings"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    Settings
-                  </a>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                  >
-                    Logout
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </nav>
+       <MainHeader cart={cart} />
 
         <main className="container mx-auto px-10 py-10">
           <section className="grid items-center gap-10 md:grid-cols-2 lg:gap-16">
@@ -363,13 +277,17 @@ export default function Home() {
 
                     </div>
                     <div
-                      onClick={() => handleCourseView(course._id)}
+                    
                       className="flex flex-col flex-grow p-4"
                     >
-                      <span className="inline-block self-start rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-800">
+                      <span 
+                      
+                      className="inline-block self-start rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-800">
                         {course.categoryId.title}
                       </span>
-                      <h3 className="mt-2 text-lg font-semibold line-clamp-2 text-gray-900 flex-grow">
+                      <h3 
+                        onClick={() => handleCourseView(course._id)}
+                      className="mt-2 text-lg font-semibold line-clamp-2 text-gray-900 flex-grow">
                         {course.title}
                       </h3>
 
@@ -401,7 +319,9 @@ export default function Home() {
                         <span className="text-xl font-bold text-gray-900">
                           ₹{formatCurrency(course.price.$numberDecimal)}
                         </span>
-                        <button title="add to cart">
+                        <button 
+                        onClick={()=>handleAddToCart(course._id,course.price)}
+                        title="add to cart">
                           <ShoppingBag />
                         </button>
                       </div>
@@ -417,7 +337,9 @@ export default function Home() {
             <div className="container mx-auto px-4 py-12">
               <div className="grid md:grid-cols-2 gap-8">
                 <div className="bg-indigo-700 rounded-lg p-8 text-white flex flex-col justify-center">
-                  <h2 className="text-3xl font-bold mb-4 text-white">
+                  <h2 
+                  onClick={()=>showModal(true)}
+                  className="text-3xl font-bold mb-4 text-white">
                     Become an Instructor
                   </h2>
                   <p className="mb-6 text-indigo-100">

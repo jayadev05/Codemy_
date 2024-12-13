@@ -18,33 +18,43 @@ const addToCart= async (req,res)=>{
      const course = await Course.findById(courseId);
      if(!course) return res.status(404).json({message:"Course not found"});
 
-     const cart = await Cart.findOne({userId});
+     let cart = await Cart.findOne({userId});
      
     
      if(!cart){
         cart = new Cart({
             userId,
-            items: [],
-            totalCartPrice: 0
+            items: [
+                {
+                    courseId,
+                    price:course.price
+                }
+            ],
+            totalCartPrice: course.price
           });
      }
 
-     const courseInCart = cart.filter((item)=>item.courseId.toString()===courseId);
+
+     const courseInCart = cart.items.filter((item)=>item.courseId.toString()===courseId);
 
      if(courseInCart.length===0){
         cart.items.push({
             courseId,
-            price:course.price.$numberDecimal
+            price:course.price
         })
+     }
+
+     else {
+        return res.status(400).json({message:'Course already in cart'});
      }
 
      //update total cart price
 
-     cart.totalCartPrice= cart.reduce((sum,item)=>sum+item.price,0);
+     cart.totalCartPrice= cart.items.reduce((sum,item)=>sum+item.price,0);
 
      await cart.save();
 
-     res.status(200).json({message:"Course added to cart successfully"});
+     res.status(200).json({message:"Course added to cart successfully",cart});
 
 
     } catch (error) {
@@ -57,20 +67,23 @@ const addToCart= async (req,res)=>{
 
 const removeFromCart= async (req,res)=>{
 
-    const {userId,courseId}=req.body;
+    const {userId,courseId}=req.query;
+    console.log(req.query);
+
     if(!userId || !courseId) return res.status(400).json({message:"UserId / CourseId is missing or innapropriate"})
 
 try {
     
-    const cart = await Cart.findOne({userId});
+    let cart = await Cart.findOne({userId});
+    
     if(!cart) return res.status(404).json({message:"Cart not found"});
 
 
     // removing item from cart
-     cart.items.filter((item)=> item.courseId.toString()!==courseId);
+     cart.items = cart.items.filter((item)=> item.courseId.toString()!==courseId);
 
-     //update toal cart price
-     cart.items.reduce((sum,item)=>sum+item.price,0);
+     //update total cart price
+     cart.totalCartPrice = cart.items.reduce((sum,item)=>sum+item.price,0);
 
     await cart.save();
 
@@ -90,7 +103,15 @@ if(!userId)  return res.status(400).json({message:"User ID is missing / innaprop
 
 try {
    
-    const cart=await Cart.findOne({userId});
+    const cart=await Cart.findOne({userId})
+    .populate({
+        path: 'items.courseId',
+        select: 'title thumbnail enrolleeCount averageRating ratings tutorId',
+        populate: {
+            path: 'tutorId',
+            select: 'profileImg fullName'
+        }
+    });
 
     if(!cart) return res.status(404).json({message:"Cart not found"});
 

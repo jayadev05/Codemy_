@@ -11,9 +11,11 @@ import UserProfile from "../../components/layout/user/UserDetails";
 import Tabs from "../../components/layout/user/Tabs";
 import SecondaryFooter from "../../components/layout/user/SecondaryFooter";
 import { selectWishlist } from "../../store/slices/wishlistSlice";
+import { selectCart } from "../../store/slices/cartSlice";
 
 const SettingsForm = () => {
   const user = useSelector(selectUser);
+  const cart=useSelector(selectCart);
   
 
   const dispatch = useDispatch();
@@ -647,7 +649,7 @@ export default function SettingsPage() {
   return (
     <div className="bg-gray-100 min-h-screen flex flex-col">
       <Header />
-      <MainHeader wishlist={wishlist}/>
+      <MainHeader cart={cart} />
       <main className="flex-grow">
         <UserProfile />
         <Tabs />

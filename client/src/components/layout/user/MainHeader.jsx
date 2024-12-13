@@ -5,13 +5,20 @@ import { toast } from "react-toastify";
 import { logoutUser, selectUser } from "../../../store/slices/userSlice";
 import logo from '../../../assets/logo_cap.png'
 import { useNavigate } from "react-router";
+import { selectCart } from "../../../store/slices/cartSlice";
+import { selectWishlist } from "../../../store/slices/wishlistSlice";
 
-const MainHeader = ({wishlist}) => {
+const MainHeader = () => {
 
   const navigate=useNavigate()
     const dispatch=useDispatch();
+
     const user=useSelector(selectUser);
-  
+    const wishlist=useSelector(selectWishlist);
+    const cart=useSelector(selectCart);
+    
+
+
   
     const handleLogout = async () => {
       try {
@@ -26,7 +33,7 @@ const MainHeader = ({wishlist}) => {
     
     return (
       <header className="bg-white shadow-md py-3 px-4 ">
-        <div className="container mx-auto flex justify-between items-center ">
+        <div className="container max-w-[1850px] flex justify-between items-center ">
           <div className="flex items-center space-x-4">
             <img src={logo} alt="" />
             <h1 className="text-2xl font-bold text-black">Codemy</h1>
@@ -57,13 +64,13 @@ const MainHeader = ({wishlist}) => {
                    ) : (
                      <div className="flex items-center gap-4">
                        <button className="px-1 py-2 rounded-md">
-                         <i className="ri-notification-2-line"></i>
+                         <i className="ri-notification-2-line hover:text-yellow-500"></i>
                        </button>
                        <button
                          onClick={() => navigate("/user/wishlist")}
-                         className="relative px-1 py-2 rounded-md"
+                         className="relative px-1 py-2 rounded-md "
                        >
-                         <i className="ri-heart-line text-xl"></i>
+                         <i className="ri-heart-line text-xl hover:text-red-500"></i>
          
                          {/* Badge for wishlist count */}
          
@@ -73,8 +80,18 @@ const MainHeader = ({wishlist}) => {
                            </span>
                          )}
                        </button>
-                       <button className="px-1 py-2 rounded-md">
-                         <i className="ri-shopping-cart-line"></i>
+                       <button 
+                       onClick={()=>navigate('/user/cart')}
+                       className="relative px-1 py-2 rounded-md">
+                         <i className="ri-shopping-cart-line hover:text-orange-500"></i>
+
+                         {/* Badge for cart count */}
+         
+                         {cart?.items?.length > 0 && (
+                           <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs font-bold rounded-full px-[6px] py-[1px]">
+                             {cart?.items?.length}
+                           </span>
+                         )}
                        </button>
                        <p>{user.userName}</p>
          

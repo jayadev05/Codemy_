@@ -1,4 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
+import {thunk} from 'redux-thunk';
 import { 
   persistStore, 
   persistReducer,
@@ -16,7 +17,8 @@ import tutorSlice from './slices/tutorSlice';
 import adminSlice from './slices/adminSlice';
 import courseSlice from './slices/courseSlice';
 import lessonsSlice from './slices/lessonsSlice';
-import wishlistSlice from './slices/wishlistSlice'
+import wishlistSlice from './slices/wishlistSlice';
+import cartSlice from './slices/cartSlice';
 
 // Create persist configs for each reducer
 const userPersistConfig = {
@@ -45,8 +47,14 @@ const lessonsPersistConfig = {
   key: 'lessons',
   storage,
 };
+
 const wishlistPersistConfig = {
   key: 'wishlist',
+  storage,
+};
+
+const cartPersistConfig = {
+  key: 'cart',
   storage,
 };
 
@@ -57,6 +65,7 @@ const persistedAdminReducer = persistReducer(adminPersistConfig, adminSlice);
 const persistedCourseReducer = persistReducer(coursePersistConfig, courseSlice);
 const persistedLessonsReducer = persistReducer(lessonsPersistConfig, lessonsSlice);
 const persistedWishlistReducer = persistReducer(wishlistPersistConfig, wishlistSlice);
+const persistedCartReducer = persistReducer(cartPersistConfig, cartSlice);
 
 const store = configureStore({
   reducer: {
@@ -65,7 +74,8 @@ const store = configureStore({
     admin: persistedAdminReducer,
     course: persistedCourseReducer,
     lessons: persistedLessonsReducer,
-    wishlist:persistedWishlistReducer
+    wishlist:persistedWishlistReducer,
+    cart:persistedCartReducer
   },
   middleware: (getDefaultMiddleware) => 
     getDefaultMiddleware({
@@ -79,7 +89,7 @@ const store = configureStore({
           REGISTER
         ]
       }
-    })
+    }).concat(thunk)
 });
 
 // Create persistor

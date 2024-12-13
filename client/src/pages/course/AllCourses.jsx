@@ -9,9 +9,14 @@ import Header from "../../components/layout/Header";
 import SecondaryFooter from "../../components/layout/user/SecondaryFooter";
 import logo from "../../assets/logo_cap.png";
 import { addToWishlist, setWishlistItems } from "../../store/slices/wishlistSlice";
+import MainHeader from "../../components/layout/user/MainHeader";
+import { addToCart, selectCart } from "../../store/slices/cartSlice";
 
 export default function CourseListing() {
   const user = useSelector(selectUser);
+  const cart=useSelector(selectCart)
+
+
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -313,9 +318,38 @@ export default function CourseListing() {
       }
     } catch (error) {
       console.error(error);
-      toast.error(error.response?.data?.message || "An error occurred");
+      toast.error(error.response?.data?.message || "An error occurred",{icon:"🕴️",style:{borderRadius: '10px',
+        background: '#eb5a0c',
+        color: '#fff',}});
     }
   };
+
+
+const handleAddToCart = async (courseId, price) => {
+  try {
+  
+    const response = await axios.post('http://localhost:3000/course/addToCart', { 
+      courseId, 
+      userId: user._id 
+    });
+
+   dispatch(addToCart({ courseId, price }));
+
+   toast.success("Item added to cart successfully",{icon: "🛒",style: {
+    borderRadius: '10px',
+    background: '#111826',
+    color: '#fff',
+  }})
+
+  } catch (error) {
+  
+    console.error('Failed to add to cart', error);
+    if(error.response)
+    toast.error(error.response.data.message || "Failed to add to cart",{icon:"🕴️",style:{borderRadius: '10px',
+      background: '#eb5a0c',
+      color: '#fff',}})
+  }
+};
 
   useEffect(() => {
     fetchWishlist();
@@ -325,120 +359,8 @@ export default function CourseListing() {
     <div className="min-h-screen flex flex-col">
       <Header />
 
-      <main className="flex-1 bg-gray-50">
-        <nav
-          className={`sticky z-10 top-0 flex items-center justify-between px-6 py-4 bg-white border-b md:py-3 `}
-        >
-          <div className="flex items-center gap-8">
-            <a
-              href="/"
-              className="flex items-center text-2xl font-semibold text-[#1d2026]"
-            >
-              <img
-                src={logo}
-                alt="Codemy Logo"
-                width={30}
-                height={30}
-                className="mr-2"
-              />
-              Codemy
-            </a>
-            <div className="relative hidden md:block">
-              <input
-                type="text"
-                placeholder="What do you want to learn..."
-                className="w-[300px] pl-10 pr-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <Search
-                className="absolute top-2.5 left-3 text-[#1d2026]"
-                size={20}
-              />
-            </div>
-          </div>
-
-          {!user ? (
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate("/signup")}
-                className="px-4 py-2 text-orange-500 rounded-md transition-colors hover:text-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
-                Create Account
-              </button>
-              <button
-                onClick={() => navigate("/login")}
-                className="px-4 py-2 text-white bg-orange-500 rounded-md transition-colors hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
-                Sign In
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-4">
-              <button className="px-1 py-2 rounded-md">
-                <i className="ri-notification-2-line text-xl"></i>
-              </button>
-              <button onClick={()=>navigate('/user/wishlist')} className="relative px-1 py-2 rounded-md">
-                <i className="ri-heart-line text-xl"></i>
-
-                {/* Badge for wishlist count */}
-
-                {wishlist.length > 0 && (
-                  <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs font-bold rounded-full px-[6px] py-[1px]">
-                    {wishlist.length}
-                  </span>
-                )}
-              </button>
-
-              <button className="px-1 py-2 rounded-md">
-                <i className="ri-shopping-cart-line text-xl"></i>
-              </button>
-              <p>{user.userName}</p>
-
-              {/* Dropdown container */}
-              <div className="relative group">
-                <img
-                  referrerPolicy="no-referrer"
-                  crossOrigin="anonymous"
-                  className="h-10 w-10 rounded-full cursor-pointer hover:ring-2 hover:ring-orange-500"
-                  src={user.profileImg || defProfile}
-                  alt=""
-                />
-
-                {/* Dropdown menu */}
-                <div className="absolute right-0  w-48 bg-white rounded-md shadow-lg py-1 border hidden group-hover:block">
-                  <div className="px-4 py-2 border-b">
-                    <p className="text-sm font-medium text-gray-900">
-                      {user.userName}
-                    </p>
-                    <p className="text-sm text-gray-500 truncate">
-                      {user.email}
-                    </p>
-                  </div>
-
-                  <a
-                    href="/user/profile"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    Profile
-                  </a>
-                  <a
-                    href="/user/settings"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    Settings
-                  </a>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                  >
-                    Logout
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </nav>
+      <main className="flex-1 bg-gray-50 min-h-[90vh]">
+       <MainHeader  />
 
         {/* Filter Section */}
         <FilterSection />
@@ -501,7 +423,7 @@ export default function CourseListing() {
                   onClick={()=>handleCourseView(course._id)}
                     src={course.thumbnail}
                     alt={`${course.title} thumbnail`}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-cover cursor-pointer"
                   />
                   {user &&   <button
                     onClick={() => handleWishlist(course._id)}
@@ -513,12 +435,14 @@ export default function CourseListing() {
                 
                 </div>
                 <div
-                onClick={()=>handleCourseView(course._id)}
+               
                  className="flex flex-col flex-grow p-4">
                   <span className="inline-block self-start rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-800">
                     {course.categoryId.title}
                   </span>
-                  <h3 className="mt-2 text-lg font-semibold line-clamp-2 text-gray-900 flex-grow">
+                  <h3 
+                   onClick={()=>handleCourseView(course._id)}
+                  className="mt-2 text-lg font-semibold line-clamp-2 text-gray-900 flex-grow cursor-pointer">
                     {course.title}
                   </h3>
                   <div className="mt-3 flex items-center gap-2">
@@ -545,7 +469,10 @@ export default function CourseListing() {
                     <span className="text-xl font-bold text-gray-900">
                       ₹{formatCurrency(course.price.$numberDecimal)}
                     </span>
-                    <button title="add to cart">
+                    <button 
+                    className="z-10"
+                    onClick={()=>handleAddToCart(course._id,course.price)}
+                    title="add to cart">
                       <ShoppingBag />
                     </button>
                   </div>

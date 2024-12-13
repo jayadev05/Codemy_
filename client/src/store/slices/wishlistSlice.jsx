@@ -12,6 +12,7 @@ const wishlistSlice = createSlice({
       const existingItem = state.items.find(
         item => item.courseId._id === action.payload
       );
+      
       if (!existingItem) {
         state.items.push(action.payload);
       }

@@ -8,6 +8,7 @@ import SecondaryFooter from '../../components/layout/user/SecondaryFooter';
 import { Heart, Play } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { selectWishlist } from '../../store/slices/wishlistSlice';
+import { selectCart } from '../../store/slices/cartSlice';
 
 
 
@@ -154,11 +155,12 @@ const Courses = () => {
 export default function UserDashboard() {
   
  const wishlist=useSelector(selectWishlist)
+ const cart=useSelector(selectCart);
 
   return (
     <div className="bg-gray-100 min-h-screen  flex flex-col">
       <Header/>
-      <MainHeader wishlist={wishlist} />
+      <MainHeader cart={cart} />
       <main className="flex-grow mb-4">
         <UserProfile />
         <Tabs />

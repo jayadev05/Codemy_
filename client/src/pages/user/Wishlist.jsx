@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Heart, Trash2 } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -12,17 +12,19 @@ import { useNavigate } from 'react-router';
 import { selectUser } from '../../store/slices/userSlice';
 import toast from 'react-hot-toast';
 import axios from 'axios';
+import { addToCart, selectCart } from '../../store/slices/cartSlice';
 
 const WishlistPage = () => {
+
   const user=useSelector(selectUser);
 
   const dispatch = useDispatch();
   const navigate=useNavigate();
+  const cart=useSelector(selectCart);
 
   const wishlistItems = useSelector(selectWishlist);
 
-  console.log('wishlist items',wishlistItems)
-
+  
 
   const handleRemoveItem = async(productId) => {
     try {
@@ -38,6 +40,31 @@ const WishlistPage = () => {
 
   };
 
+  const handleAddToCart = async (courseId, price) => {
+    try {
+    
+      const response = await axios.post('http://localhost:3000/course/addToCart', { 
+        courseId, 
+        userId: user._id 
+      });
+  
+     dispatch(addToCart({ courseId, price }));
+  
+     toast.success("Item added to cart successfully",{icon: "🛒",style: {
+      borderRadius: '10px',
+      background: '#111826',
+      color: '#fff',
+    }})
+  
+    } catch (error) {
+    
+      console.error('Failed to add to cart', error);
+      if(error.response)
+      toast.error(error.response.data.message || "Failed to add to cart",{icon:"🕴️",style:{borderRadius: '10px',
+        background: '#111826',
+        color: '#fff',}})
+    }
+  };
 
 
   const EmptyWishlist = () => (
@@ -66,12 +93,14 @@ const WishlistPage = () => {
       </div>
       <div className="flex items-center space-x-4">
         <button 
+                        onClick={()=>handleAddToCart(product.id,product.price)}
+
           className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
         >
           Add to Cart
         </button>
         <button 
-          onClick={() => handleRemoveItem(product.id)} // Use the `id` for removal
+          onClick={() => handleRemoveItem(product.id)} 
           className="p-2 text-gray-500 hover:text-red-500 transition"
         >
           <Trash2 size={20} />
@@ -110,10 +139,10 @@ const WishlistPage = () => {
   
 
   return (
-    <div className="bg-gray-100 min-h-screen flex flex-col">
+    <div className="bg-gray-100  flex flex-col">
       <Header />
-      <MainHeader wishlist={wishlistItems} />
-      <main className="flex-grow h-screen ">
+      <MainHeader  />
+      <main className="flex-grow min-h-[87vh] ">
         <UserProfile />
         <Tabs />
         <WishlistContent />
