@@ -31,6 +31,8 @@ import CourseListing from "./pages/course/AllCourses";
 import WishlistPage from "./pages/user/Wishlist";
 import CourseDetails from "./pages/course/CourseDetails";
 import Cart from "./pages/user/Cart";
+import CheckoutPage from "./pages/user/CheckoutPage";
+import PurchaseCompleted from "./pages/user/PurchaseSuccess";
 
 
 
@@ -68,6 +70,8 @@ function App() {
               <Route path="/user/settings" element={<ProtectedRoute userType="user"><SettingsPage /></ProtectedRoute>} />
               <Route path="/user/wishlist" element={<ProtectedRoute userType="user"><WishlistPage /></ProtectedRoute>} />
               <Route path="/user/cart" element={<ProtectedRoute userType="user"><Cart /></ProtectedRoute>} />
+              <Route path="/user/checkout" element={<ProtectedRoute userType="user"><CheckoutPage /></ProtectedRoute>} />
+              <Route path="/user/payment-success/:orderId" element={<ProtectedRoute userType="user"><PurchaseCompleted /></ProtectedRoute>} />
              
 
               {/* tutor routes */}

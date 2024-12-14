@@ -35,18 +35,22 @@ const addToCart= async (req,res)=>{
      }
 
 
-     const courseInCart = cart.items.filter((item)=>item.courseId.toString()===courseId);
-
-     if(courseInCart.length===0){
-        cart.items.push({
-            courseId,
-            price:course.price
-        })
-     }
-
      else {
-        return res.status(400).json({message:'Course already in cart'});
+        const courseInCart = cart.items.some((item)=>item.courseId.toString()===courseId);
+
+        if(!courseInCart){
+           cart.items.push({
+               courseId,
+               price:course.price
+           })
+        }
+        else {
+            return res.status(400).json({message:'Course already in cart'});
+        }
+       
+        
      }
+        
 
      //update total cart price
 
@@ -113,7 +117,10 @@ try {
         }
     });
 
-    if(!cart) return res.status(404).json({message:"Cart not found"});
+    if (!cart) {
+        return res.status(200).json({ cart: [], message: "Cart is empty" });
+      }
+      
 
     res.status(200).json({message:"Cart fetched succesfully",cart});
 

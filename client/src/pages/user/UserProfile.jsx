@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../../components/layout/Header'
 import MainHeader from '../../components/layout/user/MainHeader';
@@ -9,6 +9,8 @@ import { Heart, Play } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { selectWishlist } from '../../store/slices/wishlistSlice';
 import { selectCart } from '../../store/slices/cartSlice';
+import { selectUser } from '../../store/slices/userSlice';
+import axios from 'axios';
 
 
 
@@ -39,32 +41,57 @@ const CourseCard = ({ title, description, progress, image }) => (
 )
 
 const Courses = () => {
-  const courses = [
-    {
-      title: "Learn More About Web Design",
-      description: "Learn Official Guide from Codemy",
-      progress: 40,
-      image: "/placeholder.svg?height=200&width=300"
-    },
-    {
-      title: "User Experience Design 3: Create...",
-      description: "UX/UI Web Design Master Course",
-      progress: 16,
-      image: "/placeholder.svg?height=200&width=300"
-    },
-    {
-      title: "Adding Content to Our Website",
-      description: "Complete Web Design: From Figma to Webflow",
-      progress: 25,
-      image: "/placeholder.svg?height=200&width=300"
-    },
-    {
-      title: "CSS Font Property Challenge Solution",
-      description: "Modern Frontend Development Course",
-      progress: 0,
-      image: "/placeholder.svg?height=200&width=300"
+
+  const user=useSelector(selectUser);
+
+  // const courses = [
+  //   {
+  //     title: "Learn More About Web Design",
+  //     description: "Learn Official Guide from Codemy",
+  //     progress: 40,
+  //     image: "/placeholder.svg?height=200&width=300"
+  //   },
+  //   {
+  //     title: "User Experience Design 3: Create...",
+  //     description: "UX/UI Web Design Master Course",
+  //     progress: 16,
+  //     image: "/placeholder.svg?height=200&width=300"
+  //   },
+  //   {
+  //     title: "Adding Content to Our Website",
+  //     description: "Complete Web Design: From Figma to Webflow",
+  //     progress: 25,
+  //     image: "/placeholder.svg?height=200&width=300"
+  //   },
+  //   {
+  //     title: "CSS Font Property Challenge Solution",
+  //     description: "Modern Frontend Development Course",
+  //     progress: 0,
+  //     image: "/placeholder.svg?height=200&width=300"
+  //   }
+  // ]
+
+  const [courses,setCourses]=useState([]);
+
+  console.log(courses)
+
+  useEffect(()=>{
+    const fetchCourseByUserId=async()=>{
+      try {
+        const response= await axios.get(`http://localhost:3000/course/student-courses/${user._id}`);
+
+        setCourses(response.data.courses);
+
+      } catch (error) {
+        console.log("Error fetching course",error)
+      }
     }
-  ]
+
+    fetchCourseByUserId()
+
+  },[]);
+
+  console.log(courses)
 
   return (
     <div className="container px-12 py-8">
@@ -86,29 +113,24 @@ const Courses = () => {
       <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {courses.map((course, index) => (
           <div
-            key={index}
+            key={course._id}
             className="flex flex-col overflow-hidden rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out"
           >
             <div className="relative aspect-[3/2] w-full">
               <img
-                src={course.image}
+                src={course.thumbnail}
                 alt={`${course.title} thumbnail`}
                 className="h-full w-full object-cover"
               />
-              <button
-                className="absolute top-2 right-2 p-2 bg-white bg-opacity-70 rounded-full hover:bg-opacity-100 transition-all duration-300"
-                aria-label="Add to wishlist"
-              >
+             
                
-              </button>
+             
             </div>
             <div className="flex flex-col flex-grow p-4">
               <h3 className="text-lg font-semibold line-clamp-2 text-gray-900 flex-grow">
                 {course.title}
               </h3>
-              <p className="text-sm text-gray-600 mt-1">
-                {course.description}
-              </p>
+            
 
               {/* Progress Section */}
               <div className="mt-3">
@@ -117,20 +139,20 @@ const Courses = () => {
                     Course Progress
                   </span>
                   <span className="text-sm font-medium text-gray-800">
-                    {course.progress}%
+                    {course?.progress.progressPercentage}%
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2.5">
                   <div 
                     className="bg-orange-600 h-2.5 rounded-full" 
-                    style={{ width: `${course.progress}%` }}
+                    style={{ width: `${course?.progress.progressPercentage}%` }}
                   ></div>
                 </div>
               </div>
 
               {/* Start/Continue Course Button */}
               <div className="mt-4">
-                {course.progress === 0 ? (
+                {course?.progress.progressPercentage === 0 ? (
                   <button className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition-colors flex items-center justify-center">
                     <Play className="mr-2 w-5 h-5" /> Start Course
                   </button>
@@ -162,7 +184,7 @@ export default function UserDashboard() {
       <Header/>
       <MainHeader cart={cart} />
       <main className="flex-grow mb-4">
-        <UserProfile />
+      
         <Tabs />
         <Courses />
       

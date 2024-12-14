@@ -16,7 +16,7 @@ courseRoute.get('/get-course-info',getBasicCourseInfo);
 courseRoute.get('/get-wishlist',getWishlist);
 courseRoute.get('/get-cart',viewCart);
 courseRoute.get('/tutor-courses/:tutorId',getCoursesByTutorId);  
-courseRoute.get('/student-courses/:studentId',getCoursesByStudentId);  
+courseRoute.get('/student-courses/:userId',getCoursesByStudentId);  
 courseRoute.get('/view-course/:id',viewCourse)
 courseRoute.get('/get-lessons/:courseId',getLessons);
 

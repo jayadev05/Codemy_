@@ -5,6 +5,7 @@ const Course = require("../model/courseModel");
 const Category = require("../model/categoryModel");
 const Wishlist = require('../model/wishlistModel');
 const mongoose = require("mongoose");
+const CourseProgress=require('../model/courseProgressModel')
 
 
 const getBasicCourseInfo = async (req, res) => {
@@ -156,21 +157,42 @@ const getCoursesByTutorId = async (req, res) => {
 
 const getCoursesByStudentId = async (req, res) => {
   try {
-    const { studentId } = req.params;
+    const { userId } = req.params;
 
-    const courses = await Course.find({ studentId }).populate(
+    const user = await User.findById(userId);
+    const courseIds = user.activeCourses;
+
+    const courses = await Course.find({ _id: { $in: courseIds } }).populate(
       "categoryId",
       "title"
     );
 
-    console.log(courses);
+    const courseProgress = await CourseProgress.find({ 
+      userId, 
+      courseId: { $in: courseIds } 
+    });
 
-    return res.status(200).json({ courses });
+    // Merge course progress into courses
+    const coursesWithProgress = courses.map((course) => {
+      const progress = courseProgress.find(
+        (cp) => String(cp.courseId) === String(course._id)
+      );
+
+      return {
+        ...course.toObject(),
+        progress: progress || null, 
+      };
+    });
+
+    console.log(coursesWithProgress);
+
+    return res.status(200).json({ courses: coursesWithProgress });
   } catch (error) {
-    console.log("Get Courses By Tutor Id error : ", error);
+    console.error("Get Courses By Student Id error: ", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 const createCourse = async (req, res) => {
   const {

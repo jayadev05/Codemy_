@@ -649,9 +649,9 @@ export default function SettingsPage() {
   return (
     <div className="bg-gray-100 min-h-screen flex flex-col">
       <Header />
-      <MainHeader cart={cart} />
+      <MainHeader />
       <main className="flex-grow">
-        <UserProfile />
+      
         <Tabs />
         <SettingsForm />
       </main>

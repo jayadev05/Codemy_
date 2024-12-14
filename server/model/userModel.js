@@ -1,60 +1,70 @@
-const mongoose = require('mongoose')
+const mongoose = require("mongoose");
 
-const userSchema=new mongoose.Schema({
-  fullName: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  userName: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true
-  },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-    lowercase: true
-  },
-  phone: {
-    type: Number,
-    default:''
-    
-  },
-  password: {
-    type: String,
-    required: true
-  },
-  profileImg: {
-    type: String,
-    default: ''
-  },
-  isVerified:{
-    type:Boolean,
-    default:true
-  },
-  isActive:{
-    type:Boolean,
-    default:true
-  },
-  
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
-  },
+const userSchema = new mongoose.Schema(
+  {
+    fullName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    userName: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true,
+    },
+    phone: {
+      type: Number,
+      default: "",
+    },
+    password: {
+      type: String,
+      required: true,
+    },
 
-      resetPasswordToken: String,
-      resetPasswordExpires: Date
-},{ timestamps: true });
+    profileImg: {
+      type: String,
+      default: "",
+    },
 
+    activeCourses: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Course",
+        default:[]
+      },
+    ],
+    isVerified: {
+      type: Boolean,
+      default: true,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
 
-const User = mongoose.model("User",userSchema)
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now,
+    },
 
-module.exports= User
+    resetPasswordToken: String,
+    resetPasswordExpires: Date,
+  },
+  { timestamps: true }
+);
+
+const User = mongoose.model("User", userSchema);
+
+module.exports = User;

@@ -76,7 +76,7 @@ export default function ShoppingCart() {
       <Header />
       <MainHeader />
       {cart.items.length ? (
-        <div className="min-h-screen bg-gray-50 py-8">
+        <div className="min-h-screen bg-gray-50 py-6">
           <div className="max-w-6xl mx-auto px-4">
             <div className="flex flex-col gap-4">
               <nav className="flex items-center justify-center text-sm">
@@ -87,7 +87,7 @@ export default function ShoppingCart() {
                 <span className="text-gray-900">Shopping Cart</span>
               </nav>
 
-              <h1 className="text-center text-2xl font-semibold mb-8">
+              <h1 className="text-center text-2xl font-semibold mb-6">
                 Shopping Cart
               </h1>
 
@@ -156,7 +156,7 @@ export default function ShoppingCart() {
                   <div className="bg-white rounded-lg shadow p-6">
                     <div className="space-y-4">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Subtotal</span>
+                        <span className="text-gray-600">Total</span>
                         <span>₹{cart.totalCartPrice}</span>
                       </div>
                       <div className="flex justify-between">
@@ -170,7 +170,9 @@ export default function ShoppingCart() {
                       </div>
                     </div>
 
-                    <button className="w-full bg-orange-500 text-white rounded-lg px-4 py-3 mt-6 hover:bg-orange-600 transition-colors">
+                    <button
+                    onClick={()=>navigate('/user/checkout')}
+                    className="w-full bg-orange-500 text-white rounded-lg px-4 py-3 mt-6 hover:bg-orange-600 transition-colors">
                       Proceed To Checkout →
                     </button>
 

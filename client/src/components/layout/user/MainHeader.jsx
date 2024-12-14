@@ -75,7 +75,7 @@ const MainHeader = () => {
                          {/* Badge for wishlist count */}
          
                          {wishlist.length > 0 && (
-                           <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs font-bold rounded-full px-[6px] py-[1px]">
+                           <span className="absolute -top-0 -right-2 bg-orange-500 text-white text-xs font-bold rounded-full px-[6px] py-[1px]">
                              {wishlist.length}
                            </span>
                          )}
@@ -88,7 +88,7 @@ const MainHeader = () => {
                          {/* Badge for cart count */}
          
                          {cart?.items?.length > 0 && (
-                           <span className="absolute -top-1 -right-2 bg-red-500 text-white text-xs font-bold rounded-full px-[6px] py-[1px]">
+                           <span className="absolute -top-0 -right-2 bg-orange-500 text-white text-xs font-bold rounded-full px-[6px] py-[1px]">
                              {cart?.items?.length}
                            </span>
                          )}

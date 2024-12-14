@@ -6,30 +6,46 @@ const courseProgressSchema = new mongoose.Schema({
     ref: "User", // 
     required: true,
   },
+  
   courseId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Course", 
     required: true,
   },
-  completedLectures: {
-    type: [mongoose.Schema.Types.ObjectId], // Array of Lecture IDs
-    ref: "Lesson",
-    default: [],
-  },
+
+  lessonsProgress: [
+    {
+      lessonId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Lesson",
+        required: true,
+      },
+      status: {
+        type: String,
+        enum: ["not-started", "in-progress", "completed"],
+        default: "not-started",
+      },
+    },
+  ],
+
   progressPercentage: {
     type: Number,
     default: 0, 
     min: 0,
     max: 100,
   },
-  lastAccessedLectureId: {
+
+  lastAccessedLessonId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Lesson", // ID of the last accessed lecture
+    ref: "Lesson", 
+    default:null
   },
+
   isCompleted: {
     type: Boolean,
     default: false, 
   },
+
   createdAt: {
     type: Date,
     default: Date.now, 

@@ -143,7 +143,7 @@ const WishlistPage = () => {
       <Header />
       <MainHeader  />
       <main className="flex-grow min-h-[87vh] ">
-        <UserProfile />
+       
         <Tabs />
         <WishlistContent />
       </main>

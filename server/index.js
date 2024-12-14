@@ -8,6 +8,7 @@ const cookieParser=require('cookie-parser')
 const nocache=require("nocache");
 const tutorRoute = require("./routes/tutor/tutorRoutes");
 const courseRoute = require("./routes/course/courseRoutes");
+const paymentRoute = require("./routes/payment/paymentRoutes");
 
 
 // Database Connection
@@ -42,6 +43,7 @@ app.use("/user", userRoute);
 app.use("/admin",adminRoute);
 app.use("/tutor",tutorRoute);
 app.use('/course',courseRoute);
+app.use('/checkout',paymentRoute);
 
 
 app.listen(3000, () => {

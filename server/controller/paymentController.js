@@ -1,114 +1,171 @@
-// const crypto = require("crypto");
-// const { razorpayInstance } = require("../config/payment");
-// const Order = require("../models/orderModel");
-// const User = require("../models/userModel");
-// const Cart = require("../models/cartModel");
-// const Lesson = require("../models/lessonModel");
-// const Course = require("../models/courseModel");
-// const CourseProgress = require("../models/courseProgressModel");
+const crypto = require("crypto");
+const { razorpayInstance } = require("../config/paymentConfig");
+const Order = require("../model/orderModel");
+const User = require("../model/userModel");
+const Cart = require("../model/cartModel");
+const Lesson = require("../model/lessonModel");
+const Course = require("../model/courseModel");
+const CourseProgress = require("../model/courseProgressModel");
 
-// const createOrder = async (req, res) => {
-//   const { amount, studentId, courses } = req.body;
+const createOrder = async (req, res) => {
+  const { amount, userId, courses, paymentMethod } = req.body;
 
-//   const options = {
-//     amount,
-//     currency: "INR",
-//     receipt: `order_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-//   };
+  const options = {
+    amount: amount,
+    currency: "INR",
+    receipt: `order_${Date.now()}_${Math.random()
+      .toString(36)
+      .substring(2, 9)}`,
+  };
 
-//   try {
-//     const order = await razorpayInstance.orders.create(options);
+  try {
+    // Create Razorpay order
+    const razorpayOrder = await razorpayInstance.orders.create(options);
 
-//     const newOrder = await Order.create({
-//       order_id: order.id,
-//       amount: order.amount / 100,
-//       currency: order.currency,
-//       receipt: order.receipt,
-//       studentId,
-//       courses: courses.map((course) => course.courseId),
-//     });
+    console.log("razorePay Order", razorpayOrder);
 
-//     res.status(200).json(order);
-//   } catch (error) {
-//     console.error("Error creating Razorpay order:", error);
-//     res.status(500).json({ error: "Failed to create order." });
-//   }
-// };
+    const order = await Order.create({
+      orderId: razorpayOrder.id,
+      userId,
+      courses,
+      totalAmount: amount,
+      payment: {
+        paymentId: null,
+        status: "Pending",
+        paymentMethod: paymentMethod || "UPI",
+      },
+      orderStatus: "Processing",
+    });
 
-// const verifyPayment = async (req, res) => {
-//   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    res.status(200).json({
+      message: "Order created successfully",
+      order: razorpayOrder,
+    });
+  } catch (error) {
+    console.error("Failed to create an Order:", error);
+    res.status(500).json({
+      message: "Failed to create order.",error
+    });
+  }
+};
 
-//   try {
-//     // Verify signature
-//     const generated_signature = crypto
-//       .createHmac("sha256", process.env.RAZORPAY_SECRET_KEY)
-//       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-//       .digest("hex");
+const verifyPayment = async (req, res) => {
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
+    req.body;
 
-//     if (generated_signature !== razorpay_signature) {
-//       return res.status(400).json({ success: false, message: "Payment verification failed" });
-//     }
+  try {
+    
+    // Verify signature
 
-//     // Fetch and update the order
-//     const order = await Order.findOneAndUpdate(
-//       { order_id: razorpay_order_id },
-//       { payment_id: razorpay_payment_id, status: "success" },
-//       { new: true }
-//     );
+    const generated_signature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_SECRET_KEY)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest("hex");
 
-//     if (!order) throw new Error("Order not found");
+  
 
-//     // Update student's active courses
-//     await Student.updateOne(
-//       { userId: order.studentId },
-//       { $addToSet: { active_courses: { $each: order.courses } } }
-//     );
+    if (generated_signature !== razorpay_signature) {    
+      return res
+        .status(400)
+        .json({ success: false, message: "Signature verification failed" });
+    }
 
-//     // Increment enrollment counts for courses
-//     await Course.updateMany(
-//       { courseId: { $in: order.courses } },
-//       { $inc: { enrolled_count: 1 } }
-//     );
+    // Fetch and update the order
+    const order = await Order.findOneAndUpdate(
+      { orderId: razorpay_order_id },
+      {
+        $set: {
+          "payment.paymentId": razorpay_payment_id,
+          "payment.status": "Completed",
+        },orderStatus:"Completed"
+      },
+      { new: true }
+    );
 
-//     // Prepare and insert course progress for enrolled courses
-//     const lectures = await Lecture.find({ courseId: { $in: order.courses } });
-//     const progressDocs = order.courses.map((courseId) => {
-//       const courseLectures = lectures.filter((lecture) => String(lecture.courseId) === String(courseId));
-//       const progressArray = courseLectures.map((lecture) => ({
-//         lecture_id: lecture.lecture_id,
-//         status: "not-started",
-//       }));
+    if (!order) throw new Error("Order not found");
 
-//       return {
-//         studentId: order.studentId,
-//         courseId: courseId,
-//         progress: progressArray,
-//         overallProgress: 0,
-//         enrollment_date: new Date(),
-//       };
-//     });
+    // Update student's active courses
+    await User.updateOne(
+      { _id: order.userId },
+      { $addToSet: { activeCourses: { $each: order.courses } } }
+    );
 
-//     await CourseProgress.insertMany(progressDocs);
+    // Increment enrollment counts for courses
+    await Course.updateMany(
+      { _id: { $in: order.courses } },
+      { $inc: { enrolleeCount: 1 } }
+    );
 
-//     // Remove courses from the student's cart
-//     await Cart.updateMany(
-//       { userId: order.studentId },
-//       { $pull: { courses: { courseId: { $in: order.courses } } } }
-//     );
+    // Prepare and insert course progress for enrolled courses
+    const lessons = await Lesson.find({ courseId: { $in: order.courses } });
 
-//     res.status(200).json({ success: true, message: "Payment verified and courses enrolled successfully" });
-//   } catch (error) {
-//     console.error("Error verifying payment:", error);
-//     res.status(500).json({ error: "Failed to verify payment." });
-//   }
-// };
+    const progressDocs = order.courses.map((courseId) => {
+      const courseLessons = lessons.filter(
+        (lesson) => String(lesson.courseId) === String(courseId)
+      );
 
-// module.exports = {
-//   createOrder,
-//   verifyPayment,
-// };
+      const progressArray = courseLessons.map((lesson) => ({
+        lessonId: lesson._id,
+        status: "not-started",
+      }));
+
+      return {
+        userId: order.userId,
+        courseId: courseId,
+        lessonsProgress: progressArray,
+        progressPercentage: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+    });
+
+    await CourseProgress.insertMany(progressDocs);
+
+    // Remove courses from the student's cart
+    await Cart.updateMany(
+      { userId: order.userId },
+      {
+        $pull: {
+          items: {
+            courseId: { $in: order.courses },
+          },
+        },
+      }
+    );
+
+    res
+      .status(200)
+      .json({
+        success: true,
+        message: "Payment verified and courses enrolled successfully",
+        orderId:razorpay_order_id
+      });
+  } catch (error) {
+    console.error("Error verifying payment:", error);
+    res.status(500).json({ error: "Failed to verify payment." });
+  }
+};
+
+const getOrderDetails =async (req,res)=>{
+  try {
+    const {orderId}=req.params;
+
+    if(!orderId) return res.status(400),json({message:"orderId is missing"})
+
+    const order= await Order.findOne({orderId});
+   
+
+    if(!order) return res.status(404).json({message:"Order not found"})
 
 
+    return res.status(200).json({message:"Details fetched successfully",order});
+  } catch (error) {
+    console.log("Error fetching order details",error);
+  }
+}
 
-
-
+module.exports = {
+  createOrder,
+  verifyPayment,
+  getOrderDetails
+};

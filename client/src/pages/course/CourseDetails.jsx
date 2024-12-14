@@ -1,4 +1,4 @@
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import Header from "../../components/layout/Header";
 import MainHeader from "../../components/layout/user/MainHeader";
 import SecondaryFooter from "../../components/layout/user/SecondaryFooter";
@@ -15,10 +15,13 @@ import {
 import { addToCart, selectCart } from "../../store/slices/cartSlice";
 
 export default function CourseDetails() {
+  
   const user = useSelector(selectUser);
   const cart=useSelector(selectCart);
 
   const dispatch = useDispatch();
+  const navigate=useNavigate();
+
   const { courseId } = useParams();
 
   const [course, setCourse] = useState([]);
@@ -72,6 +75,33 @@ export default function CourseDetails() {
         });
     }
   };
+  const handleBuy = async (courseId, price) => {
+    try {
+      const response = await axios.post(
+        "http://localhost:3000/course/addToCart",
+        {
+          courseId,
+          userId: user._id,
+        }
+      );
+
+      dispatch(addToCart({ courseId, price }));
+      navigate('/user/cart')
+
+      
+      
+    } catch (error) {
+      console.error("Failed to add to cart", error);
+      if (error.response)
+        toast.error(error.response.data.message || "Failed to add to cart", {
+          icon: "⚠️",
+          style: { borderRadius: "10px", background: "#111826", color: "#fff" },
+        });
+    }
+  };
+  
+
+  
 
   const fetchCourse = async () => {
     try {
@@ -319,13 +349,19 @@ export default function CourseDetails() {
                 </div>
               </div>
               <div
-                onClick={() => handleAddToCart(course._id, course.price)}
+               
                 className="mt-6"
               >
-                <button className="w-full bg-orange-500 text-white py-3 rounded-lg font-medium mb-4 hover:bg-orange-600 transition-colors">
+                <button 
+                 onClick={() => handleAddToCart(course._id, course.price)}
+                className="w-full bg-orange-500 text-white py-3 rounded-lg font-medium mb-4 hover:bg-orange-600 transition-colors">
                   Add to Cart
                 </button>
-                <button className="w-full border border-orange-500 text-orange-500 py-3 rounded-lg font-medium hover:bg-orange-50 transition-colors">
+
+                <button 
+                onClick={()=> handleBuy(course._id,course.price)
+                  }
+                className="w-full border border-orange-500 text-orange-500 py-3 rounded-lg font-medium hover:bg-orange-50 transition-colors">
                   Buy Now
                 </button>
               </div>
