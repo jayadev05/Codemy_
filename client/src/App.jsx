@@ -30,9 +30,14 @@ import TutorEditCourse from "./pages/tutor/TutorEditCourse";
 import CourseListing from "./pages/course/AllCourses";
 import WishlistPage from "./pages/user/Wishlist";
 import CourseDetails from "./pages/course/CourseDetails";
-import Cart from "./pages/user/Cart";
-import CheckoutPage from "./pages/user/CheckoutPage";
-import PurchaseCompleted from "./pages/user/PurchaseSuccess";
+import Cart from "./pages/course/Cart";
+import CheckoutPage from "./pages/course/CheckoutPage";
+import PurchaseCompleted from "./pages/course/PurchaseSuccess";
+import PaymentFailed from "./pages/course/paymentFailurePage";
+import CoursePlayer from "./pages/user/coursePlayer/VideoPlayerPage";
+import { ScrollRestoration } from 'react-router-dom';
+import ScrollToTop from "./components/utils/ScrollToTop";
+import PurchaseHistory from "./pages/user/PurchaseHistory";
 
 
 
@@ -46,55 +51,65 @@ function App() {
         <GoogleOAuthProvider clientId="532055856231-5bvv6o4cog4srbvvghv969kfenmd33cl.apps.googleusercontent.com">
           <Toaster position="top-right"/>
           <BrowserRouter>
-            <Routes>
 
-              {/* generic routes */}
-              <Route path="/signup" element={<SignUp/>} />
-              <Route path="/login" element={<ProtectedRoute isLoginPage><Login /></ProtectedRoute>} />
-              <Route path="/" element={<Home/>} />
-              <Route path="/reset-password/:token" element={<ResetPassword/>} />
-              <Route path="/forgot-password" element={<ForgotPassword/>} />
+    <ScrollToTop/>
 
+    <Routes>
 
-
-              {/* admin routes */}
-              <Route path="/admin/dashboard" element={<ProtectedRoute userType="admin"><Dashboard /></ProtectedRoute>} />
-              <Route path="/admin/manage-tutors" element={<ProtectedRoute userType="admin"><TutorManagement /></ProtectedRoute>} />
-              <Route path="/admin/manage-students" element={<ProtectedRoute userType="admin"><StudentManagement /></ProtectedRoute>} />
-              <Route path="/admin/category" element={<ProtectedRoute userType="admin"><CategoryManagement/></ProtectedRoute>} />
-             
-             
-             
-              {/* //user routes */}
-              <Route path="/user/profile" element={<ProtectedRoute userType="user"><UserProfile /></ProtectedRoute>} />
-              <Route path="/user/settings" element={<ProtectedRoute userType="user"><SettingsPage /></ProtectedRoute>} />
-              <Route path="/user/wishlist" element={<ProtectedRoute userType="user"><WishlistPage /></ProtectedRoute>} />
-              <Route path="/user/cart" element={<ProtectedRoute userType="user"><Cart /></ProtectedRoute>} />
-              <Route path="/user/checkout" element={<ProtectedRoute userType="user"><CheckoutPage /></ProtectedRoute>} />
-              <Route path="/user/payment-success/:orderId" element={<ProtectedRoute userType="user"><PurchaseCompleted /></ProtectedRoute>} />
-             
-
-              {/* tutor routes */}
-              <Route path="/tutor/dashboard" element={<ProtectedRoute userType="tutor"><TutorDashboard /></ProtectedRoute>} />
-              <Route path="/tutor/settings" element={<ProtectedRoute userType="tutor"><TutorSettings /></ProtectedRoute>} />
-              <Route path="/tutor/create-course" element={<ProtectedRoute userType="tutor"><CourseCreation /></ProtectedRoute>} />
-              <Route path="/tutor/myCourses" element={<ProtectedRoute userType="tutor"><TutorCourses/></ProtectedRoute>} />
-              <Route path="/tutor/view-course" element={<ProtectedRoute userType="tutor"><TutorViewCourse/></ProtectedRoute>} />
-              <Route path="/tutor/edit-course/:id" element={<ProtectedRoute userType="tutor"><TutorEditCourse/></ProtectedRoute>} />
-
-              {/* course routes */}
-              <Route path="/all-courses" element={<CourseListing />}></Route>
-              <Route path="/course/details/:courseId" element={<CourseDetails />} />
+{/* generic routes */}
+<Route path="/signup" element={<SignUp/>} />
+<Route path="/login" element={<ProtectedRoute isLoginPage><Login /></ProtectedRoute>} />
+<Route path="/" element={<Home/>} />
+<Route path="/reset-password/:token" element={<ResetPassword/>} />
+<Route path="/forgot-password" element={<ForgotPassword/>} />
 
 
-              {/* Catch-all route for undefined paths */}
-              <Route path="*" element={<PageNotFound />} />
 
-              {/* Error Page */}
-              <Route path="/forbidden" element={<UnauthorizedPage/>} />
+{/* admin routes */}
+<Route path="/admin/dashboard" element={<ProtectedRoute userType="admin"><Dashboard /></ProtectedRoute>} />
+<Route path="/admin/manage-tutors" element={<ProtectedRoute userType="admin"><TutorManagement /></ProtectedRoute>} />
+<Route path="/admin/manage-students" element={<ProtectedRoute userType="admin"><StudentManagement /></ProtectedRoute>} />
+<Route path="/admin/category" element={<ProtectedRoute userType="admin"><CategoryManagement/></ProtectedRoute>} />
 
 
-            </Routes>
+
+{/* //user routes */}
+<Route path="/user/profile" element={<ProtectedRoute userType="user"><UserProfile /></ProtectedRoute>} />
+<Route path="/user/settings" element={<ProtectedRoute userType="user"><SettingsPage /></ProtectedRoute>} />
+<Route path="/user/wishlist" element={<ProtectedRoute userType="user"><WishlistPage /></ProtectedRoute>} />
+<Route path="/user/purchase-history" element={<ProtectedRoute userType="user"><PurchaseHistory /></ProtectedRoute>} />
+<Route path="/user/cart" element={<ProtectedRoute userType="user"><Cart /></ProtectedRoute>} />
+<Route path="/user/play-course/:courseId" element={<ProtectedRoute userType="user"><CoursePlayer /></ProtectedRoute>} />
+<Route path="/user/checkout" element={<ProtectedRoute userType="user"><CheckoutPage /></ProtectedRoute>} />
+<Route path="/user/payment-success/:orderId" element={<ProtectedRoute userType="user"><PurchaseCompleted /></ProtectedRoute>} />
+<Route path="/user/payment-failure/:orderId" element={<ProtectedRoute userType="user"><PaymentFailed /></ProtectedRoute>} />
+
+
+{/* tutor routes */}
+<Route path="/tutor/dashboard" element={<ProtectedRoute userType="tutor"><TutorDashboard /></ProtectedRoute>} />
+<Route path="/tutor/settings" element={<ProtectedRoute userType="tutor"><TutorSettings /></ProtectedRoute>} />
+<Route path="/tutor/create-course" element={<ProtectedRoute userType="tutor"><CourseCreation /></ProtectedRoute>} />
+<Route path="/tutor/myCourses" element={<ProtectedRoute userType="tutor"><TutorCourses/></ProtectedRoute>} />
+<Route path="/tutor/view-course" element={<ProtectedRoute userType="tutor"><TutorViewCourse/></ProtectedRoute>} />
+<Route path="/tutor/edit-course/:id" element={<ProtectedRoute userType="tutor"><TutorEditCourse/></ProtectedRoute>} />
+
+{/* course routes */}
+<Route path="/all-courses" element={<CourseListing />}></Route>
+<Route path="/course/details/:courseId" element={<CourseDetails />} />
+
+
+{/* Catch-all route for undefined paths */}
+<Route path="*" element={<PageNotFound />} />
+
+{/* Error Page */}
+<Route path="/forbidden" element={<UnauthorizedPage/>} />
+
+
+    </Routes>
+   
+           
+   
+          
           </BrowserRouter>
         </GoogleOAuthProvider>
       </PersistGate>

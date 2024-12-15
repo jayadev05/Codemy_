@@ -5,7 +5,12 @@ const Course = require("../model/courseModel");
 const Category = require("../model/categoryModel");
 const Wishlist = require('../model/wishlistModel');
 const mongoose = require("mongoose");
-const CourseProgress=require('../model/courseProgressModel')
+const CourseProgress=require('../model/courseProgressModel');
+
+const { createCanvas, loadImage } = require("canvas");
+const fs = require("fs");
+const path = require("path");
+const cloudinary = require('../config/cloudinaryConfig');
 
 
 const getBasicCourseInfo = async (req, res) => {
@@ -184,7 +189,7 @@ const getCoursesByStudentId = async (req, res) => {
       };
     });
 
-    console.log(coursesWithProgress);
+   
 
     return res.status(200).json({ courses: coursesWithProgress });
   } catch (error) {
@@ -193,6 +198,92 @@ const getCoursesByStudentId = async (req, res) => {
   }
 };
 
+const playCourse = async (req, res) => {
+  try {
+    const { courseId, userId } = req.query;
+
+    console.log(req.query);
+
+    if (!courseId || !userId) {
+      return res.status(400).json({ message: "Missing course or user ID" });
+    }
+
+    // Verify user has purchased the course
+    const user = await User.findById(userId);
+    if (!user || !user.activeCourses.includes(courseId)) {
+      return res.status(401).json({ message: "User does not have access to this course" });
+    }
+
+    
+    const course = await Course.findById(courseId)
+      .populate({
+        path: 'lessons',
+        select: 'lessonTitle duration durationUnit description lessonThumbnail lessonNotes video' 
+      })
+      .populate('tutorId', 'fullName'); 
+
+    
+    const courseProgress = await CourseProgress.findOne({ 
+      userId, 
+      courseId 
+    });
+
+    // If no progress exists, create a new progress record
+    if (!courseProgress) {
+      const newCourseProgress = new CourseProgress({
+        userId,
+        courseId,
+        lessonsProgress: course.lessons.map(lesson => ({
+          lessonId: lesson._id,
+          status: 'not-started'
+        }))
+      });
+      await newCourseProgress.save();
+    }
+
+    
+    const CourseResponse = {
+      courseId: course._id,
+      title: course.title,
+      description: course.description,
+      tutor: course.tutorId.fullName,
+      level: course.level,
+      language: course.language,
+      totalLessons: course.lessons.length,
+      lessons: course.lessons.map(lesson => {
+        // Find the corresponding progress for the lesson
+        const lessonProgress = courseProgress 
+          ? courseProgress.lessonsProgress.find(
+              progress => progress.lessonId.toString() === lesson._id.toString()
+            )
+          : null;
+    
+        return {
+          id: lesson._id,
+          title: lesson.lessonTitle,
+          duration: lesson.duration,
+          durationUnit: lesson.durationUnit,
+          thumbnail: lesson.lessonThumbnail,
+          description: lesson.description,
+          notes:lesson.lessonNotes,
+          video: lesson.video,
+          status: lessonProgress ? lessonProgress.status : 'not-started'
+        };
+
+      }),
+      progress: {
+        percentage: courseProgress ? courseProgress.progressPercentage : 0,
+        isCompleted: courseProgress ? courseProgress.isCompleted : false,
+      }
+    };
+
+    res.status(200).json({message:"Course fetched successfully",CourseResponse});
+
+  } catch (error) {
+    console.error("Error playing course:", error);
+    res.status(500).json({ message: "Failed to play course", error: error.message });
+  }
+};
 
 const createCourse = async (req, res) => {
   const {
@@ -478,6 +569,61 @@ const removeFromWishlist = async (req,res ) => {
   }
 };
 
+const generateCertificate = async (req, res) => {
+  try {
+      const { name, course, date } = req.body;
+
+      if (!name || !course || !date) {
+          return res.status(400).json({ error: "Name, course, and date are required." });
+      }
+
+      const canvas = createCanvas(1200, 900);
+      const ctx = canvas.getContext("2d");
+
+    
+      const templatePath = path.join(__dirname, "../utils/templates/certificate-template.png");
+      const template = await loadImage(templatePath);
+      ctx.drawImage(template, 0, 0, canvas.width, canvas.height);
+
+      ctx.font = "40px Arial"; // Adjust font size/style as needed
+      ctx.fillStyle = "#000"; // Text color
+      ctx.textAlign = "center";
+
+      
+      ctx.fillText(name, canvas.width / 2, 400); // Adjust Y-coordinate as per template design
+
+
+      ctx.fillText(course, canvas.width / 2, 500); // Adjust Y-coordinate as per template design
+
+   
+      ctx.fillText(date, canvas.width / 2, 600); // Adjust Y-coordinate as per template design
+
+      //  Save the certificate as a temporary file
+      const tempFilePath = path.join(__dirname, "../certificates", `${name.replace(/\s/g, "_")}-certificate.png`);
+      const buffer = canvas.toBuffer("image/png");
+      fs.writeFileSync(tempFilePath, buffer);
+
+     
+      const result = await cloudinary.uploader.upload(tempFilePath, {
+          folder: "certificates", 
+          use_filename: true,     // Use the file's original name
+          unique_filename: false, // Avoid adding random strings to filenames
+      });
+
+    // Delete the temporary file
+      fs.unlinkSync(tempFilePath);
+
+     
+      res.status(200).json({
+          message: "Certificate generated and uploaded successfully!",
+          certificateUrl: result.secure_url, 
+      });
+
+  } catch (error) {
+      console.error("Error generating certificate:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+  }
+};
 
 
 
@@ -493,5 +639,7 @@ module.exports = {
   editCourse,
   addToWishlist,
   removeFromWishlist,
-  getWishlist
+  getWishlist,
+  playCourse,
+  generateCertificate
 };

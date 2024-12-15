@@ -10,8 +10,10 @@ const CourseProgress = require("../model/courseProgressModel");
 const createOrder = async (req, res) => {
   const { amount, userId, courses, paymentMethod } = req.body;
 
+  const amountInPaise = Math.round(amount * 100);
+
   const options = {
-    amount: amount,
+    amount: amountInPaise,
     currency: "INR",
     receipt: `order_${Date.now()}_${Math.random()
       .toString(36)
@@ -28,7 +30,7 @@ const createOrder = async (req, res) => {
       orderId: razorpayOrder.id,
       userId,
       courses,
-      totalAmount: amount,
+      totalAmount: amountInPaise,
       payment: {
         paymentId: null,
         status: "Pending",
@@ -164,8 +166,68 @@ const getOrderDetails =async (req,res)=>{
   }
 }
 
+const getOrderHistory=async(req,res)=>{
+  const {userId}=req.params;
+
+  if(!userId) return res.status(400).json({message:"User id is missing "})
+
+  try {
+    const orders= await Order.find({userId});
+
+    const courseIds = [...new Set(orders.flatMap(order => order.courses))];
+
+    const courses = await Course.find({ _id: { $in: courseIds } })
+    .select('title price thumbnail');
+
+//response data
+  const data = orders.map(order => {
+    
+    const orderBaseDetails = {
+        orderId:order.orderId,
+        paymentMethod: order.payment.paymentMethod,
+        orderStatus: order.payment.status,
+        purchaseDate: order.timestamps.createdAt,
+        totalAmount: order.totalAmount
+    };
+    
+    // Map courses for this specific order
+    const orderCourses = order.courses.map(courseId => {
+
+        const course = courses.find(c => c._id.toString() === courseId.toString());
+        
+        if (!course) return null;
+        
+        return {
+            courseId: course._id,
+            title: course.title,
+            price: course.price,
+            thumbnail: course.thumbnail
+      };
+    }).filter(Boolean); // Remove any null entries
+    
+    
+    return {
+        ...orderBaseDetails,
+        course:orderCourses
+    };
+
+   
+
+  });
+
+
+
+    res.status(200).json({message:"Orders fetched successfully",data});
+    
+  } catch (error) {
+    console.log("Error in fetching order history",error);
+    res.status(500).json({message:"Orders fetching failed"});
+  }
+}
+
 module.exports = {
   createOrder,
   verifyPayment,
-  getOrderDetails
+  getOrderDetails,
+  getOrderHistory
 };

@@ -44,36 +44,11 @@ const Courses = () => {
 
   const user=useSelector(selectUser);
 
-  // const courses = [
-  //   {
-  //     title: "Learn More About Web Design",
-  //     description: "Learn Official Guide from Codemy",
-  //     progress: 40,
-  //     image: "/placeholder.svg?height=200&width=300"
-  //   },
-  //   {
-  //     title: "User Experience Design 3: Create...",
-  //     description: "UX/UI Web Design Master Course",
-  //     progress: 16,
-  //     image: "/placeholder.svg?height=200&width=300"
-  //   },
-  //   {
-  //     title: "Adding Content to Our Website",
-  //     description: "Complete Web Design: From Figma to Webflow",
-  //     progress: 25,
-  //     image: "/placeholder.svg?height=200&width=300"
-  //   },
-  //   {
-  //     title: "CSS Font Property Challenge Solution",
-  //     description: "Modern Frontend Development Course",
-  //     progress: 0,
-  //     image: "/placeholder.svg?height=200&width=300"
-  //   }
-  // ]
-
   const [courses,setCourses]=useState([]);
 
   console.log(courses)
+
+  const navigate=useNavigate();
 
   useEffect(()=>{
     const fetchCourseByUserId=async()=>{
@@ -91,10 +66,12 @@ const Courses = () => {
 
   },[]);
 
-  console.log(courses)
+  const handlePlayCourse=(courseId)=>{
+    navigate(`/user/play-course/${courseId}`);
+  }
 
   return (
-    <div className="container px-12 py-8">
+    <div className="container px-12 py-8 min-h-[500px]">
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-xl font-semibold">Courses ({courses.length})</h3>
         <div className="flex space-x-4">
@@ -111,7 +88,7 @@ const Courses = () => {
         </div>
       </div>
       <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        {courses.map((course, index) => (
+        {courses.map((course) => (
           <div
             key={course._id}
             className="flex flex-col overflow-hidden rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out"
@@ -133,33 +110,47 @@ const Courses = () => {
             
 
               {/* Progress Section */}
+            {course?.progress?.progressPercentage===100?(
+              <div className='mt-3 text-green-500 '>Course completed 🎉</div>
+            ):(
               <div className="mt-3">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-gray-600">
                     Course Progress
                   </span>
                   <span className="text-sm font-medium text-gray-800">
-                    {course?.progress.progressPercentage}%
+                    {course?.progress?.progressPercentage}%
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2.5">
                   <div 
                     className="bg-orange-600 h-2.5 rounded-full" 
-                    style={{ width: `${course?.progress.progressPercentage}%` }}
+                    style={{ width: `${course?.progress?.progressPercentage}%` }}
                   ></div>
                 </div>
               </div>
+            )}
+
+              
 
               {/* Start/Continue Course Button */}
-              <div className="mt-4">
-                {course?.progress.progressPercentage === 0 ? (
+              <div 
+              onClick={()=>handlePlayCourse(course._id)}
+              className="mt-4">
+                {course?.progress?.progressPercentage === 0 ? (
                   <button className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition-colors flex items-center justify-center">
                     <Play className="mr-2 w-5 h-5" /> Start Course
                   </button>
-                ) : (
+                ) : course?.progress?.progressPercentage === 100? (
                   <button className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition-colors flex items-center justify-center">
-                    <Play className="mr-2 w-5 h-5" /> Continue Course
+                    <Play className="mr-2 w-5 h-5" /> Watch Again
                   </button>
+                ):(
+
+                  <button className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition-colors flex items-center justify-center">
+                  <Play className="mr-2 w-5 h-5" /> Continue Course
+                </button>
+
                 )}
               </div>
             </div>

@@ -1,4 +1,5 @@
 const Lesson = require("../model/lessonModel");
+const CourseProgress=require('../model/courseProgressModel');
 const Course=require('../model/courseModel');
 const mongoose = require('mongoose');
 
@@ -30,9 +31,8 @@ const getLessons = async (req, res) => {
   }
 };
 
-const addLesson=async(req,res)=>{
+const addLesson = async (req, res) => {
   try {
-
     const { 
       lessonTitle, 
       description, 
@@ -41,13 +41,10 @@ const addLesson=async(req,res)=>{
       lessonThumbnail, 
       duration, 
       durationUnit,
-      tutorId ,
-      courseId
+      tutorId,
+      courseId 
     } = req.body;
 
-    console.log(req.body)
-
-    
     if (!courseId || !tutorId) {
       return res.status(400).json({ 
         success: false, 
@@ -55,7 +52,7 @@ const addLesson=async(req,res)=>{
       });
     }
 
-  
+    // Create the new lesson
     const newLesson = new Lesson({
       lessonTitle,
       description: description || '',
@@ -68,28 +65,50 @@ const addLesson=async(req,res)=>{
       courseId
     });
 
-  
     const savedLesson = await newLesson.save();
 
+    // Update the course to include the new lesson
     const updatedCourse = await Course.findByIdAndUpdate(
       courseId,
       { $push: { lessons: savedLesson._id } },
       { new: true }
     );
 
-   
+    // Fetch course progress for the course
+    const courseProgressRecords = await CourseProgress.find({ courseId });
+
+    // Add the new lesson and recalculate progress for each user
+    await Promise.all(courseProgressRecords.map(async (progress) => {
+      // Add the new lesson progress
+      progress.lessonsProgress.push({
+        lessonId: savedLesson._id,
+        status: 'not_started' // Default status for a new lesson
+      });
+
+      // Reset isCompleted to false
+      progress.isCompleted = false;
+
+      // Recalculate progress percentage
+      const totalLessons = progress.lessonsProgress.length;
+      const completedLessons = progress.lessonsProgress.filter(
+        (lesson) => lesson.status === 'completed'
+      ).length;
+
+      progress.progressPercentage = (completedLessons / totalLessons) * 100;
+
+      // Save the updated progress
+      await progress.save();
+    }));
+
     res.status(201).json({
       success: true,
       message: 'Lesson added successfully',
       lesson: savedLesson,
-      course:updatedCourse
+      course: updatedCourse
     });
-
   } catch (error) {
-  
     console.error('Error adding lesson:', error);
-    
-   s
+
     if (error.name === 'ValidationError') {
       return res.status(400).json({
         success: false,
@@ -98,15 +117,14 @@ const addLesson=async(req,res)=>{
       });
     }
 
-  
     res.status(500).json({
       success: false,
       message: 'Internal server error',
       error: error.message
     });
   }
+};
 
-}
 
 const updateLesson = async (req, res) => {
 	const { ...updatedData } = req.body;
@@ -181,6 +199,58 @@ const deleteLesson = async (req, res) => {
 };
 
 
+const updateCourseProgress=async(req,res)=>{
+  const { userId, courseId, lessonId } = req.body;
+
+  console.log(req.body);
+
+  try {
+   
+    let courseProgress = await CourseProgress.findOne({ userId, courseId });
+
+    if (!courseProgress) {
+      return res.status(404).json({ message: "Progress record not found." });
+    }
+
+ 
+    const lesson = courseProgress.lessonsProgress.find(
+      (lesson) => lesson.lessonId.toString() === lessonId
+    );
+
+    if (!lesson) {
+      return res.status(404).json({ message: "Lesson not found in progress." });
+    }
+
+    if (lesson.status !== "completed") {
+      lesson.status = "completed"; 
+    }
 
 
-module.exports = { updateLesson ,getLessons,deleteLesson,addLesson};
+    // Update the `lastAccessedLessonId`
+    courseProgress.lastAccessedLessonId = lessonId;
+
+
+    // Recalculate progress percentage
+    const totalLessons = courseProgress.lessonsProgress.length;
+
+    const completedLessons = courseProgress.lessonsProgress.filter(
+      (lesson) => lesson.status === "completed"
+    ).length;
+
+    courseProgress.progressPercentage = (completedLessons / totalLessons) * 100;
+    courseProgress.isCompleted = completedLessons === totalLessons;
+
+   
+    await courseProgress.save();
+
+    res.status(200).json({ message: "Progress updated successfully.", courseProgress });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+}
+
+
+
+
+module.exports = { updateLesson ,getLessons,deleteLesson,addLesson,updateCourseProgress};

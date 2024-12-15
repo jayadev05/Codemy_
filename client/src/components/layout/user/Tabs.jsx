@@ -7,7 +7,7 @@ const Tabs = () => {
       { label: 'Courses', path: '/user/profile' },
       { label: 'Message', path: '/user/messages' },
       { label: 'Wishlist', path: '/user/wishlist' },
-      { label: 'Purchase History', path: '/user/purchases' },
+      { label: 'Purchase History', path: '/user/purchase-history' },
       { label: 'Settings', path: '/user/settings' },
     ];
   

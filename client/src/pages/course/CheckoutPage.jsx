@@ -43,32 +43,36 @@ export default function CheckoutPage() {
 
       const {id:razorpayOrderId, amount,currency}=response.data.order;
 
-      
-      const amountInPaise = amount*100
+     
+     
       
       //Razorpay payment option
 
       const options={
         key:'rzp_test_PEILuGv0t2XI3a',
-        amount: amountInPaise, 
+        amount: amount, 
         currency: currency,
         name:"Codemy",
         description:"Purchase Courses",
         order_id: razorpayOrderId,
         handler:async function (paymentResponse){
+
+         
+
           try {
          
             await verifyRazorpayPayment(paymentResponse);
 
           } catch (error) {
               console.log(error);
-              toast.error("Failed to verify payment details");
+              navigate(`/user/payment-failure/${razorpayOrderId}`);
+              toast.error("We couldn't verify your payment details 💳. Please check and retry");
           }
      
         },
         modal: {
           ondismiss: function () {
-            toast.error("Payment process canceled. Please try again.");
+            toast.error("Oops! The payment failed. Please retry.",{icon:"💸"});
           },
         },
         theme: {
@@ -100,8 +104,8 @@ export default function CheckoutPage() {
       if(response.status===200){
         console.log(response,"asdasd")
         const orderId=response.data.orderId
-        dispatch(clearCart(cart));
         navigate(`/user/payment-success/${orderId}`)
+        dispatch(clearCart(cart));
         toast.success("Course purchased successfully!");
       }
     } catch (error) {
