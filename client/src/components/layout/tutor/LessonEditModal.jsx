@@ -80,12 +80,12 @@ const LessonEditModal = ({
         }
       );
 
-      // For PDFs, always use Google Docs viewer
-      if (fileType === "file") {
-        return `https://docs.google.com/viewer?url=${encodeURIComponent(
-          res.data.secure_url
-        )}&embedded=true`;
-      }
+      // // For PDFs, always use Google Docs viewer
+      // if (fileType === "file") {
+      //   return `https://docs.google.com/viewer?url=${encodeURIComponent(
+      //     res.data.secure_url
+      //   )}&embedded=true`;
+      // }
 
       return res.data.secure_url;
     } catch (error) {

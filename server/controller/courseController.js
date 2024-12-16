@@ -3,120 +3,115 @@ const Tutor = require("../model/tutorModel");
 const Lesson = require("../model/lessonModel");
 const Course = require("../model/courseModel");
 const Category = require("../model/categoryModel");
-const Wishlist = require('../model/wishlistModel');
+const Wishlist = require("../model/wishlistModel");
 const mongoose = require("mongoose");
-const CourseProgress=require('../model/courseProgressModel');
+const CourseProgress = require("../model/courseProgressModel");
+const Ratings = require("../model/ratingsModel");
 
 const { createCanvas, loadImage } = require("canvas");
 const fs = require("fs");
 const path = require("path");
-const cloudinary = require('../config/cloudinaryConfig');
-
+const cloudinary = require("../config/cloudinaryConfig");
+const Certificate = require("../model/certificateModel");
 
 const getBasicCourseInfo = async (req, res) => {
-  const { 
-      search, 
-      sortBy, 
-      page, 
-      limit, 
-      courseId
-  } = req.query;
-
- 
-  
+  const { search, sortBy, page, limit, courseId } = req.query;
 
   // Single Course Retrieval
   if (courseId) {
-      try {
-          const course = await Course.findById(courseId)
-              .populate("tutorId", "fullName profileImg jobTitle bio")
-              .populate("categoryId", "title")
-              .select("title description price topic lessons courseContent categoryId tutorId createdAt language level thumbnail isListed ratings averageRating duration durationUnit enrolleeCount");
+    try {
+      const course = await Course.findById(courseId)
+        .populate("tutorId", "fullName profileImg jobTitle bio")
+        .populate("categoryId", "title")
+        .select(
+          "title description price topic lessons courseContent categoryId tutorId createdAt language level thumbnail isListed ratings averageRating duration durationUnit enrolleeCount"
+        );
 
-          if (!course) {
-              return res.status(404).json({ message: "Course not found" });
-          }
-
-          return res.status(200).json({ 
-              message: "Course details found successfully", 
-              course 
-          });
-      } catch (error) {
-          console.error('Single course fetch error:', error);
-          return res.status(500).json({ 
-              message: "Internal server error",
-              error: error.message 
-          });
+      if (!course) {
+        return res.status(404).json({ message: "Course not found" });
       }
-  }
 
+      return res.status(200).json({
+        message: "Course details found successfully",
+        course,
+      });
+    } catch (error) {
+      console.error("Single course fetch error:", error);
+      return res.status(500).json({
+        message: "Internal server error",
+        error: error.message,
+      });
+    }
+  }
 
   // Course Listing
   try {
-    
-      const pageNumber = Number(page) || 1;
-      const limitNumber = Number(limit) || 10;
-      const skip = (pageNumber - 1) * limitNumber;
+    const pageNumber = Number(page) || 1;
+    const limitNumber = Number(limit) || 10;
+    const skip = (pageNumber - 1) * limitNumber;
 
-    
-      let query = { isListed: true };
+    let query = { isListed: true };
 
-      if (search) {
-          query.title = { $regex: search, $options: "i" };
-      }
+    if (search) {
+      query.title = { $regex: search, $options: "i" };
+    }
 
-      let sortOptions = { createdAt: -1 }; // default to latest
-      if (sortBy === "trending") {
-          sortOptions = { enrolleeCount: -1 };
-      } else if (sortBy === "popular") {
-          sortOptions = { averageRating: -1 };
-      }
+    let sortOptions = { createdAt: -1 }; // default to latest
+    if (sortBy === "trending") {
+      sortOptions = { enrolleeCount: -1 };
+    } else if (sortBy === "popular") {
+      sortOptions = { averageRating: -1 };
+    }
 
-      // Get total count for pagination
-      const totalCourses = await Course.countDocuments(query);
+    // Get total count for pagination
+    const totalCourses = await Course.countDocuments(query);
 
-      // 
-      const courses = await Course.find(query)
-          .populate("tutorId", "fullName profileImg")
-          .populate("categoryId", "title")
-          .select("title description price topic courseContent categoryId tutorId createdAt language level thumbnail isListed ratings averageRating duration durationUnit enrolleeCount")
-          .skip(skip)
-          .limit(limitNumber)
-          .sort(sortOptions);
+    //
+    const courses = await Course.find(query)
+      .populate("tutorId", "fullName profileImg")
+      .populate("categoryId", "title")
+      .select(
+        "title description price topic courseContent categoryId tutorId createdAt language level thumbnail isListed ratings averageRating duration durationUnit enrolleeCount"
+      )
+      .skip(skip)
+      .limit(limitNumber)
+      .sort(sortOptions);
 
-      // Determine if there are more courses
-      const hasMore = skip + courses.length < totalCourses;
+    // Determine if there are more courses
+    const hasMore = skip + courses.length < totalCourses;
 
-      res.status(200).json({
-          courses,
-          hasMore,
-          total: totalCourses,
-          currentPage: pageNumber,
-          totalPages: Math.ceil(totalCourses / limitNumber)
-      });
+    res.status(200).json({
+      courses,
+      hasMore,
+      total: totalCourses,
+      currentPage: pageNumber,
+      totalPages: Math.ceil(totalCourses / limitNumber),
+    });
   } catch (error) {
-      console.error('Courses fetch error:', error);
-      res.status(500).json({ 
-          message: "Failed to fetch courses",
-          error: error.message 
-      });
+    console.error("Courses fetch error:", error);
+    res.status(500).json({
+      message: "Failed to fetch courses",
+      error: error.message,
+    });
   }
 };
 
 const getCourses = async (req, res) => {
   try {
-
-    const {sortBy}=req.query;
-
+    const { sortBy } = req.query;
 
     let courses = await Course.find()
       .populate("tutorId", "fullName profileImg")
       .populate("categoryId", "title");
 
-      if(sortBy){
-        if(sortBy==='trending') courses=courses.sort((a,b)=>b.enrolleeCount-a.enrolleeCount);
-        if(sortBy==='latest') courses=courses.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
-      }
+    if (sortBy) {
+      if (sortBy === "trending")
+        courses = courses.sort((a, b) => b.enrolleeCount - a.enrolleeCount);
+      if (sortBy === "latest")
+        courses = courses.sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+    }
 
     res.status(200).json({ courses });
   } catch (error) {
@@ -126,13 +121,14 @@ const getCourses = async (req, res) => {
 };
 
 const getCoursesByTutorId = async (req, res) => {
- 
-
   try {
     const { tutorId } = req.params;
     const { sortBy } = req.query;
 
-    if(!tutorId) return res.status(400).json({message:"Tutorid is missing / innapropriate"});
+    if (!tutorId)
+      return res
+        .status(400)
+        .json({ message: "Tutorid is missing / innapropriate" });
 
     const query = {};
 
@@ -153,7 +149,6 @@ const getCoursesByTutorId = async (req, res) => {
     }
 
     return res.status(200).json({ courses });
-    
   } catch (error) {
     console.log("Get Courses By Tutor Id error : ", error);
     return res.status(500).json({ message: "Internal server error" });
@@ -172,9 +167,9 @@ const getCoursesByStudentId = async (req, res) => {
       "title"
     );
 
-    const courseProgress = await CourseProgress.find({ 
-      userId, 
-      courseId: { $in: courseIds } 
+    const courseProgress = await CourseProgress.find({
+      userId,
+      courseId: { $in: courseIds },
     });
 
     // Merge course progress into courses
@@ -185,11 +180,9 @@ const getCoursesByStudentId = async (req, res) => {
 
       return {
         ...course.toObject(),
-        progress: progress || null, 
+        progress: progress || null,
       };
     });
-
-   
 
     return res.status(200).json({ courses: coursesWithProgress });
   } catch (error) {
@@ -211,21 +204,22 @@ const playCourse = async (req, res) => {
     // Verify user has purchased the course
     const user = await User.findById(userId);
     if (!user || !user.activeCourses.includes(courseId)) {
-      return res.status(401).json({ message: "User does not have access to this course" });
+      return res
+        .status(401)
+        .json({ message: "User does not have access to this course" });
     }
 
-    
     const course = await Course.findById(courseId)
       .populate({
-        path: 'lessons',
-        select: 'lessonTitle duration durationUnit description lessonThumbnail lessonNotes video' 
+        path: "lessons",
+        select:
+          "lessonTitle duration durationUnit description lessonThumbnail lessonNotes video",
       })
-      .populate('tutorId', 'fullName'); 
+      .populate("tutorId", "fullName");
 
-    
-    const courseProgress = await CourseProgress.findOne({ 
-      userId, 
-      courseId 
+    const courseProgress = await CourseProgress.findOne({
+      userId,
+      courseId,
     });
 
     // If no progress exists, create a new progress record
@@ -233,15 +227,14 @@ const playCourse = async (req, res) => {
       const newCourseProgress = new CourseProgress({
         userId,
         courseId,
-        lessonsProgress: course.lessons.map(lesson => ({
+        lessonsProgress: course.lessons.map((lesson) => ({
           lessonId: lesson._id,
-          status: 'not-started'
-        }))
+          status: "not-started",
+        })),
       });
       await newCourseProgress.save();
     }
 
-    
     const CourseResponse = {
       courseId: course._id,
       title: course.title,
@@ -249,15 +242,17 @@ const playCourse = async (req, res) => {
       tutor: course.tutorId.fullName,
       level: course.level,
       language: course.language,
+      certificateUrl: courseProgress.certificateUrl || null,
       totalLessons: course.lessons.length,
-      lessons: course.lessons.map(lesson => {
+      lessons: course.lessons.map((lesson) => {
         // Find the corresponding progress for the lesson
-        const lessonProgress = courseProgress 
+        const lessonProgress = courseProgress
           ? courseProgress.lessonsProgress.find(
-              progress => progress.lessonId.toString() === lesson._id.toString()
+              (progress) =>
+                progress.lessonId.toString() === lesson._id.toString()
             )
           : null;
-    
+
         return {
           id: lesson._id,
           title: lesson.lessonTitle,
@@ -265,23 +260,25 @@ const playCourse = async (req, res) => {
           durationUnit: lesson.durationUnit,
           thumbnail: lesson.lessonThumbnail,
           description: lesson.description,
-          notes:lesson.lessonNotes,
+          notes: lesson.lessonNotes,
           video: lesson.video,
-          status: lessonProgress ? lessonProgress.status : 'not-started'
+          status: lessonProgress ? lessonProgress.status : "not-started",
         };
-
       }),
       progress: {
         percentage: courseProgress ? courseProgress.progressPercentage : 0,
         isCompleted: courseProgress ? courseProgress.isCompleted : false,
-      }
+      },
     };
 
-    res.status(200).json({message:"Course fetched successfully",CourseResponse});
-
+    res
+      .status(200)
+      .json({ message: "Course fetched successfully", CourseResponse });
   } catch (error) {
     console.error("Error playing course:", error);
-    res.status(500).json({ message: "Failed to play course", error: error.message });
+    res
+      .status(500)
+      .json({ message: "Failed to play course", error: error.message });
   }
 };
 
@@ -478,7 +475,9 @@ const addToWishlist = async (req, res) => {
 
     // Validate input
     if (!userId || !courseId) {
-      return res.status(400).json({ message: "UserId and CourseId are required" });
+      return res
+        .status(400)
+        .json({ message: "UserId and CourseId are required" });
     }
 
     let wishlist = await Wishlist.findOne({ userId });
@@ -513,7 +512,6 @@ const addToWishlist = async (req, res) => {
 };
 
 const getWishlist = async (req, res) => {
-  
   try {
     const { userId } = req.query;
 
@@ -522,11 +520,10 @@ const getWishlist = async (req, res) => {
     }
 
     // Find the wishlist for the given user and populate course details
-    const wishlist = await Wishlist.findOne({ userId })
-      .populate({
-        path: "courses.courseId",
-        select: "title description price thumbnail averageRating",
-      });
+    const wishlist = await Wishlist.findOne({ userId }).populate({
+      path: "courses.courseId",
+      select: "title description price thumbnail averageRating",
+    });
 
     if (!wishlist) {
       return res.status(404).json({ message: "Wishlist not found" });
@@ -539,10 +536,9 @@ const getWishlist = async (req, res) => {
   }
 };
 
-const removeFromWishlist = async (req,res ) => {
+const removeFromWishlist = async (req, res) => {
   try {
-    
-    const{userId,courseId}=req.query;
+    const { userId, courseId } = req.query;
 
     const wishlist = await Wishlist.findOne({ userId });
 
@@ -561,72 +557,183 @@ const removeFromWishlist = async (req,res ) => {
     wishlist.courses = updatedCourses;
     await wishlist.save();
 
-    res.status(200).json({message:"Removed from wishlist successfully"});
-
+    res.status(200).json({ message: "Removed from wishlist successfully" });
   } catch (error) {
     console.error("Error removing from wishlist:", error);
-   res.status(500).json({message:"Failed to remove item form wishlist"})
+    res.status(500).json({ message: "Failed to remove item form wishlist" });
   }
 };
 
 const generateCertificate = async (req, res) => {
   try {
-      const { name, course, date } = req.body;
+    const { userId, courseId, courseName } = req.body;
 
-      if (!name || !course || !date) {
-          return res.status(400).json({ error: "Name, course, and date are required." });
-      }
+    // Validate inputs
+    if (!userId || !courseId || !courseName) {
+      return res
+        .status(400)
+        .json({ error: "User ID, Course ID, and Course Name are required." });
+    }
 
-      const canvas = createCanvas(1200, 900);
-      const ctx = canvas.getContext("2d");
+    // Ensure certificates directory exists
+    const certificatesDir = path.join(__dirname, "../certificates");
+    if (!fs.existsSync(certificatesDir)) {
+      fs.mkdirSync(certificatesDir, { recursive: true });
+    }
 
-    
-      const templatePath = path.join(__dirname, "../utils/templates/certificate-template.png");
-      const template = await loadImage(templatePath);
-      ctx.drawImage(template, 0, 0, canvas.width, canvas.height);
+    // Get user details (you'll need to fetch this from your user model)
+    const user = await User.findById(userId);
 
-      ctx.font = "40px Arial"; // Adjust font size/style as needed
-      ctx.fillStyle = "#000"; // Text color
-      ctx.textAlign = "center";
+    // Create canvas for certificate
+    const canvas = createCanvas(2000, 1414); // Match template dimensions
+    const ctx = canvas.getContext("2d");
 
-      
-      ctx.fillText(name, canvas.width / 2, 400); // Adjust Y-coordinate as per template design
+    // Load certificate template
+    const templatePath = path.join(
+      __dirname,
+      "../utils/template/certificate-template.png"
+    );
+    const template = await loadImage(templatePath);
+    ctx.drawImage(template, 0, 0, canvas.width, canvas.height);
 
+    // Styling for text
+    ctx.font = "bold 50px 'Times New Roman', serif"; // Increased font size and changed to serif font
+    ctx.fillStyle = "#000";
+    ctx.textAlign = "center";
 
-      ctx.fillText(course, canvas.width / 2, 500); // Adjust Y-coordinate as per template design
+    // Add certificate details
+    const currentDate = new Date().toLocaleDateString();
 
-   
-      ctx.fillText(date, canvas.width / 2, 600); // Adjust Y-coordinate as per template design
+    // Adjust text positions based on the provided certificate image
+    ctx.fillText(user.fullName, canvas.width / 2 + 130, 660); // Adjusted Y coordinate
+    ctx.fillText(courseName, canvas.width / 2 + 130, 860); // Adjusted Y coordinate
+    ctx.fillText(currentDate, canvas.width / 2 + 165, 960); // Adjusted Y coordinate
 
-      //  Save the certificate as a temporary file
-      const tempFilePath = path.join(__dirname, "../certificates", `${name.replace(/\s/g, "_")}-certificate.png`);
-      const buffer = canvas.toBuffer("image/png");
-      fs.writeFileSync(tempFilePath, buffer);
+    // Save and upload to Cloudinary
+    const tempFileName = `${user.fullName.replace(/\s/g, "_")}-certificate.png`;
+    const tempFilePath = path.join(certificatesDir, tempFileName);
 
-     
-      const result = await cloudinary.uploader.upload(tempFilePath, {
-          folder: "certificates", 
-          use_filename: true,     // Use the file's original name
-          unique_filename: false, // Avoid adding random strings to filenames
-      });
+    // Write file
+    const buffer = canvas.toBuffer("image/png");
+    fs.writeFileSync(tempFilePath, buffer);
 
-    // Delete the temporary file
-      fs.unlinkSync(tempFilePath);
+    const result = await cloudinary.uploader.upload(tempFilePath, {
+      folder: "certificates",
+      use_filename: true,
+      unique_filename: false,
+    });
 
-     
-      res.status(200).json({
-          message: "Certificate generated and uploaded successfully!",
-          certificateUrl: result.secure_url, 
-      });
+    // Delete temporary file
+    fs.unlinkSync(tempFilePath);
 
+    // Save certificate to database
+    const certificate = new Certificate({
+      userId,
+      courseId,
+      certificateUrl: result.secure_url,
+    });
+    await certificate.save();
+
+    const certificateUrl = result.secure_url;
+
+    const updatedProgress = await CourseProgress.findOneAndUpdate(
+      { userId, courseId },
+      { $set: { certificateUrl } },
+      { new: true, upsert: false }
+    );
+
+    console.log(updatedProgress);
+
+    if (!updatedProgress) {
+      return res.status(404).json({ error: "Course progress not found." });
+    }
+
+    res.status(200).json({
+      message: "Certificate generated successfully!",
+      certificateUrl,
+    });
   } catch (error) {
-      console.error("Error generating certificate:", error);
-      res.status(500).json({ error: "Internal Server Error" });
+    console.error("Error generating certificate:", error);
+    res
+      .status(500)
+      .json({ error: "Internal Server Error", details: error.message });
   }
 };
 
+const rateCourse = async (req, res) => {
+  const { rating, courseId, userId } = req.body;
 
+  if (!rating || !courseId || !userId) {
+    return res.status(400).json({ message: "Missing or invalid details." });
+  }
 
+  try {
+    const existingRating = await Ratings.findOne({ userId, courseId });
+    
+    // Prevent duplicate ratings
+    if (existingRating) {
+      return res.status(400).json({ message: "You have already rated this course." });
+    }
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: "Course not found." });
+    }
+
+    course.ratings.push(rating);
+    
+    // Calculate average rating
+    const totalRatings = course.ratings.length;
+    const averageRating = course.ratings.reduce((sum, value) => sum + value, 0) / totalRatings;
+    
+    course.averageRating = averageRating;
+    await course.save();
+
+    // Create new user rating
+    const userRating = new Ratings({
+      userId,
+      courseId,
+      rating
+    });
+
+    await userRating.save();
+
+    res.status(200).json({
+      message: "Rating submitted successfully.",
+      averageRating: course.averageRating
+    });
+
+  } catch (error) {
+    console.error("Error occurred while rating the course:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+const getRatings = async (req, res) => {
+  
+  console.log('recieved');
+
+  try {
+    const { userId, courseId } = req.query;
+
+    console.log("asdasd",req.query)
+    
+    if (!userId || !courseId) {
+      return res.status(400).json({ message: "UserId or CourseId not found" });
+    }
+
+    const rating = await Ratings.findOne({ userId, courseId });
+    
+    res.status(200).json({
+      hasRated: !!rating,
+      rating: rating ? rating.rating : null
+    });
+
+  } catch (error) {
+    console.log("Error in fetching ratings", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 module.exports = {
   getBasicCourseInfo,
@@ -641,5 +748,7 @@ module.exports = {
   removeFromWishlist,
   getWishlist,
   playCourse,
-  generateCertificate
+  generateCertificate,
+  rateCourse,
+  getRatings
 };

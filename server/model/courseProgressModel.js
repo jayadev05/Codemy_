@@ -28,6 +28,11 @@ const courseProgressSchema = new mongoose.Schema({
     },
   ],
 
+  certificateUrl:{
+    type:String,
+    default:null,
+  },
+
   progressPercentage: {
     type: Number,
     default: 0, 
