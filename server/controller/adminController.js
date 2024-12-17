@@ -818,13 +818,35 @@ const openReport =async(req,res)=>{
 const getReports=async(req,res)=>{
   try {
     const reports=await Report.find()
-    .populate('reportedBy','fullName')
+    .populate('reportedBy','fullName _id')
 
     res.status(200).json({message:"Reports fetched successfully",reports})
   } catch (error) {
       console.log("Error fetching reports",error);
       res.status(500).json({message:"Internal server error , Failed to get reports"})
   }
+}
+
+const handleReportStatus=async(req,res)=>{
+  const {reportId,userId,status,action}=req.query;
+
+  try {
+
+    const report=await Report.findById(reportId);
+    if(!report) return res.status(404).json({message:"Report not found"});
+
+    const updatedReport= await Report.findByIdAndUpdate(reportId,{status});
+    await updatedReport.save();
+
+
+    
+
+
+  } catch (error) {
+    console.log("Error updating report status",error);
+    res.status(500),json({message:"Error updating report status"});
+  }
+
 }
 
 
