@@ -6,8 +6,7 @@ import { useNavigate, useParams } from 'react-router';
 import axios from 'axios';
 
 const PurchaseCompleted = () => {
-  const [courseName, orderNumber, price] = ['Advanced Web Development', 'ORD-25', 3500];
-
+ 
   const {orderId}=useParams();
 
   const [order,setOrder]=useState({});
@@ -55,7 +54,7 @@ const PurchaseCompleted = () => {
             <div className="bg-orange-50 rounded-lg p-4 space-y-2">
               <p className="text-gray-700"><span className="font-medium">Order Number:</span> {order.orderId}</p>
               <p className="text-gray-700"><span className="font-medium">Payment ID:</span> {order.payment?.paymentId}</p>
-              <p className="text-gray-700"><span className="font-medium">Total:</span> ₹{order.totalAmount}</p>
+              <p className="text-gray-700"><span className="font-medium">Total:</span> ₹{order.totalAmount/100}</p>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row justify-between gap-4">

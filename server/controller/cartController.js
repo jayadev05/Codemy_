@@ -72,7 +72,6 @@ const addToCart= async (req,res)=>{
 const removeFromCart= async (req,res)=>{
 
     const {userId,courseId}=req.query;
-    console.log(req.query);
 
     if(!userId || !courseId) return res.status(400).json({message:"UserId / CourseId is missing or innapropriate"})
 

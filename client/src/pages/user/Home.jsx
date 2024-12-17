@@ -22,10 +22,11 @@ import axios from "axios";
 import Header from "../../components/layout/Header";
 import {
   addToWishlist,
+  clearWishlsit,
   setWishlistItems,
 } from "../../store/slices/wishlistSlice";
 import MainHeader from "../../components/layout/user/MainHeader";
-import { addToCart, selectCart } from "../../store/slices/cartSlice";
+import { addToCart, clearCart, selectCart } from "../../store/slices/cartSlice";
 
 const categories = [
   { name: "Label", courses: "21,245", bgColor: "bg-blue-100", img: cat1 },
@@ -66,17 +67,19 @@ export default function Home() {
   const [showModal, setShowModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const cart=useSelector(selectCart);
+  const cart = useSelector(selectCart);
 
   console.log(wishlist, "asdasdadasd");
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  
 
   const user = useSelector(selectUser);
 
   useEffect(() => {
     fetchCourses();
+ 
   }, []);
 
   const fetchCourses = async () => {
@@ -92,27 +95,31 @@ export default function Home() {
 
   const handleAddToCart = async (courseId, price) => {
     try {
-    
-      const response = await axios.post('http://localhost:3000/course/addToCart', { 
-        courseId, 
-        userId: user._id 
+      const response = await axios.post(
+        "http://localhost:3000/course/addToCart",
+        {
+          courseId,
+          userId: user._id,
+        }
+      );
+
+      dispatch(addToCart({ courseId, price }));
+
+      toast.success("Item added to cart successfully", {
+        icon: "🛒",
+        style: {
+          borderRadius: "10px",
+          background: "#111826",
+          color: "#fff",
+        },
       });
-  
-     dispatch(addToCart({ courseId, price }));
-  
-     toast.success("Item added to cart successfully",{icon: "🛒",style: {
-      borderRadius: '10px',
-      background: '#111826',
-      color: '#fff',
-    }})
-  
     } catch (error) {
-    
-      console.error('Failed to add to cart', error);
-      if(error.response)
-      toast.error(error.response.data.message || "Failed to add to cart",{icon:"🕴️",style:{borderRadius: '10px',
-        background: '#111826',
-        color: '#fff',}})
+      console.error("Failed to add to cart", error);
+      if (error.response)
+        toast.error(error.response.data.message || "Failed to add to cart", {
+          icon: "🕴️",
+          style: { borderRadius: "10px", background: "#111826", color: "#fff" },
+        });
     }
   };
 
@@ -168,23 +175,13 @@ export default function Home() {
     return cleanedNum ? Number(cleanedNum).toLocaleString("en-IN") : "";
   };
 
-  const handleLogout = async () => {
-    try {
-      await axios.post("http://localhost:3000/user/logout");
-      dispatch(logoutUser(user));
-      toast.success("Logged out successfully");
-    } catch (error) {
-      toast.error(error.message || "Error logging out user");
-    }
-  };
-
   const isLoggedIn = user;
 
   return (
     <>
       <Header showModal={setShowModal} isLoggedIn={isLoggedIn} />
       <div className="min-h-screen bg-white">
-       <MainHeader cart={cart} />
+        <MainHeader />
 
         <main className="container mx-auto px-10 py-10">
           <section className="grid items-center gap-10 md:grid-cols-2 lg:gap-16">
@@ -247,13 +244,13 @@ export default function Home() {
           </section>
 
           {/* section-2 */}
-          <section className="py-16 px-4 bg-gray-50">
-            <div className="max-w-7xl mx-auto">
+          <section className="mt-16 bg-gray-50">
+            <div className="max-w-10xl mx-auto">
               <h2 className="mb-12 text-4xl font-extrabold text-center text-gray-800 tracking-tight">
                 Best Selling Courses
               </h2>
 
-              <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mx-auto max-w-9xl px-2 sm:px-6 lg:px-3">
                 {courses.map((course) => (
                   <div
                     key={course._id}
@@ -266,28 +263,24 @@ export default function Home() {
                         alt={`${course.title} thumbnail`}
                         className="h-full w-full object-cover"
                       />
-{user &&  <button
-                        onClick={() => handleWishlist(course._id)}
-                        className="absolute top-2 right-2 p-2 bg-white bg-opacity-70 rounded-full hover:bg-opacity-100 transition-all duration-300"
-                        aria-label="Add to wishlist"
-                      >
-                        <Heart className="w-5 h-5 text-gray-600 hover:text-red-500 transition-colors duration-300" />
-                      </button>}
-                     
-
+                      {user && (
+                        <button
+                          onClick={() => handleWishlist(course._id)}
+                          className="absolute top-2 right-2 p-2 bg-white bg-opacity-70 rounded-full hover:bg-opacity-100 transition-all duration-300"
+                          aria-label="Add to wishlist"
+                        >
+                          <Heart className="w-5 h-5 text-gray-600 hover:text-red-500 transition-colors duration-300" />
+                        </button>
+                      )}
                     </div>
-                    <div
-                    
-                      className="flex flex-col flex-grow p-4"
-                    >
-                      <span 
-                      
-                      className="inline-block self-start rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-800">
+                    <div className="flex flex-col flex-grow p-4">
+                      <span className="inline-block self-start rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-800">
                         {course.categoryId.title}
                       </span>
-                      <h3 
+                      <h3
                         onClick={() => handleCourseView(course._id)}
-                      className="mt-2 text-lg font-semibold line-clamp-2 text-gray-900 flex-grow">
+                        className="mt-2 text-lg font-semibold line-clamp-2 text-gray-900 flex-grow"
+                      >
                         {course.title}
                       </h3>
 
@@ -319,9 +312,12 @@ export default function Home() {
                         <span className="text-xl font-bold text-gray-900">
                           ₹{formatCurrency(course.price.$numberDecimal)}
                         </span>
-                        <button 
-                        onClick={()=>handleAddToCart(course._id,course.price)}
-                        title="add to cart">
+                        <button
+                          onClick={() =>
+                            handleAddToCart(course._id, course.price)
+                          }
+                          title="add to cart"
+                        >
                           <ShoppingBag />
                         </button>
                       </div>
@@ -337,9 +333,10 @@ export default function Home() {
             <div className="container mx-auto px-4 py-12">
               <div className="grid md:grid-cols-2 gap-8">
                 <div className="bg-indigo-700 rounded-lg p-8 text-white flex flex-col justify-center">
-                  <h2 
-                  onClick={()=>showModal(true)}
-                  className="text-3xl font-bold mb-4 text-white">
+                  <h2
+                    onClick={() => showModal(true)}
+                    className="text-3xl font-bold mb-4 text-white"
+                  >
                     Become an Instructor
                   </h2>
                   <p className="mb-6 text-indigo-100">

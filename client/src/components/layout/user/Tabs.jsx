@@ -4,7 +4,7 @@ const Tabs = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const tabs = [
-      { label: 'Courses', path: '/user/profile' },
+      { label: 'My Courses', path: '/user/profile' },
       { label: 'Message', path: '/user/messages' },
       { label: 'Wishlist', path: '/user/wishlist' },
       { label: 'Purchase History', path: '/user/purchase-history' },

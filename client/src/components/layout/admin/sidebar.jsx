@@ -7,7 +7,8 @@ import {
   Settings,
   Ticket,
   LogOut,
-  LayoutList
+  LayoutList,
+  MessageCircleWarningIcon
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutAdmin, selectAdmin } from "../../../store/slices/adminSlice";
@@ -64,6 +65,14 @@ const Sidebar = ({ activeSection }) => {
       href: "/admin/category",
       isActive: activeSection === "Category",
     },
+
+    {
+      title: "Report Management",
+      icon: MessageCircleWarningIcon,
+      href: "/admin/manage-reports",
+      isActive: activeSection === "Reports",
+    },
+
     {
       title: "Billing",
       icon: CreditCard,
@@ -100,7 +109,7 @@ const Sidebar = ({ activeSection }) => {
         </div>
         <span className="text-sm font-medium text-gray-200">Admin</span>
       </div>
-      <nav className="flex-1 space-y-1 px-3">
+      <nav className="flex-1 space-y-1.5 px-3">
         {menuItems.map((item) => (
           <a
             key={item.title}

@@ -38,6 +38,7 @@ import CoursePlayer from "./pages/user/coursePlayer/VideoPlayerPage";
 import { ScrollRestoration } from 'react-router-dom';
 import ScrollToTop from "./components/utils/ScrollToTop";
 import PurchaseHistory from "./pages/user/PurchaseHistory";
+import ReportManagement from "./pages/admin/reportManagement";
 
 
 
@@ -70,6 +71,7 @@ function App() {
 <Route path="/admin/manage-tutors" element={<ProtectedRoute userType="admin"><TutorManagement /></ProtectedRoute>} />
 <Route path="/admin/manage-students" element={<ProtectedRoute userType="admin"><StudentManagement /></ProtectedRoute>} />
 <Route path="/admin/category" element={<ProtectedRoute userType="admin"><CategoryManagement/></ProtectedRoute>} />
+<Route path="/admin/manage-reports" element={<ProtectedRoute userType="admin"><ReportManagement/></ProtectedRoute>} />
 
 
 

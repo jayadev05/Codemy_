@@ -195,7 +195,6 @@ const playCourse = async (req, res) => {
   try {
     const { courseId, userId } = req.query;
 
-    console.log(req.query);
 
     if (!courseId || !userId) {
       return res.status(400).json({ message: "Missing course or user ID" });
@@ -240,12 +239,13 @@ const playCourse = async (req, res) => {
       title: course.title,
       description: course.description,
       tutor: course.tutorId.fullName,
+      tutorId:course.tutorId._id,
       level: course.level,
       language: course.language,
       certificateUrl: courseProgress.certificateUrl || null,
       totalLessons: course.lessons.length,
       lessons: course.lessons.map((lesson) => {
-        // Find the corresponding progress for the lesson
+        
         const lessonProgress = courseProgress
           ? courseProgress.lessonsProgress.find(
               (progress) =>
@@ -266,7 +266,7 @@ const playCourse = async (req, res) => {
         };
       }),
       progress: {
-        percentage: courseProgress ? courseProgress.progressPercentage : 0,
+        percentage: courseProgress ? courseProgress.progressPercentage.toFixed(0) : 0,
         isCompleted: courseProgress ? courseProgress.isCompleted : false,
       },
     };
@@ -348,7 +348,6 @@ const createCourse = async (req, res) => {
 };
 
 const viewCourse = async (req, res) => {
-  console.log(req.params);
 
   const { id } = req.params;
 
@@ -358,6 +357,7 @@ const viewCourse = async (req, res) => {
     }
 
     const course = await Course.findById(id);
+    console.log("course",course)
 
     if (!course) {
       return res.status(404).json({ message: "Course not found" });
@@ -384,13 +384,13 @@ const editCourse = async (req, res) => {
       level,
       thumbnail,
       description,
+      courseContent,
       price,
       isListed,
       lessons,
       tutorId,
     } = req.body.course;
 
-    console.log(req.body);
 
     const { id } = req.params;
 
@@ -417,6 +417,7 @@ const editCourse = async (req, res) => {
       ...(level && { level }),
       ...(thumbnail && { thumbnail }),
       ...(description && { description }),
+      ...(courseContent && { courseContent }),
       ...(price && { price }),
       ...(isListed !== undefined && { isListed }),
       ...(lessons && { lessons }),
@@ -526,7 +527,11 @@ const getWishlist = async (req, res) => {
     });
 
     if (!wishlist) {
-      return res.status(404).json({ message: "Wishlist not found" });
+    
+        wishlist = new Wishlist({
+          userId,
+          courses: [],
+        });
     }
 
     res.status(200).json({ wishlist: wishlist.courses });
@@ -564,28 +569,47 @@ const removeFromWishlist = async (req, res) => {
   }
 };
 
-const generateCertificate = async (req, res) => {
-  try {
-    const { userId, courseId, courseName } = req.body;
+const handleCertificate = async (req, res) => {
+  const { userId, courseId, courseName } = req.body;
 
-    // Validate inputs
-    if (!userId || !courseId || !courseName) {
-      return res
-        .status(400)
-        .json({ error: "User ID, Course ID, and Course Name are required." });
+ 
+  if (!userId || !courseId || !courseName) {
+    return res.status(400).json({ 
+      error: "User ID, Course ID, and Course Name are required.",
+      success: false 
+    });
+  }
+
+  try {
+  
+    let certificate = await Certificate.findOne({ userId, courseId });
+
+
+    if (certificate) {
+      return res.status(200).json({
+        message: "Certificate already exists",
+        certificateUrl: certificate.certificateUrl,
+        success: true
+      });
     }
 
+    
     // Ensure certificates directory exists
     const certificatesDir = path.join(__dirname, "../certificates");
     if (!fs.existsSync(certificatesDir)) {
       fs.mkdirSync(certificatesDir, { recursive: true });
     }
 
-    // Get user details (you'll need to fetch this from your user model)
     const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ 
+        error: "User not found", 
+        success: false 
+      });
+    }
 
     // Create canvas for certificate
-    const canvas = createCanvas(2000, 1414); // Match template dimensions
+    const canvas = createCanvas(2000, 1414);
     const ctx = canvas.getContext("2d");
 
     // Load certificate template
@@ -597,7 +621,7 @@ const generateCertificate = async (req, res) => {
     ctx.drawImage(template, 0, 0, canvas.width, canvas.height);
 
     // Styling for text
-    ctx.font = "bold 50px 'Times New Roman', serif"; // Increased font size and changed to serif font
+    ctx.font = "bold 50px 'Times New Roman', serif";
     ctx.fillStyle = "#000";
     ctx.textAlign = "center";
 
@@ -605,9 +629,9 @@ const generateCertificate = async (req, res) => {
     const currentDate = new Date().toLocaleDateString();
 
     // Adjust text positions based on the provided certificate image
-    ctx.fillText(user.fullName, canvas.width / 2 + 130, 660); // Adjusted Y coordinate
-    ctx.fillText(courseName, canvas.width / 2 + 130, 860); // Adjusted Y coordinate
-    ctx.fillText(currentDate, canvas.width / 2 + 165, 960); // Adjusted Y coordinate
+    ctx.fillText(user.fullName, canvas.width / 2 + 130, 660);
+    ctx.fillText(courseName, canvas.width / 2 + 130, 860);
+    ctx.fillText(currentDate, canvas.width / 2 + 165, 960);
 
     // Save and upload to Cloudinary
     const tempFileName = `${user.fullName.replace(/\s/g, "_")}-certificate.png`;
@@ -626,37 +650,41 @@ const generateCertificate = async (req, res) => {
     // Delete temporary file
     fs.unlinkSync(tempFilePath);
 
-    // Save certificate to database
-    const certificate = new Certificate({
+    
+    certificate = new Certificate({
       userId,
       courseId,
       certificateUrl: result.secure_url,
     });
     await certificate.save();
 
-    const certificateUrl = result.secure_url;
-
+  
     const updatedProgress = await CourseProgress.findOneAndUpdate(
       { userId, courseId },
-      { $set: { certificateUrl } },
+      { $set: { certificateUrl: result.secure_url } },
       { new: true, upsert: false }
     );
 
-    console.log(updatedProgress);
-
     if (!updatedProgress) {
-      return res.status(404).json({ error: "Course progress not found." });
+      return res.status(404).json({ 
+        error: "Course progress not found.",
+        success: false 
+      });
     }
 
     res.status(200).json({
       message: "Certificate generated successfully!",
-      certificateUrl,
+      certificateUrl: result.secure_url,
+      success: true
     });
+
   } catch (error) {
-    console.error("Error generating certificate:", error);
-    res
-      .status(500)
-      .json({ error: "Internal Server Error", details: error.message });
+    console.error("Error handling certificate:", error);
+    res.status(500).json({ 
+      error: "Internal Server Error", 
+      details: error.message,
+      success: false 
+    });
   }
 };
 
@@ -668,59 +696,81 @@ const rateCourse = async (req, res) => {
   }
 
   try {
-    const existingRating = await Ratings.findOne({ userId, courseId });
-    
-    // Prevent duplicate ratings
-    if (existingRating) {
-      return res.status(400).json({ message: "You have already rated this course." });
-    }
-
     const course = await Course.findById(courseId);
     if (!course) {
       return res.status(404).json({ message: "Course not found." });
     }
 
-    course.ratings.push(rating);
+    const existingRating = await Ratings.findOne({ userId, courseId });
+    const courseLessons = await Lesson.find({ _id: { $in: course.lessons } });
     
-    // Calculate average rating
+    let isLessonUpdated = false;
+    if (existingRating) {
+      isLessonUpdated = courseLessons.some(
+        (lesson) => lesson.updatedAt > existingRating.updatedAt
+      );
+    }
+
+    if (existingRating && !isLessonUpdated) {
+      return res.status(400).json({ message: "You have already rated this course." });
+    }
+
+ 
+    if (existingRating && isLessonUpdated) {
+     
+      course.ratings = course.ratings.filter(r => r !== existingRating.rating);
+      course.ratings.push(rating);
+
+      existingRating.rating = rating;
+      existingRating.updatedAt= new Date();
+
+      await existingRating.save();
+
+      // Recalculate average rating
+      const totalRatings = course.ratings.length;
+      const averageRating = course.ratings.reduce((sum, value) => sum + value, 0) / totalRatings;
+      course.averageRating = averageRating;
+      
+      await course.save();
+
+      return res.status(200).json({
+        message: "Rating updated successfully due to lesson updates.",
+      });
+    }
+
+    // For initial rating
+    course.ratings.push(rating);
     const totalRatings = course.ratings.length;
     const averageRating = course.ratings.reduce((sum, value) => sum + value, 0) / totalRatings;
-    
     course.averageRating = averageRating;
+
     await course.save();
 
-    // Create new user rating
+    // Create a new user rating
     const userRating = new Ratings({
       userId,
       courseId,
-      rating
+      rating,
     });
 
     await userRating.save();
 
     res.status(200).json({
       message: "Rating submitted successfully.",
-      averageRating: course.averageRating
     });
-
   } catch (error) {
     console.error("Error occurred while rating the course:", error);
     res.status(500).json({ message: "Internal server error." });
   }
 };
 
+
 const getRatings = async (req, res) => {
   
-  console.log('recieved');
 
   try {
     const { userId, courseId } = req.query;
 
-    console.log("asdasd",req.query)
-    
-    if (!userId || !courseId) {
-      return res.status(400).json({ message: "UserId or CourseId not found" });
-    }
 
     const rating = await Ratings.findOne({ userId, courseId });
     
@@ -748,7 +798,8 @@ module.exports = {
   removeFromWishlist,
   getWishlist,
   playCourse,
-  generateCertificate,
+  handleCertificate,
   rateCourse,
-  getRatings
+  getRatings,
+  
 };

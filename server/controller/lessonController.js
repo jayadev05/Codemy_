@@ -7,7 +7,6 @@ const getLessons = async (req, res) => {
 
   const { courseId } = req.params;
 
-	console.log(courseId)
 
   if (!courseId) {
     return res
@@ -17,7 +16,6 @@ const getLessons = async (req, res) => {
 
   try {
     const lessons = await Lesson.find({ courseId });
-		console.log("lessons in get lessons",lessons)
     if (!lessons) {
       return res.status(404).json({ message: "Lesson not found" });
     }
@@ -67,25 +65,25 @@ const addLesson = async (req, res) => {
 
     const savedLesson = await newLesson.save();
 
-    // Update the course to include the new lesson
+
     const updatedCourse = await Course.findByIdAndUpdate(
       courseId,
       { $push: { lessons: savedLesson._id } },
       { new: true }
     );
 
-    // Fetch course progress for the course
+  
     const courseProgressRecords = await CourseProgress.find({ courseId });
 
     // Add the new lesson and recalculate progress for each user
     await Promise.all(courseProgressRecords.map(async (progress) => {
-      // Add the new lesson progress
+      
       progress.lessonsProgress.push({
         lessonId: savedLesson._id,
-        status: 'not_started' // Default status for a new lesson
+        status: 'not-started' 
       });
 
-      // Reset isCompleted to false
+    
       progress.isCompleted = false;
 
       // Recalculate progress percentage
@@ -96,7 +94,7 @@ const addLesson = async (req, res) => {
 
       progress.progressPercentage = (completedLessons / totalLessons) * 100;
 
-      // Save the updated progress
+    
       await progress.save();
     }));
 
@@ -130,14 +128,13 @@ const updateLesson = async (req, res) => {
 	const { ...updatedData } = req.body;
 	const { lessonId } = req.params; 
 
-	console.log(updatedData,"updateddata")
-	console.log(lessonId,"lessonId")
+
 
 	try {
 		const lesson = await Lesson.findByIdAndUpdate(lessonId, updatedData, {
 			new: true,
 		});
-		console.log(lesson,"lesson")
+	
 
 		if (!lesson) {
 			return res.status(404).json({ message: "Lesson not found" });
@@ -165,8 +162,7 @@ const deleteLesson = async (req, res) => {
     const courseObjectId = new mongoose.Types.ObjectId(courseId);
     const lessonObjectId = new mongoose.Types.ObjectId(lessonId);
 
-    console.log("courseId", courseId);
-    console.log("lessonId", lessonId);
+
 
     // Find the lesson by ID
     const lesson = await Lesson.findById(lessonObjectId);
@@ -174,7 +170,7 @@ const deleteLesson = async (req, res) => {
       return res.status(404).json({ message: "Lesson not found" });
     }
 
-    console.log("lesson", lesson);
+  
 
     // Check if the lesson belongs to the course
     if (lesson.courseId.toString() !== courseObjectId.toString()) {
@@ -202,7 +198,6 @@ const deleteLesson = async (req, res) => {
 const updateCourseProgress=async(req,res)=>{
   const { userId, courseId, lessonId } = req.body;
 
-  console.log(req.body);
 
   try {
    

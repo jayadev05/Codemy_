@@ -106,7 +106,7 @@ const MainHeader = () => {
                          />
          
                          {/* Dropdown menu */}
-                         <div className="absolute right-0 z-10 w-48 bg-white rounded-md shadow-lg py-1 border hidden group-hover:block">
+                         <div className="absolute right-0 z-50 w-48 bg-white rounded-md shadow-lg py-1 border hidden group-hover:block">
                            <div className="px-4 py-2 border-b">
                              <p className="text-sm font-medium text-gray-900">
                                {user.userName}

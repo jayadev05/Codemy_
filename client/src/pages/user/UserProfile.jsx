@@ -1,74 +1,69 @@
-import React, { useEffect, useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom';
-import Header from '../../components/layout/Header'
-import MainHeader from '../../components/layout/user/MainHeader';
-import UserProfile from '../../components/layout/user/UserDetails';
-import Tabs from '../../components/layout/user/Tabs';
-import SecondaryFooter from '../../components/layout/user/SecondaryFooter';
-import { Heart, Play } from 'lucide-react';
-import { useSelector } from 'react-redux';
-import { selectWishlist } from '../../store/slices/wishlistSlice';
-import { selectCart } from '../../store/slices/cartSlice';
-import { selectUser } from '../../store/slices/userSlice';
-import axios from 'axios';
-
-
-
-const CourseCard = ({ title, description, progress, image }) => (
-  <div className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 max-w-sm">
-    <img src={image} alt={title} className="w-full h-48 object-cover" />
-    <div className="p-4">
-      <h3 className="font-semibold text-lg mb-2 truncate">{title}</h3>
-      <p className="text-gray-600 text-sm mb-4 line-clamp-2">{description}</p>
-      <div className="mb-4">
-        <div className="h-2 bg-gray-200 rounded-full">
-          <div 
-            className="h-full bg-orange-500 rounded-full" 
-            style={{ width: `${progress}%` }}
-            role="progressbar"
-            aria-valuenow={progress}
-            aria-valuemin="0"
-            aria-valuemax="100"
-          ></div>
-        </div>
-        <p className="text-xs text-gray-500 mt-1 text-right">{progress}% Complete</p>
-      </div>
-      <button className="w-full bg-orange-500 text-white py-2 px-4 rounded-lg hover:bg-orange-600 transition-colors duration-300">
-        {progress===0?"Start Course" :"Continue Course"}
-      </button>
-    </div>
-  </div>
-)
+import React, { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import Header from "../../components/layout/Header";
+import MainHeader from "../../components/layout/user/MainHeader";
+import Tabs from "../../components/layout/user/Tabs";
+import SecondaryFooter from "../../components/layout/user/SecondaryFooter";
+import { Heart, Play, Download, Loader2 } from "lucide-react";
+import { useSelector } from "react-redux";
+import { selectWishlist } from "../../store/slices/wishlistSlice";
+import { selectCart } from "../../store/slices/cartSlice";
+import { selectUser } from "../../store/slices/userSlice";
+import axios from "axios";
 
 const Courses = () => {
+  const user = useSelector(selectUser);
+  const [courses, setCourses] = useState([]);
+  const [loadingCertificates, setLoadingCertificates] = useState({});
+  
+  const navigate = useNavigate();
 
-  const user=useSelector(selectUser);
-
-  const [courses,setCourses]=useState([]);
-
-  console.log(courses)
-
-  const navigate=useNavigate();
-
-  useEffect(()=>{
-    const fetchCourseByUserId=async()=>{
+  useEffect(() => {
+    const fetchCourseByUserId = async () => {
       try {
-        const response= await axios.get(`http://localhost:3000/course/student-courses/${user._id}`);
+        const response = await axios.get(
+          `http://localhost:3000/course/student-courses/${user._id}`
+        );
 
         setCourses(response.data.courses);
-
       } catch (error) {
-        console.log("Error fetching course",error)
+        console.log("Error fetching course", error);
       }
+    };
+
+    fetchCourseByUserId();
+  }, [user._id]);
+
+  const handleDownloadCertificate = async (courseId, courseName) => {
+    // Create a loading state for this specific course
+    setLoadingCertificates(prev => ({...prev, [courseId]: true}));
+    
+    try {
+      const response = await axios.post(
+        `http://localhost:3000/course/generate-certificate`, 
+        {
+          userId: user._id,
+          courseId,
+          courseName
+        }
+      );
+  
+      if (response.data.success) {
+        window.open(response.data.certificateUrl, '_blank');
+      }
+    } catch (error) {
+      console.error("Certificate error:", error);
+      alert("Failed to process certificate");
+    } finally {
+      // Remove loading state for this course
+      setLoadingCertificates(prev => ({...prev, [courseId]: false}));
     }
+  };
 
-    fetchCourseByUserId()
-
-  },[]);
-
-  const handlePlayCourse=(courseId)=>{
+  const handlePlayCourse = (courseId) => {
     navigate(`/user/play-course/${courseId}`);
-  }
+  };
+  
 
   return (
     <div className="container px-12 py-8 min-h-[500px]">
@@ -80,8 +75,11 @@ const Courses = () => {
             placeholder="Search in your courses..."
             className="px-4 py-2 border rounded-lg text-sm"
           />
-          {['Latest', 'All Courses', 'All Teachers'].map((option) => (
-            <select key={option} className="px-4 py-2 border rounded-lg text-sm">
+          {["Latest", "All Courses", "All Teachers"].map((option) => (
+            <select
+              key={option}
+              className="px-4 py-2 border rounded-lg text-sm"
+            >
               <option>{option}</option>
             </select>
           ))}
@@ -99,58 +97,74 @@ const Courses = () => {
                 alt={`${course.title} thumbnail`}
                 className="h-full w-full object-cover"
               />
-             
-               
-             
             </div>
             <div className="flex flex-col flex-grow p-4">
               <h3 className="text-lg font-semibold line-clamp-2 text-gray-900 flex-grow">
                 {course.title}
               </h3>
-            
 
               {/* Progress Section */}
-            {course?.progress?.progressPercentage===100?(
-              <div className='mt-3 text-green-500 '>Course completed 🎉</div>
-            ):(
-              <div className="mt-3">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-gray-600">
-                    Course Progress
-                  </span>
-                  <span className="text-sm font-medium text-gray-800">
-                    {course?.progress?.progressPercentage}%
-                  </span>
+              {course?.progress?.progressPercentage === 100 ? (
+                <div className="mt-3 text-green-500 text-center font-medium">
+                  Course completed 🎉
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div 
-                    className="bg-orange-600 h-2.5 rounded-full" 
-                    style={{ width: `${course?.progress?.progressPercentage}%` }}
-                  ></div>
+              ) : (
+                <div className="mt-3">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-gray-600">
+                      Course Progress
+                    </span>
+                    <span className="text-sm font-medium text-gray-800">
+                      {Math.floor(course?.progress?.progressPercentage)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5">
+                    <div
+                      className="bg-orange-600 h-2.5 rounded-full"
+                      style={{
+                        width: `${course?.progress?.progressPercentage}%`,
+                      }}
+                    ></div>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-              
-
-              {/* Start/Continue Course Button */}
-              <div 
-              onClick={()=>handlePlayCourse(course._id)}
-              className="mt-4">
+              {/* Course Action Buttons */}
+              <div className="mt-4">
                 {course?.progress?.progressPercentage === 0 ? (
-                  <button className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition-colors flex items-center justify-center">
+                  <button 
+                    onClick={() => handlePlayCourse(course._id)}
+                    className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition-colors flex items-center justify-center"
+                  >
                     <Play className="mr-2 w-5 h-5" /> Start Course
                   </button>
-                ) : course?.progress?.progressPercentage === 100? (
-                  <button className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition-colors flex items-center justify-center">
-                    <Play className="mr-2 w-5 h-5" /> Watch Again
+                ) : course?.progress?.progressPercentage === 100 ? (
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => handlePlayCourse(course._id)}
+                      className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition-colors flex items-center justify-center"
+                    >
+                      <Play className="mr-2 w-5 h-5" /> Watch Again
+                    </button>
+                    <button
+                      onClick={() => handleDownloadCertificate(course._id, course.title)}
+                      disabled={loadingCertificates[course._id]}
+                      className="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition-colors flex items-center justify-center disabled:opacity-50"
+                    >
+                      {loadingCertificates[course._id] ? (
+                        <><Loader2 className="mr-2 w-5 h-5 animate-spin" /> Processing...</>
+                      ) : (
+                        <><Download className="mr-2 w-5 h-5" /> Download Certificate</>
+                      )}
+                    </button>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => handlePlayCourse(course._id)}
+                    className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition-colors flex items-center justify-center"
+                  >
+                    <Play className="mr-2 w-5 h-5" /> Continue Course
                   </button>
-                ):(
-
-                  <button className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition-colors flex items-center justify-center">
-                  <Play className="mr-2 w-5 h-5" /> Continue Course
-                </button>
-
                 )}
               </div>
             </div>
@@ -158,30 +172,22 @@ const Courses = () => {
         ))}
       </div>
     </div>
-  )
-}
-
-
-
-
+  );
+};
 
 export default function UserDashboard() {
-  
- const wishlist=useSelector(selectWishlist)
- const cart=useSelector(selectCart);
+  const wishlist = useSelector(selectWishlist);
+  const cart = useSelector(selectCart);
 
   return (
-    <div className="bg-gray-100 min-h-screen  flex flex-col">
-      <Header/>
+    <div className="bg-gray-100 min-h-screen flex flex-col">
+      <Header />
       <MainHeader cart={cart} />
       <main className="flex-grow mb-4">
-      
         <Tabs />
         <Courses />
-      
       </main>
-      <SecondaryFooter/>
+      <SecondaryFooter />
     </div>
-  )
+  );
 }
-

@@ -19,6 +19,8 @@ const CourseSchema = new mongoose.Schema(
   
   topic:String,
 
+  courseContent:String,
+
   price: { type:Schema.Types.Decimal128, required: true },
 
   enrolleeCount: { type: Number, default: 0 },

@@ -20,6 +20,7 @@ const courseSlice = createSlice({
         ratings:action.payload.ratings,
         topic:action.payload.topic,
         description:action.payload.description,
+        courseContent:action.payload.courseContent,
         language:action.payload.language,
         category:action.payload.category,
         level:action.payload.level,

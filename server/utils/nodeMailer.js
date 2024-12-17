@@ -120,42 +120,59 @@ const tutorApprovedEmailTemplate = (tutorName,randomPassword) => {
   };
   
   const passwordResetTemplate = (resetURL) => {
+    const currentYear = new Date().getFullYear();
+  
     return {
-      subject: "Password Reset Request from Codemy",
+      subject: "Reset Your Codemy Password",
       htmlContent: `
       <!DOCTYPE html>
       <html lang="en">
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Password Reset Request</title>
+        <title>Reset Your Codemy Password</title>
       </head>
-      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <div style="background-color: #fff; border-radius: 8px; padding: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-          <div style="background-color: #fa7516; color: white; text-align: center; padding: 15px; border-radius: 8px 8px 0 0;">
-            <h1 style="margin: 0;">Password Reset Request</h1>
-          </div>
-          <div style="margin-top: 20px;">
-            <p>You are receiving this because you (or someone else) have requested the reset of the password for your account.</p>
-            <p>Please click the button below, or paste the following link into your browser to complete the process:</p>
-            
-            <a href="${resetURL}" style="display: inline-block; background-color: #fa7516; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0; text-align: center;">
-              Reset Password
-            </a>
-            
-            <p>If the button above doesn't work, copy and paste this link:</p>
-            <p style="word-break: break-all; font-size: 0.9em;">${resetURL}</p>
-            
-            <p>If you did not request this, please ignore this email and your password will remain unchanged.</p>
-          </div>
-          <div style="margin-top: 20px; font-size: 0.9em; color: #777; text-align: center;">
-            <p>© ${new Date().getFullYear()} Codemy. All rights reserved.</p>
-          </div>
-        </div>
+      <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; background-color: #f4f4f4; margin: 0; padding: 0;">
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="padding: 40px 30px; text-align: center; background-color: #fa7516;">
+              <img src="https://yourwebsite.com/logo.png" alt="Codemy Logo" style="max-width: 150px; height: auto;">
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 30px;">
+              <h1 style="color: #fa7516; margin-bottom: 20px; font-size: 24px;">Reset Your Password</h1>
+              <p style="margin-bottom: 20px;">We received a request to reset the password for your Codemy account. If you didn't make this request, you can safely ignore this email.</p>
+              <p style="margin-bottom: 30px;">To reset your password, click the button below:</p>
+              <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td align="center">
+                    <a href="${resetURL}" style="display: inline-block; background-color: #fa7516; color: #ffffff; text-decoration: none; padding: 12px 30px; border-radius: 5px; font-weight: bold; text-transform: uppercase; font-size: 16px; transition: background-color 0.3s ease;">Reset Password</a>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin-top: 30px; font-size: 14px; color: #666;">If the button doesn't work, copy and paste this link into your browser:</p>
+              <p style="word-break: break-all; font-size: 14px; color: #1a73e8; margin-bottom: 30px;">${resetURL}</p>
+              <p style="font-size: 14px; color: #666; margin-bottom: 0;">This password reset link will expire in 24 hours for security reasons.</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color: #f8f8f8; padding: 20px 30px; text-align: center; font-size: 12px; color: #666;">
+              <p style="margin: 0;">© ${currentYear} Codemy. All rights reserved.</p>
+              <p style="margin: 10px 0 0;">If you have any questions, please contact our support team at <a href="mailto:support@codemy.com" style="color: #fa7516; text-decoration: none;">support@codemy.com</a></p>
+            </td>
+          </tr>
+        </table>
       </body>
       </html>
       `
     };
   };
+
+  
+  
+ 
+  
+  
   
 module.exports = { mailSender,passwordResetTemplate ,otpEmailTemplate,tutorApprovedEmailTemplate };

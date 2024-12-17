@@ -328,26 +328,20 @@ function TutorEditCourse() {
   };
 
   const handleAddLesson = () => {
-    setLessons((prevLessons) => [
-      ...prevLessons,
-      {
-        id: Math.max(...prevLessons.map((l) => l.id), 0) + 1,
-        lessonTitle: "Lesson Title",
-        isExpanded: false,
-        description: "",
-        video: "",
-        lessonNotes: "",
-        selectedThumbnail: "",
-        lessonThumbnail: "",
-        duration: 0,
-        durationUnit: "minute",
-        tutorId: tutor._id,
-      },
-    ]);
-
     setAddModalOpen(true);
-
   };
+
+  const fetchNewLesson=async(newLesson)=>{
+
+    setCourse((prevCourse) => ({
+      ...prevCourse,
+      lessons: [...(prevCourse.lessons || []), newLesson._id]
+    }));
+
+      fetchLessons();
+
+
+  }
 
   return (
     <>
@@ -419,6 +413,22 @@ function TutorEditCourse() {
                       id="description"
                       rows={3}
                       value={course.description}
+                      onChange={handleInputChange}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500"
+                    ></textarea>
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="courseContent"
+                      className="block text-sm font-medium text-gray-700"
+                    >
+                      Course Content
+                    </label>
+                    <textarea
+                      name="courseContent"
+                      id="courseContent"
+                      rows={3}
+                      value={course.courseContent}
                       onChange={handleInputChange}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-orange-500 focus:border-orange-500"
                     ></textarea>
@@ -661,7 +671,9 @@ function TutorEditCourse() {
               </div>
             </div>
           </div>
+
         </main>
+
         {deleteModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-lg p-6 max-w-sm w-full">
@@ -701,8 +713,9 @@ function TutorEditCourse() {
           onClose={() => setAddModalOpen(false)}
           tutorId={tutor._id}
           courseId={courseFromRedux._id}
-          onLessonAdd={handleAddLesson}
+          onLessonAdd={fetchNewLesson}
         />
+
       </div>
     </>
   );

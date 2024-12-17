@@ -3,7 +3,7 @@ import heroImg from "../../assets/hero.png";
 import logo from "../../assets/logo_cap.png";
 import { useState } from "react";
 import axios from "axios";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -46,16 +46,15 @@ export default function ForgotPassword() {
       );
 
       // Handle successful responses
-      if (response?.data?.type === "success") {
+      if (response?.status===200) {
         toast.success(
           response.data.message ||
             "Password reset link has been sent to your email"
         );
 
-        // Optional: Navigate to login page after successful email send
         setTimeout(() => {
           navigate("/login");
-        }, 3000);
+        }, 2500);
       }
     } catch (error) {
       // Comprehensive error handling
@@ -66,6 +65,7 @@ export default function ForgotPassword() {
           "An unexpected error occurred while processing your request";
 
         toast.error(errorMessage);
+        
       } else if (error.request) {
         // The request was made but no response was received
         toast.error(

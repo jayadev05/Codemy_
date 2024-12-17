@@ -4,12 +4,11 @@ const bcrypt = require ("bcryptjs")
 
 const changePassword = async (req, res) => {
     const { currentPassword, newPassword, email } = req.body.passwordChange;
-    console.log(req.body)
-   console.log(email)
+   
     try {
       // Find user by email
       const tutor = await Tutor.findOne({email});
-      console.log(tutor);
+   
       if (!tutor) {
         return res.status(404).json({ message: "Tutor not found" });
       }

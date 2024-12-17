@@ -24,7 +24,6 @@ const createOrder = async (req, res) => {
     // Create Razorpay order
     const razorpayOrder = await razorpayInstance.orders.create(options);
 
-    console.log("razorePay Order", razorpayOrder);
 
     const order = await Order.create({
       orderId: razorpayOrder.id,

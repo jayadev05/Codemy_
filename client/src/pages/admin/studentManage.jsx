@@ -151,6 +151,7 @@ const StudentManagement = () => {
    
       <Sidebar activeSection={"Students"} />
       <div className="flex-1 flex flex-col overflow-hidden">
+
       <header className="flex items-center justify-between border-b bg-white px-6 py-4 ">
           <div>
             <h1 className="text-xl font-semibold">Student Management</h1>
@@ -205,6 +206,7 @@ const StudentManagement = () => {
               </div>
           </div>
         </header>
+        
         <main className="flex-1  overflow-x-hidden overflow-y-auto bg-gray-100">
           <div className="max-w-6xl mx-auto px-4 py-8">
             <div className="bg-white  rounded-xl min-h-[500px] shadow-lg p-8">

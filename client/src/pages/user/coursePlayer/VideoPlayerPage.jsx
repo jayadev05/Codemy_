@@ -26,10 +26,12 @@ import axios from "axios";
 import { useSelector } from "react-redux";
 import { selectUser } from "../../../store/slices/userSlice";
 import toast from "react-hot-toast";
+import ReportModal from "../../../components/utils/ReportModal";
 
 export default function CoursePlayer() {
   const user = useSelector(selectUser);
   const [course, setCourse] = useState({});
+
   const [activeTab, setActiveTab] = useState("description");
   const [activeLesson, setActiveLesson] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -39,7 +41,7 @@ export default function CoursePlayer() {
   const [certificateLoading, setCertificateLoading] = useState(false);
   const [hasShownCompletionModal, setHasShownCompletionModal] = useState(false);
   const [certificateUrl, setCertificateUrl] = useState(null);
-  const [alreadyRated,setAlreadyRated]=useState(false);
+  const [alreadyRated, setAlreadyRated] = useState(false);
 
   const initialCompletionStatus = useRef(new Set());
   const completedLessons = useRef(new Set());
@@ -50,8 +52,24 @@ export default function CoursePlayer() {
   const [courseRating, setCourseRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [ratingModalOpen, setRatingModalOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportTargetType, setReportTargetType] = useState('Course'); 
+  const [reportTargetId, setReportTargetId] = useState('');
 
-  console.log("course", course);
+  const openReportModal = (type) => {
+   
+    const targetId = type === "Tutor" ? course.tutorId : courseId;
+    
+    setReportTargetType(type);
+    setReportTargetId(targetId);
+    setIsMenuOpen(false);
+  
+    setIsReportModalOpen(true);
+    
+  };
+
+
+  //certificate modal check
 
   useEffect(() => {
     // Only show modal on first completion
@@ -60,13 +78,16 @@ export default function CoursePlayer() {
       !hasShownCompletionModal &&
       !course.certificateUrl
     ) {
-      setShowCertificateModal(true);
-      setHasShownCompletionModal(true);
+      setTimeout(() => {
+        setShowCertificateModal(true);
+        setHasShownCompletionModal(true);
+      }, 5000);
     }
   }, [lessonProgress, hasShownCompletionModal]);
 
-  useEffect(() => {
+  //course and ratings fetching
 
+  useEffect(() => {
     const fetchCourse = async () => {
       try {
         const response = await axios.get(
@@ -74,7 +95,10 @@ export default function CoursePlayer() {
           { params: { userId: user._id, courseId } }
         );
 
+        console.log("response",response.data)
+
         const courseData = response.data.CourseResponse;
+
         setCourse(courseData);
 
         const initialProgress = {};
@@ -98,45 +122,30 @@ export default function CoursePlayer() {
 
     const fetchRating = async () => {
       try {
-        const response = await axios.get(`http://localhost:3000/course/get-ratings`, {
-          params: { 
-            userId: user._id, 
-            courseId 
-          },
-          // Add timeout and error handling
-          timeout: 5000 
-        });
-    
-        // More robust checking
+        const response = await axios.get(
+          "http://localhost:3000/course/get-ratings",
+          {
+            params: { userId: user._id, courseId },
+          }
+        );
+
         setAlreadyRated(response.data?.hasRated || false);
       } catch (error) {
-        if (axios.isAxiosError(error)) {
-          // Handle specific axios errors
-          if (error.response) {
-            // The request was made and the server responded with a status code
-            console.error('Error response:', error.response.data);
-            console.error('Error status:', error.response.status);
-          } else if (error.request) {
-            // The request was made but no response was received
-            console.error('No response received', error.request);
-          } else {
-            // Something happened in setting up the request
-            console.error('Error setting up request', error.message);
-          }
+        if (error.response) {
+          console.error("Error response:", error.response.data);
+          console.error("Error status:", error.response.status);
+        } else if (error.request) {
+          console.error("No response received", error.request);
         }
-        // Default to false if there's an error
+
         setAlreadyRated(false);
       }
     };
 
     fetchCourse();
     fetchRating();
-
   }, [courseId, user._id]);
-
-  console.log("already rated",alreadyRated);
- 
-
+               
   const handleVideoProgress = (lesson) => {
     if (!videoRef.current) return;
 
@@ -213,6 +222,9 @@ export default function CoursePlayer() {
     const currentLessonIndex = course.lessons.findIndex(
       (lesson) => lesson.id === activeLesson.id
     );
+
+    if (currentLessonIndex === -1) return;
+
     const nextLesson = course.lessons[currentLessonIndex + 1];
 
     if (nextLesson) {
@@ -227,6 +239,9 @@ export default function CoursePlayer() {
     const currentLessonIndex = course.lessons.findIndex(
       (lesson) => lesson.id === activeLesson.id
     );
+
+    if (currentLessonIndex === -1) return;
+
     const prevLesson = course.lessons[currentLessonIndex - 1];
 
     if (prevLesson) {
@@ -288,7 +303,7 @@ export default function CoursePlayer() {
           rating: courseRating,
         }
       );
-  
+
       if (response.status === 200) {
         setRatingModalOpen(false);
         setAlreadyRated(true);
@@ -296,9 +311,9 @@ export default function CoursePlayer() {
       }
     } catch (error) {
       console.error("Error rating course", error);
-      
+
       if (error.response?.status === 400) {
-        toast.error("You have already rated this course.");
+        toast.error("You have already rated this course.", { icon: "🌟" });
       } else {
         toast.error("Failed to rate the course. Please try again.");
       }
@@ -308,7 +323,6 @@ export default function CoursePlayer() {
   const renderStarRating = () => {
     return (
       <div className="flex items-center space-x-1 mt-4">
-        
         {[1, 2, 3, 4, 5].map((star) => (
           <Star
             key={star}
@@ -410,16 +424,16 @@ export default function CoursePlayer() {
                     <LucideThumbsUp className="w-12 h-12 text-yellow-500" />
                   </div>
                   <div className="flex justify-center items-center mb-3">
-                  {renderStarRating()}
+                    {renderStarRating()}
                   </div>
-              
+
                   <h3 className="text-2xl font-bold text-gray-900 mb-2"></h3>
                   <p className="text-gray-600 mb-6">
                     You've completed the course! Please give the course a
                     rating.
                   </p>
                   <button
-                    onClick={()=>submitCourseReview()}
+                    onClick={() => submitCourseReview()}
                     disabled={!courseRating}
                     className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                   >
@@ -445,15 +459,13 @@ export default function CoursePlayer() {
               </h1>
             </div>
             <div className="flex items-center gap-4">
-              
-              {!alreadyRated?( <button
+              <button
                 onClick={handleReview}
                 className="bg-orange-100 text-orange-500 px-4 py-2"
               >
                 Write A Review
+              </button>
 
-              </button>):''}
-             
               <button
                 onClick={handlePreviousLesson}
                 className={`
@@ -504,6 +516,9 @@ export default function CoursePlayer() {
                 Next
                 <ChevronRight className="w-5 h-5" />
               </button>
+
+                  {/* report option  */}
+
               <div className="relative">
                 <button
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -513,45 +528,55 @@ export default function CoursePlayer() {
                 </button>
                 {isMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50 border border-gray-200">
-                    <button className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors">
+                    <button
+                     onClick={() => openReportModal('Course')}
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors">
                       <AlertTriangle className="w-4 h-4 mr-2 text-orange-500" />
                       Report Course
                     </button>
-                    <button className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors">
+                    <button 
+                     onClick={() => openReportModal('Tutor')}
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors">
                       <AlertTriangle className="w-4 h-4 mr-2 text-orange-500" />
                       Report Tutor
                     </button>
                   </div>
                 )}
+                <ReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        targetType={reportTargetType}
+        targetId={reportTargetId}
+        reportedBy={user._id}
+      />
               </div>
+
             </div>
           </div>
         </header>
 
-        <div className="container mx-auto px-4 py-6 flex gap-6">
-          <div className="flex-2">
+        <div className="container mx-auto px-4 py-6 flex gap-6 flex-grow">
+          {/* Video and Lesson Details Section */}
+          <div className="flex-2 w-full max-w-4xl">
             {activeLesson && (
-              <div className="relative bg-black max-w-5xl  overflow-hidden  aspect-video mb-6 shadow-2xl">
-                <video
-                  ref={videoRef}
-                  key={`video-${activeLesson.id}`}
-                  src={activeLesson.video}
-                  controls
-                  className="aspect-video"
-                  poster={activeLesson.thumbnail}
-                  onTimeUpdate={() => handleVideoProgress(activeLesson)}
-                  onEnded={() => {
-                    setVideoProgress((prev) => ({
-                      ...prev,
-                      [activeLesson.id]: {
-                        status: "completed",
-                        watchedPercentage: 95,
-                      },
-                    }));
-                  }}
-                >
-                  Your browser does not support the video tag.
-                </video>
+              <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl mb-6">
+                {activeLesson ? (
+                  <video
+                    ref={videoRef}
+                    key={`video-${activeLesson.id}`}
+                    src={activeLesson.video}
+                    controls
+                    className="absolute inset-0 w-full h-full object-contain"
+                    poster={activeLesson.thumbnail}
+                    onTimeUpdate={() => handleVideoProgress(activeLesson)}
+                  >
+                    Your browser does not support the video tag.
+                  </video>
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center text-white">
+                    Select a lesson to begin
+                  </div>
+                )}
               </div>
             )}
 
@@ -593,20 +618,15 @@ export default function CoursePlayer() {
                         Lecture Notes
                       </h2>
                       <div className="space-y-2">
-                     
-                          <a
-                           
-                            href={activeLesson.notes}
-                            className="flex items-center p-3 border rounded-lg hover:bg-orange-50 transition-colors"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                          
-                            <FileText className="w-5 h-5 text-orange-500 mr-3" />
-                            Notes(pdf)
-                            
-                          </a>
-                       
+                        <a
+                          href={activeLesson.notes}
+                          className="flex items-center p-3 border rounded-lg hover:bg-orange-50 transition-colors"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <FileText className="w-5 h-5 text-orange-500 mr-3" />
+                          Notes(pdf)
+                        </a>
                       </div>
                     </div>
                   )}
@@ -641,36 +661,27 @@ export default function CoursePlayer() {
               <div className="divide-y divide-gray-100 max-h-[calc(100vh-300px)] overflow-y-auto">
                 {course?.lessons?.map((lesson) => {
                   const progress = lessonProgress[lesson.id] || {};
+                  const isActive = activeLesson?.id === lesson?.id;
+
                   return (
                     <div
                       key={`lesson-item-${lesson?.id}`}
                       onClick={() => setActiveLesson(lesson)}
-                      className={`
-                        flex items-center gap-3 p-4 hover:bg-orange-50 cursor-pointer transition-all duration-200
-                        ${
-                          activeLesson?.id === lesson?.id
-                            ? "bg-orange-50 border-l-4 border-orange-500"
-                            : ""
-                        }
-                        ${progress.status === "completed" ? "opacity-90" : ""}
-                      `}
+                      className={`flex items-center gap-3 p-4 hover:bg-orange-50 cursor-pointer transition-all duration-200
+          ${isActive ? "bg-orange-50 border-l-4  !border-orange-500" : ""}
+          ${progress.status === "completed" ? "opacity-90" : ""}
+        `}
+                      style={
+                        isActive ? { borderLeft: "4px solid #f97316" } : {}
+                      }
                     >
                       {getLessonStatusIcon(lesson)}
                       <div className="flex-1">
                         <p
-                          className={`
-                          text-sm font-medium 
-                          ${
-                            activeLesson?.id === lesson?.id
-                              ? "text-orange-600"
-                              : "text-gray-900"
-                          }
-                          ${
-                            progress.status === "completed"
-                              ? "text-gray-600"
-                              : ""
-                          }
-                        `}
+                          className={`text-sm font-medium 
+              ${isActive ? "text-orange-600" : "text-gray-900"}
+              ${progress.status === "completed" ? "text-gray-600" : ""}
+            `}
                         >
                           {lesson?.title}
                         </p>

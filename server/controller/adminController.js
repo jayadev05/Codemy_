@@ -2,7 +2,8 @@
 const User = require("../model/userModel");
 const Tutor = require("../model/tutorModel");
 const Admin = require("../model/adminModel");
-const Course=require('../model/courseModel')
+const Course=require('../model/courseModel');
+const Report =require('../model/reportModel')
 const InstructorApplication = require("../model/tutorApplication");
 const Category = require('../model/categoryModel')
 const mongoose = require('mongoose');
@@ -64,7 +65,7 @@ const forgotPassword = async (req, res) => {
 
     await currentUser.save();
 
-    console.log("asdasdasd",currentUser);
+ 
 
     // Create reset URL
     const resetURL = `http://localhost:5173/reset-password/${resetToken}`;
@@ -307,7 +308,7 @@ const getCertificates = async (req, res) => {
   try {
     const { certificateId } = req.params;
 
-    console.log('Requested Certificate ID:', certificateId); // Add detailed logging
+   
 
     // Find the application containing the certificate
     const application = await InstructorApplication.findOne({
@@ -337,7 +338,7 @@ const getCertificates = async (req, res) => {
 
     // Construct full file path
     const filePath = path.resolve(certificate.certificate);
-    console.log('Resolved File Path:', filePath);
+    
 
     // Use fs.promises.access for file existence check
     try {
@@ -387,7 +388,7 @@ const reviewInstructorApplication = async (req, res) => {
   try {       
       const { id } = req.params;
       const { status } = req.body;
-      console.log("recieved status",status);
+   
       
       // Find application
       const application = await InstructorApplication.findById(id);
@@ -536,11 +537,7 @@ const existsCheck = async (req, res) => {
           ]).then(results => results.some(result => result));
       }
 
-      console.log({
-          emailExists,
-          userNameExists,
-          phoneExists
-      });
+      
 
       let message = 'No conflicts found';
       if (userNameExists) message = 'Username is already in use';
@@ -622,7 +619,7 @@ const approveTutor = async (req, res) => {
 const listUser = async(req, res) => {
   try {
     const id = req.params.id;
-    console.log(id);
+   
     const user = await User.findByIdAndUpdate({_id: id}, {isActive: true}, {new: true});
     if(!user) {
       res.status(404).json({success: false, message: "User not found"});
@@ -701,7 +698,7 @@ const addCategory = async (req, res) => {
 const getCategories = async (req, res) => {
   try {
     const categories = await Category.find();
-    console.log("This is the category request coming ", categories);
+   
     return res.status(200).json(categories);
   } catch (error) {
     console.error("Error fetching categories:", error);
@@ -713,8 +710,7 @@ const updateCategory = async (req, res) => {
   const { id } = req.params;
   const { title, description } = req.body;
 
-  console.log(id,"id");
-  console.log(req.body);
+
 
   try {
     const updatedCategory = await Category.findByIdAndUpdate(id, { title, description }, { new: true });
@@ -768,7 +764,7 @@ const listCourse = async (req, res) => {
 
 const unlistCourse = async (req, res) => {
   const { id } = req.params; 
-  console.log("course id",id);
+
   if (!id) {
     return res.status(400).json({ message: "Course ID is missing or not in proper format" });
   }
@@ -788,6 +784,50 @@ const unlistCourse = async (req, res) => {
     res.status(500).json({ message: "Failed to unlist course" });
   }
 };
+
+const openReport =async(req,res)=>{
+
+  try {
+
+    const { title, description, type, targetType, targetId, reportedBy } = req.body;
+
+    console.log(req.body)
+
+    if (!['Course', 'Tutor'].includes(targetType)) {
+      return res.status(400).json({ error: 'Invalid target type' });
+    }
+
+
+    const existingReport= await Report.findOne({reportedBy,targetType});
+
+    if(existingReport)return res.status(409).json({message:"You already have a report in review! Please be patient"});
+
+
+    const newReport = new Report({ title, description, type, targetType, targetId, reportedBy });
+
+    const report = await newReport.save();
+
+    res.status(200).json({message:"Report submitted successfully",report});
+
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+
+}
+
+const getReports=async(req,res)=>{
+  try {
+    const reports=await Report.find()
+    .populate('reportedBy','fullName')
+
+    res.status(200).json({message:"Reports fetched successfully",reports})
+  } catch (error) {
+      console.log("Error fetching reports",error);
+      res.status(500).json({message:"Internal server error , Failed to get reports"})
+  }
+}
+
+
 
 
 
@@ -817,5 +857,7 @@ module.exports = {
   updateCategory,
   deleteCategory,
   listCourse,
-  unlistCourse
+  unlistCourse,
+  openReport,
+  getReports
 };

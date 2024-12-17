@@ -226,7 +226,7 @@ const googleLogin = async (req, res, next) => {
     genarateAccessToken(res, payload);
     genarateRefreshToken(res, payload);
 
-    console.log("current user after update", currentUser);
+    
 
     const responseData = {
       currentUser,
@@ -279,7 +279,7 @@ const googleLogin = async (req, res, next) => {
 const changePassword = async (req, res) => {
   const { currentPassword, newPassword, email } = req.body;
 
-  console.log("Cookies:", req.cookies); // This should print accessToken and refreshToken
+
 
   try {
     // Find user by email
@@ -321,7 +321,7 @@ const changePassword = async (req, res) => {
 
 const updateUser = async (req, res) => {
   try {
-    console.log(req.body);
+  
     const { email, firstName, userName, lastName, phone, profileImg } =
       req.body;
     const fullName = `${firstName} ${lastName}`;

@@ -268,6 +268,21 @@ export default function CourseDetails() {
                 ))}
               </div>
             </section>
+            <section className="mb-8">
+              <h2 className="text-2xl font-bold mb-4 text-gray-800">
+                Course Contents
+              </h2>
+              <p className="text-gray-600">
+  {course?.courseContent?.split("\n").map((line, index) => (
+    <span key={index}>
+      {index+1}. {line}
+      <br />
+      <br/>
+    </span>
+  ))}
+</p>
+
+            </section>
 
             <section>
               <h2 className="text-2xl font-bold mb-4 text-gray-800">
