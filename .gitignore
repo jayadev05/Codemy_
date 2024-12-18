@@ -3,5 +3,8 @@ client/node_modules/
 .env
 server/config/googleConfig
 server/uploads
+client/src/config/
+server/config/firebase-service-acc-key/
+server/config/firebaseAdminConfig.js
 
 

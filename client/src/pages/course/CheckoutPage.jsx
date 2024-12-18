@@ -45,7 +45,7 @@ export default function CheckoutPage() {
 
      
      
-      
+  
       //Razorpay payment option
 
       const options={
@@ -56,8 +56,6 @@ export default function CheckoutPage() {
         description:"Purchase Courses",
         order_id: razorpayOrderId,
         handler:async function (paymentResponse){
-
-         
 
           try {
          
@@ -70,6 +68,7 @@ export default function CheckoutPage() {
           }
      
         },
+
         modal: {
           ondismiss: function () {
             toast.error("Oops! The payment failed. Please retry.",{icon:"💸"});
@@ -175,7 +174,7 @@ export default function CheckoutPage() {
                           type="radio"
                           name="payment"
                           value="card"
-                          checked={paymentMethod === "card"}
+                          checked={paymentMethod === "Card"}
                           onChange={() => handlePaymentMethodChange("card")}
                           className="h-4 w-4 text-indigo-600"
                         />

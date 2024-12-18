@@ -331,13 +331,13 @@ const StudentManagement = () => {
 
               </div>
             </div>
-            <div className="flex justify-center">
-            <Pagination className="flex items-center justify-between mt-3" totalData={filteredStudents.length} dataPerPage={dataPerPage} currentPage={currentPage} setCurrentPage={handlePageChange}/>
 
-            </div>
 
           </div>
+          <Pagination className="flex items-center justify-center mt-3" totalData={filteredStudents.length} dataPerPage={dataPerPage} currentPage={currentPage} setCurrentPage={handlePageChange}/>
+
         </main>
+
       </div>
 
       {isModalOpen && selectedStudent && (

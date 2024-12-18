@@ -45,6 +45,15 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    notifications: [
+      {
+        type: { type: String }, 
+        title: { type: String, required: true }, 
+        content: { type: String, required: true },
+        isRead: { type: Boolean, default: false }, // Read/unread status
+        createdAt: { type: Date, default: Date.now }, 
+      },
+    ],
     isActive: {
       type: Boolean,
       default: true,

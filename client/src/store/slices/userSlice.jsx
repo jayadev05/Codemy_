@@ -19,7 +19,8 @@ const userSlice = createSlice({
         password: action.payload.password,
         profileImg: action.payload.profileImg || '',
         isVerified: action.payload.isVerified,
-        isActive: action.payload.isActive
+        isActive: action.payload.isActive,
+        notifications:action.payload.notifications
       };
     },
     logoutUser: (state) => {

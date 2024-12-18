@@ -14,7 +14,7 @@ const reportSchema = new mongoose.Schema({
 
   reportedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 
-  status: { type: String, enum: ['Open', 'In Progress', 'Resolved'], default: 'Open' },
+  status: { type: String, enum: ['Open', 'Resolved','Rejected'], default: 'Open' },
 
   createdAt: { type: Date, default: Date.now },
 
