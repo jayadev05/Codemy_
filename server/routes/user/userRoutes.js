@@ -1,6 +1,6 @@
 const express = require("express");
 const userRoute = express.Router();
-const { googleLogin,signUp, login, logoutUser, updateUser, sendOtp, changePassword, toggleNotifications } = require('../../controller/userController');
+const { googleLogin,signUp, login, logoutUser, updateUser, sendOtp, changePassword, toggleNotifications, deleteNotification } = require('../../controller/userController');
 const { verifyOtp}  = require('../../middleware/verifyOtp');
 const verifyUser = require("../../middleware/authMiddleware");
 
@@ -14,6 +14,7 @@ userRoute.put('/update-profile', updateUser);
 
 
 userRoute.put('/toggle-notifications', toggleNotifications);
+userRoute.delete('/delete-notification', deleteNotification);
 
 userRoute.post("/logout", logoutUser);
 

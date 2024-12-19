@@ -31,7 +31,10 @@ export default function CourseListing() {
     levels: [],
     priceRange: { min: 0, max: 2000 },
   });
+
   const [categories, setCategories] = useState([]);
+
+  console.log(filters)
 
 
   const [page,setPage]=useState(1);
@@ -67,7 +70,7 @@ export default function CourseListing() {
     console.log('top',document.documentElement.scrollTop)
     console.log('window',window.innerHeight)
 
-    if(window.innerHeight + document.documentElement.scrollTop +1>=document.documentElement.scrollHeight){
+    if(window.innerHeight + document.documentElement.scrollTop+200 +1>=document.documentElement.scrollHeight){
       setPage(prev=>prev+1)
     }
   }
@@ -123,7 +126,7 @@ export default function CourseListing() {
         setCourses(prev => [...prev, ...response.data.courses]);
       }
       
-      // Optional: Track if there are more courses to load
+  
       const hasMore = response.data.hasMore;
       if (!hasMore) {
         window.removeEventListener('scroll', handleScroll);
@@ -237,7 +240,7 @@ export default function CourseListing() {
         <div className="mb-6">
           <h3 className="text-sm font-semibold mb-3">COURSE LEVEL</h3>
           <div className="space-y-2">
-            {["Beginner", "Intermediate", "Expert"].map((level) => (
+            {["Beginner", "Intermediate", "Advanced"].map((level) => (
               <label key={level} className="flex items-center space-x-2">
                 <input
                   type="checkbox"

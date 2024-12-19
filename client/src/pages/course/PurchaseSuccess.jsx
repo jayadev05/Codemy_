@@ -4,6 +4,7 @@ import MainHeader from '../../components/layout/user/MainHeader';
 import SecondaryFooter from '../../components/layout/user/SecondaryFooter';
 import { useNavigate, useParams } from 'react-router';
 import axios from 'axios';
+import { CheckCircleIcon } from 'lucide-react';
 
 const PurchaseCompleted = () => {
  

@@ -14,8 +14,11 @@ const path = require("path");
 const cloudinary = require("../config/cloudinaryConfig");
 const Certificate = require("../model/certificateModel");
 
+
 const getBasicCourseInfo = async (req, res) => {
-  const { search, sortBy, page, limit, courseId } = req.query;
+  const { search, sortBy, page, limit, courseId, categories, levels , ratings } = req.query;
+
+  console.log(req.query)
 
   // Single Course Retrieval
   if (courseId) {
@@ -44,30 +47,38 @@ const getBasicCourseInfo = async (req, res) => {
     }
   }
 
-  // Course Listing
-  try {
+   // Course Listing
+   try {
     const pageNumber = Number(page) || 1;
-    const limitNumber = Number(limit) || 10;
+    const limitNumber = Number(limit) || 8;
     const skip = (pageNumber - 1) * limitNumber;
-
+    
     let query = { isListed: true };
-
+    
     if (search) {
       query.title = { $regex: search, $options: "i" };
     }
+ 
+    if (levels) {
+      query.level = { $in: levels };
+    }
 
-    let sortOptions = { createdAt: -1 }; // default to latest
+    if (ratings) {
+      // Convert ratings array strings to numbers
+      const ratingNumbers = ratings.map(rating => Number(rating));
+      query.averageRating = { $gte: Math.min(...ratingNumbers) };
+    }
+    
+    let sortOptions = { createdAt: -1 };
     if (sortBy === "trending") {
       sortOptions = { enrolleeCount: -1 };
     } else if (sortBy === "popular") {
       sortOptions = { averageRating: -1 };
     }
 
-    // Get total count for pagination
-    const totalCourses = await Course.countDocuments(query);
-
-    //
-    const courses = await Course.find(query)
+    const totalCount = await Course.countDocuments(query);
+    
+    let courses = await Course.find(query)
       .populate("tutorId", "fullName profileImg")
       .populate("categoryId", "title")
       .select(
@@ -76,17 +87,24 @@ const getBasicCourseInfo = async (req, res) => {
       .skip(skip)
       .limit(limitNumber)
       .sort(sortOptions);
+    
+    // Handle categories array filtering
+    if (categories) {
+      courses = courses.filter(course => 
+        course.categoryId && categories.includes(course.categoryId.title)
+      );
+    }
 
-    // Determine if there are more courses
-    const hasMore = skip + courses.length < totalCourses;
-
+    const hasMore = skip + courses.length < totalCount;
+    
     res.status(200).json({
       courses,
       hasMore,
-      total: totalCourses,
+      total: totalCount,
       currentPage: pageNumber,
-      totalPages: Math.ceil(totalCourses / limitNumber),
+      totalPages: Math.ceil(totalCount / limitNumber),
     });
+    
   } catch (error) {
     console.error("Courses fetch error:", error);
     res.status(500).json({
@@ -95,6 +113,7 @@ const getBasicCourseInfo = async (req, res) => {
     });
   }
 };
+
 
 const getCourses = async (req, res) => {
   try {

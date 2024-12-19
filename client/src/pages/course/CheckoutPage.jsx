@@ -10,6 +10,7 @@ import SecondaryFooter from "../../components/layout/user/SecondaryFooter";
 import { useNavigate } from "react-router";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import {loadStripe} from '@stripe/stripe-js'
 
 export default function CheckoutPage() {
 
@@ -33,7 +34,7 @@ export default function CheckoutPage() {
     setPaymentMethod(method);
   };
 
-  const handleCheckout = async() => {
+  const handleLocalPayment = async() => {
 
     try {
       
@@ -91,11 +92,56 @@ export default function CheckoutPage() {
 
   };
 
+  const handleGlobalPayment=async()=>{
+    try {
+     
+      const response = await axios.post('http://localhost:3000/checkout/order-create', {
+        amount: total,
+        userId: user._id,
+        courses,
+        paymentMethod, 
+      });
+  
+      const { clientSecret, orderId } = response.data;
+  
+      
+      const stripe = await stripePromise; 
+      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: {
+          card: cardElement, // Reference to Stripe's Card Element
+          billing_details: {
+            name: user.name,
+            email: user.email,
+          },
+        },
+      });
+  
+      if (error) {
+        console.error("Payment failed:", error);
+        navigate(`/user/payment-failure/${orderId}`);
+        toast.error("Payment failed. Please retry.");
+        return;
+      }
+  
+      if (paymentIntent.status === "succeeded") {
+    
+        await axios.post('http://localhost:3000/checkout/payment-verify', {
+          paymentIntentId: paymentIntent.id,
+          orderId,
+        });
+  
+        toast.success("Payment successful! 🎉");
+        navigate(`/user/payment-success/${orderId}`);
+      }
+    } catch (error) {
+      console.error("Error during Stripe payment:", error);
+      toast.error("An error occurred during payment. Please retry.");
+    }
+  }
+
   const verifyRazorpayPayment=async(paymentResponse)=>{
     try {
       
-      console.log(paymentResponse,"payment response");
-
       const {razorpay_payment_id,razorpay_order_id,razorpay_signature} = paymentResponse;
 
       const response=await axios.post('http://localhost:3000/checkout/verify-payment',{razorpay_order_id,razorpay_payment_id,razorpay_signature});
@@ -162,8 +208,8 @@ export default function CheckoutPage() {
                           type="radio"
                           name="payment"
                           value="Bank Transfer"
-                          checked={paymentMethod === "Bank Transfer"}
-                          onChange={() => handlePaymentMethodChange("Bank Transfer")}
+                          checked={paymentMethod === "Net Banking"}
+                          onChange={() => handlePaymentMethodChange("Net Banking")}
                           className="h-4 w-4 text-indigo-600"
                         />
                         <span className="text-sm font-medium text-gray-700">Bank Transfer</span>
@@ -174,11 +220,22 @@ export default function CheckoutPage() {
                           type="radio"
                           name="payment"
                           value="card"
-                          checked={paymentMethod === "Card"}
-                          onChange={() => handlePaymentMethodChange("card")}
+                          checked={paymentMethod === "Cards"}
+                          onChange={() => handlePaymentMethodChange("Cards")}
                           className="h-4 w-4 text-indigo-600"
                         />
                         <span className="text-sm font-medium text-gray-700">Credit / Debit Card</span>
+                      </label>
+                      <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+                        <input
+                          type="radio"
+                          name="payment"
+                          value="International Options"
+                          checked={paymentMethod === "International Options"}
+                          onChange={() => handlePaymentMethodChange("International Options")}
+                          className="h-4 w-4 text-indigo-600"
+                        />
+                        <span className="text-sm font-medium text-gray-700">International Payment</span>
                       </label>
                     </div>
 
@@ -224,7 +281,7 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                   <button
-                    onClick={handleCheckout}
+                    onClick={paymentMethod==='International Options'?handleGlobalPayment:handleLocalPayment}
                     className="w-full bg-orange-500 text-white rounded-lg px-4 py-3 mt-6 hover:bg-orange-600 transition-colors"
                   >
                     Proceed To Payment

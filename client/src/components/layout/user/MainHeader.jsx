@@ -1,7 +1,7 @@
 'use client'
 
 import axios from "axios"
-import { Heart, LogOut, Search, ShoppingCart, Bell, X, Mail, AlertCircle, CheckCircle2, Clock, MessageSquare } from 'lucide-react'
+import { Heart, LogOut, Search, ShoppingCart, Bell, X, Mail, AlertCircle, CheckCircle2, Clock, MessageSquare, Trash2 } from 'lucide-react'
 import { useDispatch, useSelector } from "react-redux"
 import { toast } from "react-toastify"
 import { addUser, logoutUser, selectUser } from "../../../store/slices/userSlice"
@@ -26,6 +26,15 @@ const formatTimeAgo = (date) => {
   if (minutes > 0) return `${minutes}m ago`
   return 'Just now'
 }
+
+const handleDeleteNotification = async (userId, notificationId) => {
+  try {
+    const response = await axios.delete(`http://localhost:3000/user/delete-notification/${userId}/${notificationId}`);
+    dispatch(addUser(response.data.user));
+  } catch (error) {
+    toast.error('Failed to delete notification');
+  }
+};
 
 const MainHeader = () => {
   const navigate = useNavigate()
@@ -72,9 +81,10 @@ const MainHeader = () => {
      const response= await axios.put('http://localhost:3000/user/toggle-notifications', {
          userId, notificationId 
       });
+
       dispatch(addUser(response.data.user));
 
-        
+
       // Show detail modal
       
     
@@ -182,7 +192,7 @@ const MainHeader = () => {
                             {getIcon(notification.type)}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center justify-between gap-2">
                               <p className={`text-sm font-medium ${notification.isRead ? 'text-gray-700' : 'text-gray-900'}`}>
                                 {notification.title}
                               </p>
@@ -198,6 +208,16 @@ const MainHeader = () => {
                               {notification.content}
                             </p>
                           </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation(); 
+                              handleDeleteNotification(user._id, notification._id);
+                            }}
+                            className="text-gray-400 hover:text-red-500 transition-colors"
+                            aria-label="Delete notification"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
                     ))

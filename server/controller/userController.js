@@ -379,6 +379,27 @@ const toggleNotifications = async (req, res) => {
   }
 };
 
+const deleteNotification=async(req,res)=>{
+  const {userId,notificationId}=req.query;
+  if(!userId || !notificationId) return res.status(404).json({message:"UserID or NotficationId is missing "});
+
+  try {
+    
+    const updatedUser= await User.findById(userId);
+    if(!updatedUser) return res.staus(404).json({message:"User not found"});
+
+    updatedUser.notifications.filter((n)=> n._id !== notificationId);
+
+    await updatedUser.save();
+
+    res.status(200).json({message:"notification deleted",updatedUser});
+
+  } catch (error) {
+    console.log("Error deleting notification",error);
+    res.status(500).json({message:"Failed to delete notification"});
+  }
+}
+
 
 module.exports = {
   googleLogin,
@@ -388,7 +409,8 @@ module.exports = {
   logoutUser,
   sendOtp,
   changePassword,
-  toggleNotifications
+  toggleNotifications,
+  deleteNotification
   
   
 };

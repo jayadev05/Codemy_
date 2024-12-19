@@ -147,6 +147,7 @@ const verifyPayment = async (req, res) => {
   }
 };
 
+
 const getOrderDetails =async (req,res)=>{
   try {
     const {orderId}=req.params;
@@ -224,9 +225,92 @@ const getOrderHistory=async(req,res)=>{
   }
 }
 
+const createStripeOrder=async(req,res)=>{
+  const { amount, userId, courses, paymentMethod } = req.body;
+
+  // Convert amount to the smallest currency unit (paise to rupees or cents)
+  const amountInCents = Math.round(amount * 100);
+
+  try {
+    // Create a Stripe Payment Intent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amountInCents,
+      currency: "INR",
+      payment_method_types: [paymentMethod || "International Card"], // Default to "card"
+      metadata: {
+        userId,
+        courses: JSON.stringify(courses),
+      },
+    });
+
+    // Save the order to the database
+    const order = await Order.create({
+      orderId: paymentIntent.id,
+      userId,
+      courses,
+      totalAmount: amountInCents,
+      payment: {
+        paymentId: null,
+        status: "Pending",
+        paymentMethod: paymentMethod || "International Card",
+      },
+      orderStatus: "Processing",
+    });
+
+    res.status(200).json({
+      message: "Order created successfully",
+      clientSecret: paymentIntent.client_secret, // Send this to the frontend
+    });
+  } catch (error) {
+    console.error("Failed to create Payment Intent:", error);
+    res.status(500).json({
+      message: "Failed to create order.",
+      error: error.message,
+    });
+  }
+}
+
+const verifyStripePayment=async(req,res)=>{
+  const { paymentIntentId, orderId } = req.body;
+
+  try {
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+    if (paymentIntent.status === "succeeded") {
+      const order = await Order.findOneAndUpdate(
+        { orderId: paymentIntentId },
+        {
+          $set: {
+            "payment.paymentId": paymentIntentId,
+            "payment.status": "Completed",
+          },
+          orderStatus: "Completed",
+        },
+        { new: true }
+      );
+
+      if (!order) throw new Error("Order not found");
+
+      // Additional steps: Enroll student, update course counts, etc.
+      res.status(200).json({
+        success: true,
+        message: "Payment verified and courses enrolled successfully",
+        orderId,
+      });
+    } else {
+      res.status(400).json({ message: "Payment not successful." });
+    }
+  } catch (error) {
+    console.error("Error verifying payment:", error);
+    res.status(500).json({ error: "Failed to verify payment." });
+  }
+}
+
 module.exports = {
   createOrder,
   verifyPayment,
   getOrderDetails,
-  getOrderHistory
+  getOrderHistory,
+  createStripeOrder,
+  verifyStripePayment
 };
