@@ -8,6 +8,8 @@ function genarateRefreshToken(res, payload) {
       });
 
     console.log("refresh token:",refreshToken)
+
+    
       
       res.cookie("refreshToken", refreshToken, {
           httpOnly: true,
@@ -17,7 +19,7 @@ function genarateRefreshToken(res, payload) {
       });
 
 
-     
+     return refreshToken;
 
   } catch (error) {
       console.error("Complete Refresh Token Generation Error:", error);

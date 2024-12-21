@@ -9,6 +9,7 @@ import Sidebar from '../../components/layout/admin/sidebar'
 import axios from 'axios'
 import { toast } from 'react-hot-toast';
 import Pagination from '../../components/utils/Pagination'
+import axiosInstance from '../..//config/axiosConfig'
 
 const StatusBadge = ({ status }) => {
   const styles = {
@@ -83,7 +84,7 @@ fetchReports();
   const fetchReports=async()=>{
     try {
   
-      const response=await axios.get('http://localhost:3000/admin/get-reports');
+      const response=await axiosInstance.get('http://localhost:3000/admin/get-reports');
       setReports(response.data.reports);
   
     } catch (error) {
@@ -106,7 +107,7 @@ fetchReports();
   const sendAction =async (userId) => {
     try {
       
-      const response=await axios.post('http://localhost:3000/admin/send-notification',{userId,actionTaken});
+      const response=await axiosInstance.post('http://localhost:3000/admin/send-notification',{userId,actionTaken});
 
       if(response.status===200){
         toast.success("Updated the status and Notified the user sucessfully!")
@@ -128,7 +129,7 @@ fetchReports();
 
     try {
       
-      const response = await axios.put('http://localhost:3000/admin/handle-report',{reportId,status});
+      const response = await axiosInstance.put('http://localhost:3000/admin/handle-report',{reportId,status});
 
       if(response.status===200){
           try {
@@ -148,7 +149,7 @@ fetchReports();
 
   const onLogout=()=>{
     try {
-      const response=axios.post("http://localhost:3000/admin/logout");
+      const response=axiosInstance.post("http://localhost:3000/admin/logout");
 
       dispatch(logoutAdmin(admin));
 

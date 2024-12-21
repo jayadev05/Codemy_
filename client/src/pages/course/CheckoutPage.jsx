@@ -50,7 +50,7 @@ export default function CheckoutPage() {
       //Razorpay payment option
 
       const options={
-        key:'rzp_test_PEILuGv0t2XI3a',
+        key: import.meta.env.VITE_RAZORPAY_SECRET,
         amount: amount, 
         currency: currency,
         name:"Codemy",
@@ -282,7 +282,7 @@ export default function CheckoutPage() {
                   </div>
                   <button
                     onClick={paymentMethod==='International Options'?handleGlobalPayment:handleLocalPayment}
-                    className="w-full bg-orange-500 text-white rounded-lg px-4 py-3 mt-6 hover:bg-orange-600 transition-colors"
+                    className="w-full bg-[#ff6738] text-white rounded-lg px-4 py-3 mt-6 hover:bg-orange-600 transition-colors"
                   >
                     Proceed To Payment
                   </button>

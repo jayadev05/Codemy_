@@ -39,6 +39,8 @@ import { ScrollRestoration } from 'react-router-dom';
 import ScrollToTop from "./components/utils/ScrollToTop";
 import PurchaseHistory from "./pages/user/PurchaseHistory";
 import ReportManagement from "./pages/admin/reportManagement";
+import ChatPage from "./pages/user/ChatPage";
+import TutorChatPage from "./pages/tutor/TutorChatPage";
 
 
 
@@ -80,6 +82,7 @@ function App() {
 <Route path="/user/settings" element={<ProtectedRoute userType="user"><SettingsPage /></ProtectedRoute>} />
 <Route path="/user/wishlist" element={<ProtectedRoute userType="user"><WishlistPage /></ProtectedRoute>} />
 <Route path="/user/purchase-history" element={<ProtectedRoute userType="user"><PurchaseHistory /></ProtectedRoute>} />
+<Route path="/user/messages" element={<ProtectedRoute userType="user"><ChatPage /></ProtectedRoute>} />
 <Route path="/user/cart" element={<ProtectedRoute userType="user"><Cart /></ProtectedRoute>} />
 <Route path="/user/play-course/:courseId" element={<ProtectedRoute userType="user"><CoursePlayer /></ProtectedRoute>} />
 <Route path="/user/checkout" element={<ProtectedRoute userType="user"><CheckoutPage /></ProtectedRoute>} />
@@ -92,6 +95,7 @@ function App() {
 <Route path="/tutor/settings" element={<ProtectedRoute userType="tutor"><TutorSettings /></ProtectedRoute>} />
 <Route path="/tutor/create-course" element={<ProtectedRoute userType="tutor"><CourseCreation /></ProtectedRoute>} />
 <Route path="/tutor/myCourses" element={<ProtectedRoute userType="tutor"><TutorCourses/></ProtectedRoute>} />
+<Route path="/tutor/messages" element={<ProtectedRoute userType="tutor"><TutorChatPage/></ProtectedRoute>} />
 <Route path="/tutor/view-course" element={<ProtectedRoute userType="tutor"><TutorViewCourse/></ProtectedRoute>} />
 <Route path="/tutor/edit-course/:id" element={<ProtectedRoute userType="tutor"><TutorEditCourse/></ProtectedRoute>} />
 

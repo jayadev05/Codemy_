@@ -267,7 +267,7 @@ export default function CourseListing() {
             <input
               type="range"
               min="0"
-              max="2000"
+              max="10000"
               value={filters.priceRange.max}
               onChange={(e) =>
                 handleFilterChange("priceRange", {
@@ -291,7 +291,7 @@ export default function CourseListing() {
         {/* Apply Filters Button */}
         <button
           onClick={() => setIsFilterOpen(false)}
-          className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition-colors"
+          className="w-full bg-[#ff6738] text-white py-2 rounded-md hover:bg-orange-600 transition-colors"
         >
           Apply Filters
         </button>

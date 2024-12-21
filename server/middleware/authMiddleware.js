@@ -1,19 +1,17 @@
 const jwt = require("jsonwebtoken");
 
 
-//   Middleware to verify the user and handle access token refresh if needed.
-
 const verifyUser = async (req, res, next) => {
-  
- 
-    const accessToken = req.cookies.accessToken;
-    const refreshToken = req.cookies.refreshToken;
+   
+    const accessToken = req.headers.authorization && req.headers.authorization.startsWith("Bearer ") 
+        ? req.headers.authorization.split(" ")[1]  
+        : null;
 
-
+    const refreshToken = req.headers['x-refresh-token'] || null;  
 
     console.log("Received Tokens:", {
-        accessToken: accessToken ,
-        refreshToken: refreshToken 
+        accessToken: accessToken,
+        refreshToken: refreshToken
     });
 
     if (accessToken) {
@@ -33,8 +31,6 @@ const verifyUser = async (req, res, next) => {
 };
 
 
-//   Handles the generation of a new access token using the refresh token.
-
 const handleRefreshToken = async (refreshToken, req, res, next) => {
     if (!refreshToken) {
         return res.status(401).json({ message: "No access token or refresh token provided" });
@@ -50,12 +46,8 @@ const handleRefreshToken = async (refreshToken, req, res, next) => {
             { expiresIn: process.env.ACCESS_TOKEN_EXPIRY || "10m" }
         );
 
-        res.cookie("accessToken", newAccessToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production", // Use secure cookies in production
-            sameSite: "strict",
-            maxAge: 10 * 60 * 1000, 
-        });
+        
+        res.setHeader('Authorization', `Bearer ${newAccessToken}`);
 
         req.user = decoded; 
         next();

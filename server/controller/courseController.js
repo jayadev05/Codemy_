@@ -16,7 +16,7 @@ const Certificate = require("../model/certificateModel");
 
 
 const getBasicCourseInfo = async (req, res) => {
-  const { search, sortBy, page, limit, courseId, categories, levels , ratings } = req.query;
+  const { search, sortBy, page, limit, courseId, categories, levels , ratings ,priceRange} = req.query;
 
   console.log(req.query)
 
@@ -61,6 +61,11 @@ const getBasicCourseInfo = async (req, res) => {
  
     if (levels) {
       query.level = { $in: levels };
+    }
+
+    if(priceRange){
+      query.price ={  $gte: mongoose.Types.Decimal128.fromString(priceRange.min), $lte: mongoose.Types.Decimal128.fromString(priceRange.max)  }
+
     }
 
     if (ratings) {

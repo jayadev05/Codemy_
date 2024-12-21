@@ -223,14 +223,15 @@ const googleLogin = async (req, res, next) => {
     const payload = { id: currentUser._id, type: accType };
 
     // Generate tokens
-    genarateAccessToken(res, payload);
-    genarateRefreshToken(res, payload);
-
+    const accessToken = genarateAccessToken(res, payload);
+    const refreshToken = genarateRefreshToken(res, payload);
     
 
     const responseData = {
       currentUser,
       accType,
+      accessToken,
+      refreshToken
     };
 
     if (accType === "user" || accType === "tutor") {

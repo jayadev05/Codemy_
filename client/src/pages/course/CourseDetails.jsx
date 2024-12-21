@@ -251,7 +251,7 @@ export default function CourseDetails() {
                 {features.map((feature, index) => (
                   <div key={index} className="flex items-start gap-3">
                     <svg
-                      className="w-6 h-6 text-orange-500 mt-1"
+                      className="w-6 h-6 text-[#ff6738] mt-1"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -369,14 +369,14 @@ export default function CourseDetails() {
               >
                 <button 
                  onClick={() => handleAddToCart(course._id, course.price)}
-                className="w-full bg-orange-500 text-white py-3 rounded-lg font-medium mb-4 hover:bg-orange-600 transition-colors">
+                className="w-full bg-[#ff6738] text-white py-3 rounded-lg font-medium mb-4 hover:bg-orange-600 transition-colors">
                   Add to Cart
                 </button>
 
                 <button 
                 onClick={()=> handleBuy(course._id,course.price)
                   }
-                className="w-full border border-orange-500 text-orange-500 py-3 rounded-lg font-medium hover:bg-orange-50 transition-colors">
+                className="w-full border border-orange-500 text-[#ff6738] py-3 rounded-lg font-medium hover:bg-orange-50 transition-colors">
                   Buy Now
                 </button>
               </div>

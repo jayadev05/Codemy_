@@ -261,7 +261,7 @@ export default function Home() {
                         onClick={() => handleCourseView(course._id)}
                         src={course.thumbnail}
                         alt={`${course.title} thumbnail`}
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-cover cursor-pointer"
                       />
                       {user && (
                         <button
@@ -279,7 +279,7 @@ export default function Home() {
                       </span>
                       <h3
                         onClick={() => handleCourseView(course._id)}
-                        className="mt-2 text-lg font-semibold line-clamp-2 text-gray-900 flex-grow"
+                        className="mt-2 text-lg font-semibold line-clamp-2 text-gray-900 flex-grow cursor-pointer"
                       >
                         {course.title}
                       </h3>

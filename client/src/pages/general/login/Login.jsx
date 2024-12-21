@@ -10,6 +10,7 @@ import { addUser, selectUser } from "../../../store/slices/userSlice";
 import { useGoogleLogin } from "@react-oauth/google";
 import { addTutor } from "../../../store/slices/tutorSlice";
 import { addAdmin } from "../../../store/slices/adminSlice";
+import axiosInstance from "../../../config/axiosConfig";
 
 const Login = () => {
   const dispatch = useDispatch();
@@ -31,7 +32,7 @@ const Login = () => {
       });
 
       if (response.status === 200) {
-        const { userData, userType, token, redirectUrl } = response.data;
+        const { userData, userType, accessToken,refreshToken, redirectUrl } = response.data;
 
         // Check if the user is active before proceeding
         if (userData.isActive === false) {
@@ -91,7 +92,7 @@ const Login = () => {
       setIsLoading(true);
 
       if (authResult.code) {
-        const response = await axios.post("http://localhost:3000/user/google", {
+        const response = await axiosInstance.post("http://localhost:3000/user/google", {
           code: authResult.code,
         });
 
@@ -108,6 +109,17 @@ const Login = () => {
         }
 
         if (response.data.success) {
+
+        
+
+          const accessToken=response.data.data.accessToken;
+          const refreshToken=response.data.data.refreshToken;
+
+          localStorage.setItem('accessToken',accessToken);
+          localStorage.setItem('refreshToken',refreshToken);
+          
+          console.log('local storage',localStorage);
+
        
           toast.success("Google Sign-in Successful!",{style: {
             borderRadius: '10px',
@@ -228,7 +240,7 @@ const Login = () => {
                 <div className="flex justify-end">
                   <a
                     onClick={() => navigate("/forgot-password")}
-                    className="text-sm text-orange-500 hover:underline cursor-pointer"
+                    className="text-sm text-[#ff6738] hover:underline cursor-pointer"
                   >
                     Forgot password?
                   </a>
@@ -245,7 +257,7 @@ const Login = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-2 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 disabled:opacity-50"
+                className="w-full py-2 bg-[#ff6738] text-white font-semibold rounded-lg hover:bg-orange-600 disabled:opacity-50"
               >
                 {isLoading ? "Signing In..." : "Sign In"}
               </button>

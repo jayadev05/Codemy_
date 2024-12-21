@@ -95,7 +95,7 @@ export default function ForgotPassword() {
           <span className="text-sm text-gray-600">Don't have an account?</span>
           <button
             onClick={() => navigate("/signup")}
-            className="px-4 py-2 text-sm font-medium text-orange-500 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors"
+            className="px-4 py-2 text-sm font-medium text-[#ff6738] bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors"
           >
             Create Account
           </button>
@@ -164,7 +164,7 @@ export default function ForgotPassword() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded-lg hover:bg-orange-600 transition-colors"
+                  className="flex-1 px-4 py-2 text-sm font-medium text-white bg-[#ff6738] rounded-lg hover:bg-orange-600 transition-colors"
                   disabled={loading}
                 >
                   {loading ? "Sending..." : "Send Link"}

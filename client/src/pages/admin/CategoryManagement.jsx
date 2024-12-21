@@ -11,6 +11,7 @@ import axios from 'axios'
 import { useNavigate } from 'react-router'
 import Pagination from '../../components/utils/Pagination'
 import Sidebar from '../../components/layout/admin/sidebar'
+import axiosInstance from '../../config/axiosConfig'
 
 export default function CategoryManagement() {
   const admin = useSelector(selectAdmin);
@@ -35,7 +36,7 @@ export default function CategoryManagement() {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/admin/get-categories');
+      const response = await axiosInstance.get('http://localhost:3000/admin/get-categories');
       console.log(response.data);
       setCategories(response.data);
      
@@ -90,7 +91,7 @@ export default function CategoryManagement() {
 
     try {
       // Assuming you have an API endpoint for updating categories
-      await axios.put(`http://localhost:3000/admin/update-category/${editCategory._id}`, editCategory);
+      await axiosInstance.put(`http://localhost:3000/admin/update-category/${editCategory._id}`, editCategory);
       
       const updatedCategories = categories.map(cat => 
         cat._id === editCategory._id ? { ...cat, ...editCategory } : cat
@@ -110,7 +111,7 @@ export default function CategoryManagement() {
 
   const onLogout=()=>{
     try {
-      const response=axios.post("http://localhost:3000/admin/logout");
+      const response=axiosInstance.post("http://localhost:3000/admin/logout");
 
       dispatch(logoutAdmin(admin));
 
@@ -138,7 +139,7 @@ export default function CategoryManagement() {
       if (result.isConfirmed) {
         try {
           // Fixed the typo in the URL (added missing 'h' in 'http')
-          const response = await axios.delete(`http://localhost:3000/admin/delete-category/${_id}`);
+          const response = await axiosInstance.delete(`http://localhost:3000/admin/delete-category/${_id}`);
           
           // Remove the deleted category from the state
           const updatedCategories = categories.filter(cat => cat._id !== _id);
@@ -163,7 +164,7 @@ export default function CategoryManagement() {
 
     if (newCategory.title && newCategory.description) {
       try {
-        const response = await axios.post('http://localhost:3000/admin/add-category', newCategory);
+        const response = await axiosInstance.post('http://localhost:3000/admin/add-category', newCategory);
         setCategories(prevCategories => [...prevCategories, response.data.category]);
         setNewCategory({ title: '', description: '' });
         setIsAddModalOpen(false);
@@ -373,7 +374,7 @@ export default function CategoryManagement() {
             <div className="flex justify-end">
               <button
                 onClick={handleSaveEdit}
-                className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition duration-300"
+                className="px-4 py-2 bg-[#ff6738] text-white rounded-md hover:bg-orange-600 transition duration-300"
               >
                 Save Changes
               </button>

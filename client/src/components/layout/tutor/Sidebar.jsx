@@ -61,7 +61,7 @@ const Sidebar = ({ activeSection }) => {
     {
       title: "Message",
       icon: CreditCard,
-      href: "#",
+      href: "/tutor/messages",
       isActive: activeSection === "Message",
     },
     {

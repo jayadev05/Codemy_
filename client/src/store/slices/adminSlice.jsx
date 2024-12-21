@@ -23,7 +23,8 @@ const adminSlice = createSlice({
     logoutAdmin: (state) => {
       state.currentUser = null;
       // Clear localStorage on logout
-      localStorage.removeItem('token');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
     }
   }
 });

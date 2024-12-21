@@ -3,7 +3,7 @@
 import axios from "axios"
 import { Heart, LogOut, Search, ShoppingCart, Bell, X, Mail, AlertCircle, CheckCircle2, Clock, MessageSquare, Trash2 } from 'lucide-react'
 import { useDispatch, useSelector } from "react-redux"
-import { toast } from "react-toastify"
+import { toast } from "react-hot-toast"
 import { addUser, logoutUser, selectUser } from "../../../store/slices/userSlice"
 import logo from '../../../assets/logo_cap.png'
 import { useNavigate } from "react-router"
@@ -232,7 +232,7 @@ const MainHeader = () => {
             >
               <Heart className="w-5 h-5 text-gray-700 hover:text-red-500" />
               {wishlist.length > 0 && (
-                <span className="absolute -top-0 -right-2 bg-orange-500 text-white text-xs font-bold rounded-full px-[6px] py-[1px]">
+                <span className="absolute -top-0 -right-2 bg-[#ff6738] text-white text-xs font-bold rounded-full px-[6px] py-[1px]">
                   {wishlist.length}
                 </span>
               )}
@@ -244,7 +244,7 @@ const MainHeader = () => {
             >
               <ShoppingCart className="w-5 h-5 text-gray-700 hover:text-orange-500" />
               {cart?.items?.length > 0 && (
-                <span className="absolute -top-0 -right-2 bg-orange-500 text-white text-xs font-bold rounded-full px-[6px] py-[1px]">
+                <span className="absolute -top-0 -right-2 bg-[#ff6738] text-white text-xs font-bold rounded-full px-[6px] py-[1px]">
                   {cart?.items?.length}
                 </span>
               )}

@@ -13,6 +13,7 @@ import CertificateViewer from "../../components/utils/CertificateViewer";
 import { logoutAdmin, selectAdmin } from "../../store/slices/adminSlice";
 import { useNavigate } from "react-router";
 import Sidebar from "../../components/layout/admin/sidebar";
+import axiosInstance from "../..//config/axiosConfig";
 
 const TutorManagement = () => {
   const user = useSelector(selectUser);
@@ -55,8 +56,8 @@ const TutorManagement = () => {
   const fetchTutorsAndApplications = async () => {
     try { 
       const [tutorsResponse, applicationsResponse] = await Promise.all([
-        axios.get("http://localhost:3000/admin/get-tutors"),
-        axios.get("http://localhost:3000/admin/instructor-applications"),
+        axiosInstance.get("http://localhost:3000/admin/get-tutors"),
+        axiosInstance.get("http://localhost:3000/admin/instructor-applications"),
       ]);
 
       // Ensure we have a clean list of tutors and applications
@@ -76,7 +77,7 @@ const TutorManagement = () => {
   const handleApplicationAction = async (applicationId, action) => {
     try {
       setLoading(true);
-      const result = await axios.patch(
+      const result = await axiosInstance.patch(
         `http://localhost:3000/admin/approve-tutor/${applicationId}`,
         {
           status: action,
@@ -156,7 +157,7 @@ const TutorManagement = () => {
           ? `http://localhost:3000/admin/listtutor/${id}`
           : `http://localhost:3000/admin/unlisttutor/${id}`;
 
-      const result = await axios.put(endpoint);
+      const result = await axiosInstance.put(endpoint);
 
       // Update the tutors state to reflect the new status
       setTutors((prevTutors) =>
@@ -184,7 +185,7 @@ const TutorManagement = () => {
 
   const onLogout = () => {
     try {
-      const response = axios.post("http://localhost:3000/admin/logout");
+      const response = axiosInstance.post("http://localhost:3000/admin/logout");
 
       dispatch(logoutAdmin(admin));
 
@@ -332,7 +333,7 @@ const TutorManagement = () => {
                     onClick={() => setActiveTab("applications")}
                     className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
                       activeTab === "applications"
-                        ? "bg-orange-500 text-white"
+                        ? "bg-[#ff6738] text-white"
                         : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                     }`}
                   >
@@ -417,7 +418,7 @@ const TutorManagement = () => {
                             <div className="flex justify-end space-x-3">
                               <button
                                 onClick={() => openModal(tutor, "details")}
-                                className="text-orange-500 hover:text-orange-700 transition-colors"
+                                className="text-[#ff6738] hover:text-orange-700 transition-colors"
                                 title="View Details"
                               >
                                 <FileText className="h-5 w-5" />
@@ -501,7 +502,7 @@ const TutorManagement = () => {
                       <div className="mt-6 flex justify-between items-center">
                         <button
                           onClick={() => openModal(item, "details")}
-                          className="text-orange-500 hover:text-orange-700 transition-colors"
+                          className="text-[#ff6738] hover:text-orange-700 transition-colors"
                         >
                           <FileText className="h-6 w-6" />
                         </button>

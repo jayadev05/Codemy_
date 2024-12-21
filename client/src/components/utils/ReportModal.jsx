@@ -91,7 +91,7 @@ export default function ReportModal({
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
         <div className="flex justify-between items-center p-4 border-b">
           <h2 className="text-xl font-semibold flex items-center">
-            <AlertTriangle className="w-6 h-6 mr-2 text-orange-500" />
+            <AlertTriangle className="w-6 h-6 mr-2 text-[#ff6738]" />
             Report {targetType}
           </h2>
           <button 
@@ -163,7 +163,7 @@ export default function ReportModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors disabled:opacity-50"
+              className="px-4 py-2 bg-[#ff6738] text-white rounded-md hover:bg-orange-600 transition-colors disabled:opacity-50"
             >
               {isSubmitting ? 'Submitting...' : 'Submit Report'}
             </button>

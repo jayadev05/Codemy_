@@ -17,6 +17,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { logoutAdmin, selectAdmin } from "../../store/slices/adminSlice";
 import Sidebar from "../../components/layout/admin/sidebar";
 import { useNavigate } from "react-router";
+import axiosInstance from "../../config/axiosConfig";
 
 const StudentManagement = () => {
   const admin=useSelector(selectAdmin);
@@ -37,7 +38,7 @@ const StudentManagement = () => {
   const fetchStudents = async () => {
     try {
     
-      const response = await axios.get("http://localhost:3000/admin/get-students",{withCredentials:true});
+      const response = await axiosInstance.get("http://localhost:3000/admin/get-students",{withCredentials:true});
       console.log("response data length ",response.data.students.length);
       setStudents(response.data.students || []);
       
@@ -106,7 +107,7 @@ const StudentManagement = () => {
         ? `http://localhost:3000/admin/listuser/${id}` 
         : `http://localhost:3000/admin/unlistuser/${id}`;
   
-      const result = await axios.put(endpoint,{withCredentials:true});
+      const result = await axiosInstance.put(endpoint,{withCredentials:true});
       
       // Update the student state to reflect the new status
 
@@ -131,7 +132,7 @@ const StudentManagement = () => {
 
   const onLogout=()=>{
     try {
-      const response=axios.post("http://localhost:3000/admin/logout");
+      const response=axiosInstance.post("http://localhost:3000/admin/logout");
 
       dispatch(logoutAdmin(admin));
 
@@ -214,7 +215,7 @@ const StudentManagement = () => {
 
               <div className="flex space-x-4">
               <button           
-              className={`px-6 py-3 rounded-lg font-semibold transition-colors  bg-orange-500 text-white`}                  >
+              className={`px-6 py-3 rounded-lg font-semibold transition-colors  bg-[#ff6738] text-white`}                  >
                 Students
                </button>
               </div>
@@ -296,7 +297,7 @@ const StudentManagement = () => {
                           <div className="flex justify-end space-x-3">
                             <button
                               onClick={() => openModal(student)}
-                              className="text-orange-500 hover:text-orange-700 transition-colors"
+                              className="text-[#ff6738] hover:text-orange-700 transition-colors"
                               title="View Details"
                             >
                               <FileText className="h-5 w-5" />

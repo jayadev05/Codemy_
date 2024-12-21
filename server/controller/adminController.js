@@ -364,6 +364,19 @@ const getCertificates = async (req, res) => {
 };
 
 const reviewInstructorApplication = async (req, res) => {
+
+  if(!req.user)return res
+  .status(403)
+  .json({ message: "Token is invalid! Please refresh or login again." });
+
+
+  if (req.user?.type !== "admin")
+    return res
+      .status(403)
+      .json({ message: "You dont have authorization to perform this action!" });
+
+
+
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -530,6 +543,11 @@ const existsCheck = async (req, res) => {
 };
 
 const approveTutor = async (req, res) => {
+  if(!req.user)return res
+  .status(403)
+  .json({ message: "Token is invalid! Please refresh or login again." });
+  if(req.user?.type!=='admin') return res.status(403).json({message:"You dont have authorization to perform this action!"})
+
   try {
     const { applicationId } = req.params;
     const { status } = req.body;
@@ -590,6 +608,15 @@ const approveTutor = async (req, res) => {
 
 const listUser = async (req, res) => {
   try {
+    if(!req.user)return res
+  .status(403)
+  .json({ message: "Token is invalid! Please refresh or login again." });
+    if (req.user?.type !== "admin")
+      return res
+        .status(403)
+        .json({
+          message: "You dont have authorization to perform this action!",
+        });
     const id = req.params.id;
 
     const user = await User.findByIdAndUpdate(
@@ -612,7 +639,19 @@ const listUser = async (req, res) => {
 
 const unlistUser = async (req, res) => {
   try {
+    console.log("jwt decoded", req.user);
+    if(!req.user)return res
+  .status(403)
+  .json({ message: "Token is invalid! Please refresh or login again." });
+    if (req.user?.type !== "admin")
+      return res
+        .status(403)
+        .json({
+          message: "You dont have authorization to perform this action!",
+        });
+
     const id = req.params.id;
+
     const user = await User.findByIdAndUpdate(
       { _id: id },
       { isActive: false },
@@ -633,6 +672,15 @@ const unlistUser = async (req, res) => {
 
 const lisTtutor = async (req, res) => {
   try {
+    if(!req.user)return res
+  .status(403)
+  .json({ message: "Token is invalid! Please refresh or login again." });
+    if (req.user?.type !== "admin")
+      return res
+        .status(403)
+        .json({
+          message: "You dont have authorization to perform this action!",
+        });
     const id = req.params.id;
 
     const user = await Tutor.findByIdAndUpdate(
@@ -655,6 +703,15 @@ const lisTtutor = async (req, res) => {
 
 const unlisTtutor = async (req, res) => {
   try {
+    if(!req.user)return res
+  .status(403)
+  .json({ message: "Token is invalid! Please refresh or login again." });
+    if (req.user?.type !== "admin")
+      return res
+        .status(403)
+        .json({
+          message: "You dont have authorization to perform this action!",
+        });
     const id = req.params.id;
     const user = await Tutor.findByIdAndUpdate(
       { _id: id },
@@ -676,6 +733,16 @@ const unlisTtutor = async (req, res) => {
 
 const addCategory = async (req, res) => {
   const { title, description } = req.body;
+
+  console.log(req.user)
+
+  if(!req.user)return res
+  .status(403)
+  .json({ message: "Token is invalid! Please refresh or login again." });
+  if (req.user?.type !== "admin")
+    return res
+      .status(403)
+      .json({ message: "You dont have authorization to perform this action!" });
 
   if (!title || !description) {
     return res
@@ -707,6 +774,14 @@ const getCategories = async (req, res) => {
 };
 
 const updateCategory = async (req, res) => {
+  if(!req.user)return res
+  .status(403)
+  .json({ message: "Token is invalid! Please refresh or login again." });
+  if (req.user?.type !== "admin")
+    return res
+      .status(403)
+      .json({ message: "You dont have authorization to perform this action!" });
+
   const { id } = req.params;
   const { title, description } = req.body;
 
@@ -729,6 +804,13 @@ const updateCategory = async (req, res) => {
 };
 
 const deleteCategory = async (req, res) => {
+  if(!req.user)return res
+  .status(403)
+  .json({ message: "Token is invalid! Please refresh or login again." });
+  if (req.user?.type !== "admin")
+    return res
+      .status(403)
+      .json({ message: "You dont have authorization to perform this action!" });
   const { id } = req.params;
 
   try {
@@ -744,6 +826,13 @@ const deleteCategory = async (req, res) => {
 };
 
 const listCourse = async (req, res) => {
+  if(!req.user)return res
+  .status(403)
+  .json({ message: "Token is invalid! Please refresh or login again." });
+  if (req.user?.type !== "admin")
+    return res
+      .status(403)
+      .json({ message: "You dont have authorization to perform this action!" });
   const { id } = req.params;
 
   if (!id) {
@@ -771,6 +860,13 @@ const listCourse = async (req, res) => {
 };
 
 const unlistCourse = async (req, res) => {
+  if(!req.user)return res
+  .status(403)
+  .json({ message: "Token is invalid! Please refresh or login again." });
+  if (req.user?.type !== "admin")
+    return res
+      .status(403)
+      .json({ message: "You dont have authorization to perform this action!" });
   const { id } = req.params;
 
   if (!id) {
@@ -811,11 +907,9 @@ const openReport = async (req, res) => {
     const existingReport = await Report.findOne({ reportedBy, targetType });
 
     if (existingReport)
-      return res
-        .status(409)
-        .json({
-          message: "You already have a report in review! Please be patient",
-        });
+      return res.status(409).json({
+        message: "You already have a report in review! Please be patient",
+      });
 
     const newReport = new Report({
       title,
@@ -850,19 +944,18 @@ const getReports = async (req, res) => {
 const handleReportStatus = async (req, res) => {
   const { reportId, status } = req.body;
 
-  console.log('asdasdasd',req.body)
+  console.log("asdasdasd", req.body);
 
   try {
     const report = await Report.findById(reportId);
     if (!report) return res.status(404).json({ message: "Report not found" });
 
-    console.log(report)
+    console.log(report);
 
     const updatedReport = await Report.findByIdAndUpdate(reportId, { status });
     await updatedReport.save();
 
-    res.status(200).json({message:"Updated report status successfully"});
-    
+    res.status(200).json({ message: "Updated report status successfully" });
   } catch (error) {
     console.log("Error updating report status", error);
     res.status(500).json({ message: "Error updating report status" });
@@ -883,7 +976,7 @@ const sendNotification = async (req, res) => {
     }
 
     const notification = {
-      type: 'ReportAction', 
+      type: "ReportAction",
       title: "Report Review Update",
       content: actionTaken,
       isRead: false,
@@ -892,15 +985,15 @@ const sendNotification = async (req, res) => {
     user.notifications.push(notification);
     await user.save();
 
-    res.status(200).send({ message: "Notification sent successfully", notification });
+    res
+      .status(200)
+      .send({ message: "Notification sent successfully", notification });
   } catch (error) {
-    res.status(500).send({ error: "Failed to send notification", details: error.message });
+    res
+      .status(500)
+      .send({ error: "Failed to send notification", details: error.message });
   }
 };
-
-
-
-
 
 module.exports = {
   forgotPassword,

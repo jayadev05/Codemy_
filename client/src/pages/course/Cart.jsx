@@ -138,7 +138,7 @@ export default function ShoppingCart() {
                                     onClick={() =>
                                       handleRemoveFromCart(item.courseId._id)
                                     }
-                                    className="text-orange-500 text-sm mt-2"
+                                    className="text-[#ff6738] text-sm mt-2"
                                   >
                                     Remove from cart
                                   </button>
@@ -172,7 +172,7 @@ export default function ShoppingCart() {
 
                     <button
                     onClick={()=>navigate('/user/checkout')}
-                    className="w-full bg-orange-500 text-white rounded-lg px-4 py-3 mt-6 hover:bg-orange-600 transition-colors">
+                    className="w-full bg-[#ff6738] text-white rounded-lg px-4 py-3 mt-6 hover:bg-orange-600 transition-colors">
                       Proceed To Checkout →
                     </button>
 
@@ -205,7 +205,7 @@ export default function ShoppingCart() {
           </p>
           <button
             onClick={() => navigate("/")}
-            className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
+            className="px-6 py-2 bg-[#ff6738] text-white rounded-lg hover:bg-orange-600 transition"
           >
             Continue Shopping
           </button>

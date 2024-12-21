@@ -8,6 +8,7 @@ function genarateAccessToken(res, payload) {
       });
 
       console.log("access token:",token )
+
       
       res.cookie("accessToken", token, {
           httpOnly: true,
@@ -17,6 +18,8 @@ function genarateAccessToken(res, payload) {
       });
 
       
+
+      return token;
 
      
 

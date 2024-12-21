@@ -41,7 +41,8 @@ const tutorSlice = createSlice({
     logoutTutor: (state) => {
       // Clear the tutor state and token on logout
       state.currentTutor = null;
-      localStorage.removeItem('token');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
     },
   },
 });
