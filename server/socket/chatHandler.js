@@ -32,30 +32,6 @@ const chatHandler =(io, socket, onlineStudents, onlineTutors)=>{
         return (new Error("Chat not found"));
       }
 
-      await Message.create({
-        chatId,
-        messageId,
-        sender,
-        receiver,
-        content
-      });
-
-      //atomcially update chat
-
-      await Chat.findByIdAndUpdate(
-        chatId,
-        {
-          $set: {
-            'lastMessage.content': content,
-            'lastMessage.senderId': senderId,
-            'lastMessage.timestamp': new Date()
-          },
-          $inc: {
-            [`unreadCount.${socket.user.userType === 'user' ? 'student' : 'tutor'}`]: 1
-          }
-        },
-        { new: true }
-      );
 
       const receiverOnline = socket.user.userType==='tutor' ? onlineTutors[receiverId] : onlineStudents[receiverId]
 

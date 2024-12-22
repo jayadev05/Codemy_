@@ -20,7 +20,8 @@ const userSlice = createSlice({
         profileImg: action.payload.profileImg || '',
         isVerified: action.payload.isVerified,
         isActive: action.payload.isActive,
-        notifications:action.payload.notifications
+        notifications:action.payload.notifications,
+        activeCourses:action.payload.activeCourses
       };
     },
     logoutUser: (state) => {

@@ -166,16 +166,8 @@ const getUsers = async (req, res) => {
 };
 
 const logoutAdmin = async (req, res) => {
-  res.clearCookie("accessToken", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "Lax",
-  });
-  res.clearCookie("refreshToken", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "Lax",
-  });
+  res.clearCookie("accessToken")
+  res.clearCookie("refreshToken");
   res.status(200).json({ message: "Logged out successfully" });
 };
 

@@ -120,27 +120,23 @@ const login = async (req, res) => {
 
     const payload = { id: userId, type: userType };
 
-    try {
-      genarateAccessToken(res, payload);
-      genarateRefreshToken(res, payload);
+    
+      const accessToken=genarateAccessToken(res, payload);
+      const refreshToken = genarateRefreshToken(res, payload);
 
-      // Respond with success
-      res.status(200).json({
-        message: "Login successful",
-        userData: accountToAuthenticate,
-        userType: userType,
-        redirectUrl: admin
-          ? "/admin/dashboard"
-          : user
-          ? "/"
-          : "/tutor/dashboard",
-      });
-    } catch (tokenError) {
-      console.error("Error generating tokens:", tokenError);
-      res
-        .status(500)
-        .json({ message: "Error generating tokens. Please try again later." });
-    }
+   
+    res.status(200).json({
+      message: "Login successful",
+      userData: accountToAuthenticate,
+      userType: userType,
+      accessToken,
+      refreshToken,
+      redirectUrl: admin
+        ? "/admin/dashboard"
+        : user
+        ? "/"
+        : "/tutor/dashboard",
+    });
   } catch (error) {
     console.error("Error in login:", error);
     res.status(500).json({ message: "Server error. Please try again later." });

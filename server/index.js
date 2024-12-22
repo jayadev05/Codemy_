@@ -8,6 +8,7 @@ const nocache = require("nocache");
 const tutorRoute = require("./routes/tutor/tutorRoutes");
 const courseRoute = require("./routes/course/courseRoutes");
 const paymentRoute = require("./routes/payment/paymentRoutes");
+const chatRoute = require("./routes/chat/chatRoutes");
 
 const app = express();
 const server = require("http").createServer(app);
@@ -51,6 +52,7 @@ app.use("/admin", adminRoute);
 app.use("/tutor", tutorRoute);
 app.use('/course', courseRoute);
 app.use('/checkout', paymentRoute);
+app.use('/chat', chatRoute);
 
 // Use server.listen instead of app.listen
 server.listen(3000, () => {

@@ -1,211 +1,414 @@
-import Sidebar from "@/components/layout/tutor/Sidebar";
+import { useEffect, useState } from "react";
+import Header from "@/components/layout/Header";
+import MainHeader from "@/components/layout/user/MainHeader";
+import Tabs from "@/components/layout/user/Tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, MoreHorizontal, Bell, Search } from "lucide-react";
+import { Send, MoreHorizontal, Search, Bell } from "lucide-react";
+import { socketService } from "@/services/socket";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router";
-import { selectTutor } from "../../store/slices/tutorSlice";
-import defProfile from "../../assets/user-profile.png";
-
-const conversations = [
-  {
-    id: 1,
-    name: "Jane Cooper",
-    message: "Yeah sure, hit me later",
-    time: "just now",
-    avatar: "/placeholder.svg",
-    active: true,
-  },
-  {
-    id: 2,
-    name: "Jenny Wilson",
-    message: "Thank you so much! 💕",
-    time: "2 m",
-    avatar: "/placeholder.svg",
-    active: false,
-  },
-  {
-    id: 3,
-    name: "Marvin McKinney",
-    message: "You're Welcome!",
-    time: "1 m",
-    avatar: "/placeholder.svg",
-    active: true,
-  },
-  {
-    id: 4,
-    name: "Eleanor Pena",
-    message: "Thank you so much! 💕",
-    time: "1 m",
-    avatar: "/placeholder.svg",
-    active: false,
-  },
-  {
-    id: 5,
-    name: "Ronald Richards",
-    message: "Sorry, I can't help you",
-    time: "2 m",
-    avatar: "/placeholder.svg",
-    active: true,
-  },
-  {
-    id: 6,
-    name: "Kathryn Murphy",
-    message: "Your message",
-    time: "2 m",
-    avatar: "/placeholder.svg",
-    active: false,
-  },
-  {
-    id: 7,
-    name: "Jacob Jones",
-    message: "Thank you so much! 💕",
-    time: "5 m",
-    avatar: "/placeholder.svg",
-    active: true,
-  },
-];
+import { selectUser } from "@/store/slices/userSlice";
+import axiosInstance from "@/config/axiosConfig";
+import ComposeModal from "@/components/layout/user/chat/TutorListModal";
+import { jwtDecode } from "jwt-decode";
+import Sidebar from "@/components/layout/tutor/sidebar";
+import { selectTutor } from "@/store/slices/tutorSlice";
 
 export default function TutorChatPage() {
   const tutor = useSelector(selectTutor);
+  const [chats, setChats] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [inputMessage, setInputMessage] = useState("");
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [isTyping, setIsTyping] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [students, setStudents] = useState([]);
 
-  const navigate = useNavigate();
+
+
+  const userType = getUserRoleFromToken();
+
+  console.log(messages);
+
+  //get userType form token
+  function getUserRoleFromToken() {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      try {
+        const decodedToken = jwtDecode(token);
+        return decodedToken.type;
+      } catch (error) {
+        console.error("Invalid token:", error);
+      }
+    }
+    return null;
+  }
+
+  // Fetch all chats for the current user
+  const fetchChats = async () => {
+    try {
+      const response = await axiosInstance.get(
+        `/chat/get-all-chats/${tutor._id}`
+      );
+      setChats(response.data);
+    } catch (error) {
+      console.error("Error fetching chats:", error);
+    } 
+  };  
+
+  // Fetch messages for a specific chat
+  const fetchMessages = async (chatId) => {
+    try {
+      const response = await axiosInstance.get(`/chat/get-messages/${chatId}`);
+      console.log(response);
+      setMessages(response.data);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+    }
+  };
+
+  // Fetch tutors when modal opens
+  const fetchStudents = async () => {
+    try {
+      setLoading(true);
+      
+      const response = await axiosInstance.get(`/chat/get-students/${tutor._id}` );
+
+
+      setStudents(response.data.students);
+
+    } catch (error) {
+      console.error("Error fetching tutors:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStudents();
+  }, []);
+
+  const handleCreateChat = (newChat) => {
+    setChats((prev) => [newChat, ...prev]);
+    setSelectedChat(newChat);
+    fetchMessages(newChat._id);
+  };
+
+  // Initialize chat data and socket connection
+  useEffect(() => {
+    const initializeChat = async () => {
+      setLoading(true);
+      await fetchChats();
+      setLoading(false);
+    };
+
+    if (tutor?._id) {
+      initializeChat();
+
+      // Socket connection
+      const token = localStorage.getItem("accessToken");
+      if (token) {
+        socketService.connect(token);
+
+        // Socket event listeners
+        socketService.onReceiveMessage((message) => {
+          setMessages((prev) => [...prev, message]);
+          // Update last message in chat list
+          updateChatLastMessage(message);
+        });
+
+        socketService.onTyping(({ senderId }) => {
+          if (
+            selectedChat?.userId === senderId ||
+            selectedChat?.tutorId === senderId
+          ) {
+            setIsTyping(true);
+          }
+        });
+
+        socketService.onStopTyping(() => {
+          setIsTyping(false);
+        });
+
+        return () => {
+          socketService.disconnect();
+        };
+      }
+    }
+  }, [tutor?._id]);
+
+  // Update chat's last message
+  const updateChatLastMessage = (message) => {
+    setChats((prevChats) =>
+      prevChats.map((chat) =>
+        chat._id === message.chatId
+          ? {
+              ...chat,
+              lastMessage: {
+                content: message.content,
+                senderId: message.sender.userId,
+                timestamp: message.createdAt,
+              },
+            }
+          : chat
+      )
+    );
+  };
+
+  // Handle chat selection
+  const handleChatSelect = async (chat) => {
+    setSelectedChat(chat);
+    await fetchMessages(chat._id);
+    // Mark messages as read
+    await axiosInstance.post("/api/messages/read", {
+      chatId: chat._id,
+      userType,
+    });
+  };
+
+  // Handle sending messages
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!inputMessage.trim() || !selectedChat) return;
+
+    try {
+      const messageData = {
+        chatId: selectedChat._id,
+        sender: {
+          userId: tutor._id,
+          role: userType,
+        },
+        receiver: {
+          userId:
+            userType === "user"
+              ? selectedChat.tutorId._id
+              : selectedChat.userId._id,
+          role: userType === "user" ? "tutor" : "user",
+        },
+        content: inputMessage,
+      };
+
+      const response = await axiosInstance.post("/chat/create-message", {...messageData});
+      setMessages((prev) => [...prev, response.data]);
+      updateChatLastMessage(response.data);
+      setInputMessage("");
+
+      // Emit socket event
+      socketService.sendMessage({
+        ...messageData,
+        messageId: response.data._id,
+        timestamps: response.data.createdAt
+      });
+
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
+  };
+
+  // Handle typing events
+  const handleTyping = () => {
+    if (selectedChat) {
+      socketService.sendTyping({
+        chatId: selectedChat._id,
+        senderId: tutor._id,
+      });
+    }
+  };
+
+  // Format timestamp
+  const formatTime = (timestamp) => {
+    return new Date(timestamp).toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
 
   return (
     <>
+      <div className="flex">
+        <Sidebar activeSection="Message"/>
+
+    <div className="flex flex-col flex-1 ">
+    <header className="flex items-center justify-between border-b bg-white px-6 py-4 ">
+          <div>
+            <h1 className="text-xl font-semibold">Messages</h1>
+            <p className="text-sm text-gray-500">Good Morning</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                className="w-64 pl-9 pr-3 py-2 rounded-md border border-gray-300"
+                placeholder="Search"
+              />
+            </div>
+            <button className="p-2 rounded-full hover:bg-gray-100">
+              <Bell className="h-5 w-5" />
+            </button>
+            <img
+              referrerPolicy="no-referrer"
+              crossOrigin="anonymous"
+              src={tutor.profileImg || defProfile}
+              className="w-12 h-12 rounded-full"
+              alt=""
+            />
+          </div>
+        </header>
       <div className="flex h-[78vh] bg-white">
-        <Sidebar activeSection={"Message"} />
+        {/* Sidebar */}
+        <div className="w-80 border-r flex flex-col">
+          <div className="p-4 border-b">
+            <div className="flex items-center justify-between mb-4">
+              <h1 className="text-xl font-semibold">Chat</h1>
+              <Button
+                className="bg-blue-100 hover:bg-blue-200 text-blue-700"
+                size="sm"
+                onClick={() => setComposeOpen(true)}
+              >
+                + Compose
+              </Button>
+            </div>
+            <div className="relative">
+              <Input
+                className="pl-8 bg-gray-50"
+                placeholder="Search"
+                type="search"
+              />
+              <svg
+                className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                />
+              </svg>
+            </div>
+          </div>
+          <ScrollArea className="flex-1">
+            <div className="divide-y">
+              {chats.map((chat) => {
+                const otherUser =
+                  userType === "user" ? chat.tutorId : chat.userId;
 
-        <div className="flex flex-col flex-1">
-
-         <header className="flex items-center justify-between border-b bg-white px-6 py-4 ">
-                  <div>
-                    <h1 className="text-xl font-semibold">Messages</h1>
-                    <p className="text-sm text-gray-500">Good Morning</p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                      <input className="w-64 pl-9 pr-3 py-2 rounded-md border border-gray-300" placeholder="Search" />
-                    </div>
-                    <button className="p-2 rounded-full hover:bg-gray-100">
-                      <Bell className="h-5 w-5" />
-                    </button>
-                    <img  referrerPolicy="no-referrer" crossOrigin="anonymous" src={tutor.profileImg || defProfile} className="w-12 h-12 rounded-full" alt="" />
-        
-                   
-                   
-                   
-                  </div>
-                </header>
-
-          <div className="flex flex-1">
-            {/*Chat Sidebar */}
-            <div className="w-80 border-r flex flex-col">
-              <div className="p-4 border-b">
-                <div className="flex items-center justify-between mb-4">
-                  <h1 className="text-xl font-semibold">Chat</h1>
-                  <Button
-                    className="bg-blue-100 hover:bg-blue-200 text-blue-700"
-                    size="sm"
+                return (
+                  <div
+                    key={chat._id}
+                    className={`p-4 hover:bg-gray-50 cursor-pointer ${
+                      selectedChat?._id === chat._id ? "bg-orange-50" : ""
+                    }`}
+                    onClick={() => handleChatSelect(chat)}
                   >
-                    + Compose
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Input
-                    className="pl-8 bg-gray-50"
-                    placeholder="Search"
-                    type="search"
-                  />
-                  <svg
-                    className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                    />
-                  </svg>
-                </div>
-              </div>
-              <ScrollArea className="flex-1">
-                <div className="divide-y">
-                  {conversations.map((conversation) => (
-                    <div
-                      key={conversation.id}
-                      className={`p-4 hover:bg-gray-50 cursor-pointer ${
-                        conversation.id === 1 ? "bg-orange-50" : ""
-                      }`}
-                    >
-                      <div className="flex gap-3">
-                        <div className="relative">
-                          <Avatar className="h-12 w-12">
-                            <AvatarImage
-                              src={conversation.avatar}
-                              alt={`${conversation.name}'s avatar`}
-                            />
-                            <AvatarFallback>
-                              {conversation.name.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span
-                            className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white ${
-                              conversation.active
-                                ? "bg-green-500"
-                                : "bg-gray-300"
-                            }`}
-                            aria-label={
-                              conversation.active ? "Online" : "Offline"
-                            }
+                    <div className="flex gap-3">
+                      <div className="relative">
+                        <Avatar className="h-12 w-12">
+                          <img
+                            referrerPolicy="no-referrer"
+                            crossOrigin="anonymous"
+                            src={otherUser.profileImg || "/placeholder.svg"}
+                            alt={`${otherUser.fullName}'s avatar`}
                           />
+                          <AvatarFallback>
+                            {otherUser.fullName?.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span
+                          className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white ${
+                            chat.isOnline[
+                              userType === "user" ? "tutor" : "student"
+                            ]
+                              ? "bg-green-500"
+                              : "bg-gray-300"
+                          }`}
+                        />
+                      </div>
+                      <div className="flex-1 overflow-hidden">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold truncate">
+                            {otherUser.fullName}
+                          </h3>
+                          <span className="text-xs text-gray-500">
+                            {chat.lastMessage?.timestamp &&
+                              formatTime(chat.lastMessage.timestamp)}
+                          </span>
                         </div>
-                        <div className="flex-1 overflow-hidden">
-                          <div className="flex items-center justify-between">
-                            <h3 className="font-semibold truncate">
-                              {conversation.name}
-                            </h3>
-                            <span className="text-xs text-gray-500">
-                              {conversation.time}
-                            </span>
-                          </div>
-                          <p className="text-sm text-gray-600 truncate">
-                            {conversation.message}
-                          </p>
+                        <div className="flex items-center justify-between">
+                        <p className="text-sm text-gray-600 truncate">
+                          {chat.lastMessage?.content || "Start a conversation"}
+                        </p>
+                        <p className="text-xs bg-orange-400 px-[9px] py-[3px] rounded-full">{chat.unreadCount?.tutor}</p>      
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </ScrollArea>
+                  </div>
+                );
+              })}
             </div>
+          </ScrollArea>
+        </div>
 
-            {/* Main Chat Area */}
-            <div className="flex-1 flex flex-col">
+        {/* Main Chat Area */}
+        <div className="flex-1 flex flex-col">
+          {selectedChat ? (
+            <>
               <div className="flex items-center justify-between p-4 border-b">
                 <div className="flex items-center gap-3">
                   <div className="relative">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage
-                        src="/placeholder.svg"
-                        alt="Jane Cooper's avatar"
+                      <img
+                        crossOrigin="anonymus"
+                        referrerPolicy="no-referrer"
+                        src={
+                          userType === "user"
+                            ? selectedChat.tutorId.profileImg
+                            : selectedChat.userId.profileImg
+                        }
+                        alt="Chat partner's avatar"
                       />
-                      <AvatarFallback>JC</AvatarFallback>
+                      <AvatarFallback>
+                        {userType === "user"
+                          ? selectedChat.tutorId.fullName?.charAt(0)
+                          : selectedChat.userId.fullName?.charAt(0)}
+                      </AvatarFallback>
                     </Avatar>
                     <span
-                      className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-green-500"
-                      aria-label="Online"
+                      className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
+                        selectedChat.isOnline[
+                          userType === "user" ? "tutor" : "student"
+                        ]
+                          ? "bg-green-500"
+                          : "bg-gray-300"
+                      }`}
                     />
                   </div>
                   <div>
-                    <h2 className="font-semibold">Jane Cooper</h2>
-                    <p className="text-sm text-green-600">Active Now</p>
+                    <h2 className="font-semibold">
+                      {userType === "user"
+                        ? selectedChat.tutorId.fullName
+                        : selectedChat.userId.fullName}
+                    </h2>
+                    <p
+                      className={`text-sm ${
+                        selectedChat.isOnline[
+                          userType === "user" ? "tutor" : "student"
+                        ]
+                          ? "text-green-600"
+                          : "text-gray-500"
+                      }`}
+                    >
+                      {selectedChat.isOnline[
+                        userType === "user" ? "tutor" : "student"
+                      ]
+                        ? "Active Now"
+                        : "Offline"}
+                    </p>
                   </div>
                 </div>
                 <Button variant="ghost" size="icon">
@@ -215,65 +418,106 @@ export default function TutorChatPage() {
 
               <ScrollArea className="flex-1 p-4">
                 <div className="space-y-4">
-                  <div className="flex gap-3 max-w-xl">
-                    <Avatar className="h-8 w-8 mt-1">
-                      <AvatarImage
-                        src="/placeholder.svg"
-                        alt="Teacher's avatar"
-                      />
-                      <AvatarFallback>T</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="bg-gray-100 rounded-2xl p-3">
-                        <p>
-                          Hello and thanks for signing up to the course. If you
-                          have any questions about the course or Adobe XD, feel
-                          free to get in touch and I'll be happy to help 😊
-                        </p>
-                      </div>
-                      <span className="text-xs text-gray-500 ml-2">Today</span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end">
-                    <div className="flex gap-3 max-w-xl">
+                  {messages.map((message) => (
+                    <div
+                      key={message._id}
+                      className={`flex gap-3 max-w-xl ${
+                        message.sender.userId === tutor._id
+                          ? "justify-end ml-auto"
+                          : ""
+                      }`}
+                    >
+                      {message.sender.userId !== tutor._id && (
+                        <Avatar className="h-8 w-8 mt-1">
+                          <AvatarImage
+                            src={
+                              userType === "user"
+                                ? selectedChat.tutorId.profileImg
+                                : selectedChat.userId.profileImg
+                            }
+                            alt="Sender's avatar"
+                          />
+                          <AvatarFallback>
+                            {userType === "tutor"
+                              ? selectedChat.tutorId.fullName?.charAt(0)
+                              : selectedChat.userId.fullName?.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
                       <div>
-                        <div className="bg-[#ff6738] text-white rounded-2xl p-3">
-                          <p>
-                            I only have a small doubt about your lecture, can
-                            you give me some time for tomorrow?
-                          </p>
+                        <div
+                          className={`rounded-2xl p-3 ${
+                            message.sender.userId === tutor._id
+                              ? "bg-[#ff6738] text-white"
+                              : "bg-gray-100"
+                          }`}
+                        >
+                          <p>{message.content}</p>
                         </div>
-                        <div className="bg-[#ff6738] text-white rounded-2xl p-3 mt-2">
-                          <p>Yeah sure, hit me later</p>
-                        </div>
+                        <span className="text-xs text-gray-500 ml-2">
+                          {formatTime(message.createdAt)}
+                        </span>
                       </div>
-                      <Avatar className="h-8 w-8 mt-1">
-                        <AvatarImage
-                          src="/placeholder.svg"
-                          alt="Jane Cooper's avatar"
-                        />
-                        <AvatarFallback>JC</AvatarFallback>
-                      </Avatar>
+                      {message.sender.userId === tutor._id && (
+                        <Avatar className="h-8 w-8 mt-1">
+                          <AvatarImage
+                            src={tutor.profileImg}
+                            alt="Your avatar"
+                          />
+                          <AvatarFallback>
+                            {tutor.fullName.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
                     </div>
-                  </div>
+                  ))}
+                  {isTyping && (
+                    <div className="text-sm text-gray-500">Typing...</div>
+                  )}
                 </div>
               </ScrollArea>
 
               <div className="p-4 border-t">
-                <div className="flex gap-2">
-                  <Input className="flex-1" placeholder="Type your message" />
-                  <Button className="bg-[#ff4f38] hover:bg-[#e63f2a]">
+                <form onSubmit={handleSendMessage} className="flex gap-2">
+                  <Input
+                    className="flex-1"
+                    placeholder="Type your message"
+                    value={inputMessage}
+                    onChange={(e) => {
+                      setInputMessage(e.target.value);
+                      handleTyping();
+                    }}
+                  />
+                  <Button
+                    type="submit"
+                    className="bg-[#ff4f38] hover:bg-[#e63f2a]"
+                  >
                     <span>Send</span>
                     <Send className="ml-2 h-4 w-4" />
                   </Button>
-                </div>
+                </form>
               </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center text-gray-500">
+              Select a chat to start messaging
             </div>
-          </div>
-
+          )}
         </div>
+
+        <ComposeModal
+          open={composeOpen}
+          onOpenChange={setComposeOpen}
+          onChatCreated={handleCreateChat}
+          recipients={students}
+          user={tutor}
+        />
       </div>
+    </div>
+       
+
+      </div>
+     
     </>
   );
 }

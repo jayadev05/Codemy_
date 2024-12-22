@@ -64,6 +64,9 @@ const Login = () => {
             console.warn("Unknown user type:", userType);
         }
 
+        localStorage.setItem('accessToken',accessToken);
+        localStorage.setItem('refreshToken',refreshToken);
+
         toast.success("Log In Successfull!",{style: {
           borderRadius: '10px',
           background: '#111826',
@@ -118,8 +121,7 @@ const Login = () => {
           localStorage.setItem('accessToken',accessToken);
           localStorage.setItem('refreshToken',refreshToken);
           
-          console.log('local storage',localStorage);
-
+          
        
           toast.success("Google Sign-in Successful!",{style: {
             borderRadius: '10px',

@@ -1,19 +1,22 @@
-const Chat = require("../models/chatModel");
-const Message = require("../models/messageModel");
-const User = require("../models/userModel");
-const Tutor = require("../models/tutorModel");
+const Chat = require("../model/chatModel");
+const Message = require("../model/messageModel");
+const User = require("../model/userModel");
+const Tutor = require("../model/tutorModel");
+const Course = require('../model/courseModel')
 
 const getChatsByUserId = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { userType } = req.query;
+    const  userType  = req.user?.type;
+
+    console.log("userType:", req.user?.type);
 
     const isUser = userType === "user";
     const populateField = isUser ? "tutorId" : "userId";
     const populateModel = isUser ? "Tutor" : "User";
 
     const chats = await Chat.find({
-      $or: [{ userId }, { tutorId: userId }],
+      $or: [{ userId:userId }, { tutorId: userId }],
     })
       .populate({
         path: populateField,
@@ -23,16 +26,90 @@ const getChatsByUserId = async (req, res) => {
       .select('userId tutorId lastMessage isOnline unreadCount');
 
     res.status(200).json(chats);
+    console.log(chats);
   } catch (error) {
     console.error("Error fetching chats:", error);
     res.status(500).json({ message: error.message });
   }
 };
 
+const getTutorsByUserId = async (req, res) => {
+  try {
+    const { courseIds } = req.query;
+
+    console.log('courseIds',courseIds);
+
+    if (!courseIds) {
+      return res.status(400).json({ message: "CourseIds are missing" });
+    }
+
+    // Find courses by IDs
+    const courses = await Course.find({ _id: { $in: courseIds } });
+
+    if (!courses || courses.length === 0) {
+      return res.status(404).json({ message: "No courses found for the given IDs" });
+    }
+
+    // Populate tutors for each course
+    const tutors = await Promise.all(
+      courses.map(async (course) => {
+        await course.populate('tutorId', 'fullName profileImg');
+        return course.tutorId; // Return the populated tutor
+      })
+    );
+
+    res.status(200).json({
+      message: "Tutors list fetched successfully",
+      tutors,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to get tutor list" });
+  }
+};
+
+const getStudentsByUserId = async (req, res) => {
+  try {
+    const { tutorId } = req.params;
+  
+
+    if (!tutorId) {
+      return res.status(400).json({ message: "TutorId is missing" });
+    }
+
+    
+    const courses = await Course.find({ tutorId }).select('_id');
+
+    if (!courses || courses.length === 0) {
+      return res.status(404).json({ message: "No courses found for the given tutor" });
+    }
+
+    // Extract course IDs into an array
+    const courseIds = courses.map(course => course._id);
+
+    
+    const students = await User.find({ activeCourses: { $in: courseIds } });
+
+    if (!students || students.length === 0) {
+      return res.status(404).json({ message: "No students found for the given tutor's courses" });
+    }
+
+   
+    res.status(200).json({
+      message: "Students list fetched successfully",
+      students,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to get students list" });
+  }
+};
+
 const createChat = async (req, res) => {
   try {
-    const { chatDetails, userType } = req.body;
-    const { userId, tutorId } = chatDetails;
+
+    const { userId, tutorId } = req.body;
+    const  userType  = req.user?.type;
 
     const isUser = userType === "user";
     const populateField = isUser ? "tutorId" : "userId";
@@ -79,7 +156,8 @@ const getMessagesByChatId = async (req, res) => {
   try {
     const { chatId } = req.params;
     const messages = await Message.find({ chatId })
-      .sort({ createdAt: -1 });
+      // .sort({ createdAt: -1 });
+
     res.status(200).json(messages);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -89,6 +167,8 @@ const getMessagesByChatId = async (req, res) => {
 const createMessage = async (req, res) => {
   try {
     const { chatId, sender, receiver, content } = req.body;
+
+    console.log(req.body);
 
     const newMessage = await Message.create({
       chatId,
@@ -198,5 +278,7 @@ module.exports = {
   deleteChat,
   createMessage,
   markMessageAsRead,
-  updateOnlineStatus
+  updateOnlineStatus,
+  getTutorsByUserId,
+  getStudentsByUserId
 };

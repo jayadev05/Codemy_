@@ -1,163 +1,230 @@
-import { useEffect, useState } from "react"
-import Header from "@/components/layout/Header"
-import MainHeader from "@/components/layout/user/MainHeader"
-import Tabs from "@/components/layout/user/Tabs"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Send, MoreHorizontal } from 'lucide-react'
-import { socketService } from "@/services/socket"
-import { useSelector } from "react-redux"
-import { selectUser } from "@/store/slices/userSlice"
-import axiosInstance from "@/config/axiosConfig"
+import { useEffect, useState } from "react";
+import Header from "@/components/layout/Header";
+import MainHeader from "@/components/layout/user/MainHeader";
+import Tabs from "@/components/layout/user/Tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Send, MoreHorizontal } from "lucide-react";
+import { socketService } from "@/services/socket";
+import { useSelector } from "react-redux";
+import { selectUser } from "@/store/slices/userSlice";
+import axiosInstance from "@/config/axiosConfig";
+import ComposeModal from "@/components/layout/user/chat/TutorListModal";
+import axios from "axios";
+import { jwtDecode } from "jwt-decode";
 
 export default function ChatInterface() {
-  const user = useSelector(selectUser)
-  const [chats, setChats] = useState([])
-  const [messages, setMessages] = useState([])
-  const [inputMessage, setInputMessage] = useState('')
-  const [selectedChat, setSelectedChat] = useState(null)
-  const [isTyping, setIsTyping] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const user = useSelector(selectUser);
+  const [chats, setChats] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [inputMessage, setInputMessage] = useState("");
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [isTyping, setIsTyping] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [composeOpen, setComposeOpen] = useState(false);
+  const [tutors, setTutors] = useState([]);
+
+  const courseIds = user.activeCourses;
+
+
+  const userType = getUserRoleFromToken();
+
+  //get userType form token
+  function getUserRoleFromToken() {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      try {
+        const decodedToken = jwtDecode(token);
+        return decodedToken.type;
+      } catch (error) {
+        console.error("Invalid token:", error);
+      }
+    }
+    return null;
+  }
 
   // Fetch all chats for the current user
   const fetchChats = async () => {
     try {
-      const response = await axiosInstance.get(`/api/chats/${user._id}?userType=${user.role}`)
-      setChats(response.data)
+      const response = await axiosInstance.get(
+        `/chat/get-all-chats/${user._id}`
+      );
+      setChats(response.data);
     } catch (error) {
-      console.error('Error fetching chats:', error)
+      console.error("Error fetching chats:", error);
     }
-  }
+  };
 
   // Fetch messages for a specific chat
   const fetchMessages = async (chatId) => {
     try {
-      const response = await axiosInstance.get(`/api/messages/${chatId}`)
-      setMessages(response.data)
+      const response = await axiosInstance.get(`/chat/get-messages/${chatId}`);
+      setMessages(response.data);
     } catch (error) {
-      console.error('Error fetching messages:', error)
+      console.error("Error fetching messages:", error);
     }
-  }
+  };
+
+  // Fetch tutors when modal opens
+  const fetchTutors = async () => {
+    try {
+      setLoading(true);
+
+      const response = await axiosInstance.get(
+        "/chat/get-tutors",
+        { params: { courseIds } }
+      );
+
+      console.log("response", response);
+
+      setTutors(response.data.tutors);
+    } catch (error) {
+      console.error("Error fetching tutors:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTutors();
+  }, []);
+
+  const handleCreateChat = (newChat) => {
+    setChats((prev) => [newChat, ...prev]);
+    setSelectedChat(newChat);
+    fetchMessages(newChat._id);
+  };
 
   // Initialize chat data and socket connection
   useEffect(() => {
     const initializeChat = async () => {
-      setLoading(true)
-      await fetchChats()
-      setLoading(false)
-    }
+      setLoading(true);
+      await fetchChats();
+      setLoading(false);
+    };
 
     if (user?._id) {
-      initializeChat()
-      
+      initializeChat();
+
       // Socket connection
-      const token = localStorage.getItem('accessToken')
+      const token = localStorage.getItem("accessToken");
       if (token) {
-        socketService.connect(token)
-        
+        socketService.connect(token);
+
         // Socket event listeners
         socketService.onReceiveMessage((message) => {
-          setMessages(prev => [...prev, message])
+          setMessages((prev) => [...prev, message]);
           // Update last message in chat list
-          updateChatLastMessage(message)
-        })
+          updateChatLastMessage(message);
+        });
 
         socketService.onTyping(({ senderId }) => {
-          if (selectedChat?.userId === senderId || selectedChat?.tutorId === senderId) {
-            setIsTyping(true)
+          if (
+            selectedChat?.userId === senderId ||
+            selectedChat?.tutorId === senderId
+          ) {
+            setIsTyping(true);
           }
-        })
+        });
 
         socketService.onStopTyping(() => {
-          setIsTyping(false)
-        })
+          setIsTyping(false);
+        });
 
         return () => {
-          socketService.disconnect()
-        }
+          socketService.disconnect();
+        };
       }
     }
-  }, [user?._id])
+  }, [user?._id]);
 
   // Update chat's last message
   const updateChatLastMessage = (message) => {
-    setChats(prevChats => 
-      prevChats.map(chat => 
-        chat._id === message.chatId 
+    setChats((prevChats) =>
+      prevChats.map((chat) =>
+        chat._id === message.chatId
           ? {
               ...chat,
               lastMessage: {
                 content: message.content,
                 senderId: message.sender.userId,
-                timestamp: message.createdAt
-              }
+                timestamp: message.createdAt,
+              },
             }
           : chat
       )
-    )
-  }
+    );
+  };
 
   // Handle chat selection
   const handleChatSelect = async (chat) => {
-    setSelectedChat(chat)
-    await fetchMessages(chat._id)
+    setSelectedChat(chat);
+    await fetchMessages(chat._id);
     // Mark messages as read
-    await axiosInstance.post('/api/messages/read', {
+    await axiosInstance.post("/api/messages/read", {
       chatId: chat._id,
-      userType: user.role
-    })
-  }
+      userType,
+    });
+  };
 
   // Handle sending messages
   const handleSendMessage = async (e) => {
-    e.preventDefault()
-    if (!inputMessage.trim() || !selectedChat) return
+    e.preventDefault();
+    if (!inputMessage.trim() || !selectedChat) return;
 
     try {
       const messageData = {
         chatId: selectedChat._id,
         sender: {
           userId: user._id,
-          role: user.role
+          role: userType,
         },
         receiver: {
-          userId: user.role === 'user' ? selectedChat.tutorId._id : selectedChat.userId._id,
-          role: user.role === 'user' ? 'tutor' : 'user'
+          userId:
+            userType === "user"
+              ? selectedChat.tutorId._id
+              : selectedChat.userId._id,
+          role: userType === "user" ? "tutor" : "user",
         },
-        content: inputMessage
-      }
+        content: inputMessage,
+      };
 
-      const response = await axiosInstance.post('/api/messages', messageData)
-      setMessages(prev => [...prev, response.data])
-      updateChatLastMessage(response.data)
-      setInputMessage('')
+      const response = await axiosInstance.post("/chat/create-message", {...messageData});
+      setMessages((prev) => [...prev, response.data]);
+      updateChatLastMessage(response.data);
+      setInputMessage("");
 
       // Emit socket event
-      socketService.sendMessage(messageData)
+      socketService.sendMessage({
+        ...messageData,
+        messageId: response.data._id,
+        timestamps: response.data.createdAt
+      });
+
     } catch (error) {
-      console.error('Error sending message:', error)
+      console.error("Error sending message:", error);
     }
-  }
+  };
 
   // Handle typing events
   const handleTyping = () => {
     if (selectedChat) {
       socketService.sendTyping({
         chatId: selectedChat._id,
-        senderId: user._id
-      })
+        senderId: user._id,
+      });
     }
-  }
+  };
 
   // Format timestamp
   const formatTime = (timestamp) => {
-    return new Date(timestamp).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit'
-    })
-  }
+    return new Date(timestamp).toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  };
 
   return (
     <>
@@ -169,10 +236,11 @@ export default function ChatInterface() {
         <div className="w-80 border-r flex flex-col">
           <div className="p-4 border-b">
             <div className="flex items-center justify-between mb-4">
-              <h1 className="text-xl font-semibold">Messages</h1>
+              <h1 className="text-xl font-semibold">Chat</h1>
               <Button
                 className="bg-blue-100 hover:bg-blue-200 text-blue-700"
                 size="sm"
+                onClick={() => setComposeOpen(true)}
               >
                 + Compose
               </Button>
@@ -201,7 +269,9 @@ export default function ChatInterface() {
           <ScrollArea className="flex-1">
             <div className="divide-y">
               {chats.map((chat) => {
-                const otherUser = user.role === 'user' ? chat.tutorId : chat.userId
+                const otherUser =
+                  userType === "user" ? chat.tutorId : chat.userId;
+
                 return (
                   <div
                     key={chat._id}
@@ -213,17 +283,23 @@ export default function ChatInterface() {
                     <div className="flex gap-3">
                       <div className="relative">
                         <Avatar className="h-12 w-12">
-                          <AvatarImage 
-                            src={otherUser.profileImg || "/placeholder.svg"} 
-                            alt={`${otherUser.fullName}'s avatar`} 
+                          <img
+                            referrerPolicy="no-referrer"
+                            crossOrigin="anonymous"
+                            src={otherUser.profileImg || "/placeholder.svg"}
+                            alt={`${otherUser.fullName}'s avatar`}
                           />
-                          <AvatarFallback>{otherUser.fullName.charAt(0)}</AvatarFallback>
+                          <AvatarFallback>
+                            {otherUser.fullName?.charAt(0)}
+                          </AvatarFallback>
                         </Avatar>
                         <span
                           className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white ${
-                            chat.isOnline[user.role === 'user' ? 'tutor' : 'student']
-                              ? 'bg-green-500'
-                              : 'bg-gray-300'
+                            chat.isOnline[
+                              userType === "user" ? "tutor" : "student"
+                            ]
+                              ? "bg-green-500"
+                              : "bg-gray-300"
                           }`}
                         />
                       </div>
@@ -233,17 +309,22 @@ export default function ChatInterface() {
                             {otherUser.fullName}
                           </h3>
                           <span className="text-xs text-gray-500">
-                            {chat.lastMessage?.timestamp && 
+                            {chat.lastMessage?.timestamp &&
                               formatTime(chat.lastMessage.timestamp)}
                           </span>
                         </div>
+                        
+                        <div className="flex items-center justify-between">
                         <p className="text-sm text-gray-600 truncate">
-                          {chat.lastMessage?.content || 'Start a conversation'}
+                          {chat.lastMessage?.content || "Start a conversation"}
                         </p>
+                        <p className="text-xs bg-orange-400 px-[9px] py-[3px] rounded-full">{chat.unreadCount?.student}</p>      
+                        </div>
+                        
                       </div>
                     </div>
                   </div>
-                )
+                );
               })}
             </div>
           </ScrollArea>
@@ -257,36 +338,52 @@ export default function ChatInterface() {
                 <div className="flex items-center gap-3">
                   <div className="relative">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage
-                        src={user.role === 'user' 
-                          ? selectedChat.tutorId.profileImg 
-                          : selectedChat.userId.profileImg}
+                      <img
+                        crossOrigin="anonymus"
+                        referrerPolicy="no-referrer"
+                        src={
+                          userType === "user"
+                            ? selectedChat.tutorId.profileImg
+                            : selectedChat.userId.profileImg
+                        }
                         alt="Chat partner's avatar"
                       />
                       <AvatarFallback>
-                        {user.role === 'user'
-                          ? selectedChat.tutorId.fullName.charAt(0)
-                          : selectedChat.userId.fullName.charAt(0)}
+                        {userType === "user"
+                          ? selectedChat.tutorId.fullName?.charAt(0)
+                          : selectedChat.userId.fullName?.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
                     <span
                       className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
-                        selectedChat.isOnline[user.role === 'user' ? 'tutor' : 'student']
-                          ? 'bg-green-500'
-                          : 'bg-gray-300'
+                        selectedChat.isOnline[
+                          userType === "user" ? "tutor" : "student"
+                        ]
+                          ? "bg-green-500"
+                          : "bg-gray-300"
                       }`}
                     />
                   </div>
                   <div>
                     <h2 className="font-semibold">
-                      {user.role === 'user'
+                      {userType === "user"
                         ? selectedChat.tutorId.fullName
                         : selectedChat.userId.fullName}
                     </h2>
-                    <p className="text-sm text-green-600">
-                      {selectedChat.isOnline[user.role === 'user' ? 'tutor' : 'student']
-                        ? 'Active Now'
-                        : 'Offline'}
+                    <p
+                      className={`text-sm ${
+                        selectedChat.isOnline[
+                          userType === "user" ? "tutor" : "student"
+                        ]
+                          ? "text-green-600"
+                          : "text-gray-500"
+                      }`}
+                    >
+                      {selectedChat.isOnline[
+                        userType === "user" ? "tutor" : "student"
+                      ]
+                        ? "Active Now"
+                        : "Offline"}
                     </p>
                   </div>
                 </div>
@@ -302,22 +399,24 @@ export default function ChatInterface() {
                       key={message._id}
                       className={`flex gap-3 max-w-xl ${
                         message.sender.userId === user._id
-                          ? 'justify-end ml-auto'
-                          : ''
+                          ? "justify-end ml-auto"
+                          : ""
                       }`}
                     >
                       {message.sender.userId !== user._id && (
                         <Avatar className="h-8 w-8 mt-1">
                           <AvatarImage
-                            src={user.role === 'user'
-                              ? selectedChat.tutorId.profileImg
-                              : selectedChat.userId.profileImg}
+                            src={
+                              userType === "user"
+                                ? selectedChat.tutorId.profileImg
+                                : selectedChat.userId.profileImg
+                            }
                             alt="Sender's avatar"
                           />
                           <AvatarFallback>
-                            {user.role === 'user'
-                              ? selectedChat.tutorId.fullName.charAt(0)
-                              : selectedChat.userId.fullName.charAt(0)}
+                            {userType === "user"
+                              ? selectedChat.tutorId.fullName?.charAt(0)
+                              : selectedChat.userId.fullName?.charAt(0)}
                           </AvatarFallback>
                         </Avatar>
                       )}
@@ -325,8 +424,8 @@ export default function ChatInterface() {
                         <div
                           className={`rounded-2xl p-3 ${
                             message.sender.userId === user._id
-                              ? 'bg-[#ff6738] text-white'
-                              : 'bg-gray-100'
+                              ? "bg-[#ff6738] text-white"
+                              : "bg-gray-100"
                           }`}
                         >
                           <p>{message.content}</p>
@@ -349,9 +448,7 @@ export default function ChatInterface() {
                     </div>
                   ))}
                   {isTyping && (
-                    <div className="text-sm text-gray-500">
-                      Typing...
-                    </div>
+                    <div className="text-sm text-gray-500">Typing...</div>
                   )}
                 </div>
               </ScrollArea>
@@ -363,8 +460,8 @@ export default function ChatInterface() {
                     placeholder="Type your message"
                     value={inputMessage}
                     onChange={(e) => {
-                      setInputMessage(e.target.value)
-                      handleTyping()
+                      setInputMessage(e.target.value);
+                      handleTyping();
                     }}
                   />
                   <Button
@@ -383,7 +480,15 @@ export default function ChatInterface() {
             </div>
           )}
         </div>
+
+        <ComposeModal
+          open={composeOpen}
+          onOpenChange={setComposeOpen}
+          onChatCreated={handleCreateChat}
+          recipients={tutors}
+          user={user}
+        />
       </div>
     </>
-  )
+  );
 }

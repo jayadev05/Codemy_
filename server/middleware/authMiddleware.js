@@ -3,11 +3,13 @@ const jwt = require("jsonwebtoken");
 
 const verifyUser = async (req, res, next) => {
    
-    const accessToken = req.headers.authorization && req.headers.authorization.startsWith("Bearer ") 
+
+       
+    const accessToken = req.cookies.accessToken || req.headers.authorization && req.headers.authorization.startsWith("Bearer ") 
         ? req.headers.authorization.split(" ")[1]  
         : null;
 
-    const refreshToken = req.headers['x-refresh-token'] || null;  
+    const refreshToken = req.headers['x-refresh-token'] || req.cookies.refreshToken;  
 
     console.log("Received Tokens:", {
         accessToken: accessToken,
@@ -43,7 +45,7 @@ const handleRefreshToken = async (refreshToken, req, res, next) => {
         const newAccessToken = jwt.sign(
             { id: decoded.id, type: decoded.type }, 
             process.env.ACCESS_TOKEN_SECRET,
-            { expiresIn: process.env.ACCESS_TOKEN_EXPIRY || "10m" }
+            { expiresIn: "10m" }
         );
 
         
