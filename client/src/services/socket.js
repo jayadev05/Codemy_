@@ -1,24 +1,24 @@
 import { io } from 'socket.io-client';
-import {jwtDecode} from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 
 class SocketService {
   constructor() {
     this.socket = null;
+    this.eventHandlers = new Map();
   }
 
   getUserTypeFromToken(token) {
     try {
       const decoded = jwtDecode(token);
-      console.log("decoded",decoded)
-      return decoded?.type || null; 
+      return decoded?.type || null;
     } catch (error) {
       console.error('Error decoding token:', error);
       return null;
     }
   }
- 
-  connect(token) {
-    if (this.socket) {
+
+  connect(token, refreshToken) {
+    if (this.socket?.connected) {
       console.warn('Socket already connected');
       return;
     }
@@ -31,9 +31,16 @@ class SocketService {
     }
 
     this.socket = io('http://localhost:3000', {
-      auth: { token, type }
+      auth: { token, refreshToken, type },
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
     });
 
+    this.setupDefaultListeners();
+  }
+
+  setupDefaultListeners() {
     this.socket.on('connect', () => {
       console.log('[SocketService] Connected to socket server');
     });
@@ -46,49 +53,88 @@ class SocketService {
       console.log('[SocketService] Token expired, redirecting to login...');
       window.location.href = '/login';
     });
+
+    this.socket.on('new-access-token', ({ token }) => {
+      console.log('[SocketService] Received new access token');
+      this.token = token;
+    });
   }
 
   disconnect() {
     if (this.socket) {
+      // Remove all event listeners
+      this.eventHandlers.forEach((handlers, event) => {
+        handlers.forEach(handler => this.socket.off(event, handler));
+      });
+      this.eventHandlers.clear();
       this.socket.disconnect();
       this.socket = null;
     }
   }
+  
 
   isConnected() {
     return this.socket?.connected || false;
   }
 
+  // Enhanced event handling methods
+  on(event, callback) {
+    if (this.socket) {
+      if (!this.eventHandlers.has(event)) {
+        this.eventHandlers.set(event, new Set());
+      }
+      this.eventHandlers.get(event).add(callback);
+      this.socket.on(event, callback);
+    }
+  }
+
+  off(event, callback) {
+    if (this.socket) {
+      const handlers = this.eventHandlers.get(event);
+      if (handlers) {
+        handlers.delete(callback);
+        this.socket.off(event, callback);
+      }
+    }
+  }
+
   sendMessage(data) {
     if (this.isConnected()) {
-      this.socket.emit('send-message', data);
+      const messageData = {
+        chatId: data.chatId,
+        messageId: data.messageId,
+        sender: data.sender,
+        receiver: data.receiver,
+        content: data.content,
+        timestamps: data.timestamps
+      };
+      this.socket.emit('send-message', messageData);
+      console.log('[SocketService] Sending message:', messageData);
+    } else {
+      console.warn('[SocketService] Cannot send message: Socket not connected');
     }
   }
 
-  onReceiveMessage(callback) {
+  sendTyping(data) {
     if (this.isConnected()) {
-      this.socket.on('receive-message', callback);
+      this.socket.emit('typing', {
+        chatId: data.chatId,
+        senderId: data.senderId,
+        receiverId: data.receiverId
+      });
+      console.log('[SocketService] Sending typing event');
     }
   }
 
-  sendTyping(receiverId) {
-    this.socket?.emit('typing', { receiverId });
-  }
-
-  sendStopTyping(receiverId) {
-    this.socket?.emit('stop-typing', { receiverId });
-  }
-
-  onTyping(callback) {
-    this.socket?.on('typing', callback);
-  }
-
-  onStopTyping(callback) {
-    this.socket?.on('stop-typing', callback);
-  }
-
-  onUserStatusUpdate(callback) {
-    this.socket?.on('user-status-update', callback);
+  sendStopTyping(data) {
+    if (this.isConnected()) {
+      this.socket.emit('stop-typing', {
+        chatId: data.chatId,
+        senderId: data.senderId,
+        receiverId: data.receiverId
+      });
+      console.log('[SocketService] Sending stop typing event');
+    }
   }
 }
 

@@ -12,7 +12,7 @@ const initializeSocket = (server) => {
     cors: {
       origin: 'http://localhost:5173',
       methods: ['GET', 'POST'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'x-refresh-token'],  // Added Content-Type
+      allowedHeaders: ['Content-Type', 'Authorization', 'x-refresh-token'],  
       credentials: true,
     },
     pingTimeout: 60000,
@@ -20,77 +20,86 @@ const initializeSocket = (server) => {
   });
 
   // authenticate user
-  io.use((socket, next) => {
+  io.use(async (socket, next) => {
     const auth = socket.handshake.auth;
-    
-    // Better error handling for missing token
-    if (!auth || (!auth.token && !socket.handshake.headers.authorization)) {
-      return next(new Error("Authentication token missing"));
+    const headers = socket.handshake.headers;
+  
+    // Extract tokens
+    const accessToken = auth.token || headers.authorization?.replace("Bearer ", "");
+    const refreshToken = auth.refreshToken;
+  
+    console.log("Socket handshake tokens:", { accessToken, refreshToken });
+  
+    if (!accessToken && !refreshToken) {
+      return next(new Error("Authentication tokens missing"));
     }
-
-    // Try to get token from either auth object or Authorization header
-    const token = auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
-    
-
+  
     try {
-      const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-
-      if (!decoded.id || !decoded.type) {
-        console.error('Invalid token structure:', decoded);
-        return next(new Error("Invalid token structure"));
-      }
-
-      // Attach user info to socket
-      socket.user = {
-        userId: decoded.id,
-        userType: decoded.type
-      };
-
-
-      next();
-
+      // Verify access token
+      const decoded = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET);
+      socket.user = { userId: decoded.id, userType: decoded.type };
+      return next();
     } catch (error) {
-      console.error('Token verification failed:', {
-        errorName: error.name,
-        errorMessage: error.message,
-        token: token?.substring(0, 10) + '...'
-      });
-
-      if (error.name === 'TokenExpiredError') {
-        socket.emit('token-expired', { 
-          message: "Session expired. Please log in again.",
-          code: 'TOKEN_EXPIRED'
-        });
-      } else if (error.name === 'JsonWebTokenError') {
-        return next(new Error(`Invalid token: ${error.message}`));
-      } else {
-        return next(new Error("Authentication failed"));
+      // Handle token expiration
+      if (error.name === "TokenExpiredError" && refreshToken) {
+        try {
+          // Verify refresh token
+          const decodedRefresh = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+  
+          // Generate a new access token
+          const newAccessToken = jwt.sign(
+            { id: decodedRefresh.id, type: decodedRefresh.type },
+            process.env.ACCESS_TOKEN_SECRET,
+            { expiresIn: "10m" }
+          );
+  
+          // Attach new token to socket response
+          socket.emit("new-access-token", { token: newAccessToken });
+  
+          // Update user data
+          socket.user = { userId: decodedRefresh.id, userType: decodedRefresh.type };
+  
+          return next();
+        } catch (refreshError) {
+          console.error("Refresh token verification failed:", refreshError);
+          return next(new Error("Invalid or expired refresh token"));
+        }
       }
+  
+      console.error("Access token verification failed:", error);
+      return next(new Error("Authentication failed"));
     }
   });
 
 
   // establish connected users
   io.on('connection', async (socket) => {
-    console.log('New client connected');
+    console.log('New client connected',socket.id);
     const { userId, userType } = socket.user;
 
     try {
-      if (userType === 'tutor') {
-        onlineTutors[userId] = { socketId: socket.id, userId };
-        await Chat.updateMany(
-          { tutorId: userId },
-          { $set: { "isOnline.tutor": true } }
-        );
-      } else if (userType === 'user') {
-        onlineStudents[userId] = { socketId: socket.id, userId };
-        await Chat.updateMany(
-          { userId },
-          { $set: { "isOnline.student": true } }
-        );
-      }
+      const updateQuery = userType === 'tutor' 
+      ? { tutorId: userId }
+      : { userId };
+    
+    const updateField = userType === 'tutor' 
+      ? "isOnline.tutor" 
+      : "isOnline.student";
 
-      socket.broadcast.emit('user-status-update');
+    await Chat.updateMany(
+      updateQuery,
+      { $set: { [updateField]: true } }
+    );
+
+    // Store socket info
+    if (userType === 'tutor') {
+      onlineTutors[userId] = { socketId: socket.id, userId };
+    } else {
+      onlineStudents[userId] = { socketId: socket.id, userId };
+    }
+
+    // Broadcast status update
+    socket.broadcast.emit('user-status-update');
 
       // Initialize chat handler for this socket
       chatHandler(io, socket, onlineTutors, onlineStudents);
@@ -117,10 +126,12 @@ const initializeSocket = (server) => {
           }
 
           socket.broadcast.emit('user-status-update');
+
         } catch (error) {
           console.error("Error in disconnect handler:", error);
         }
       });
+
     } catch (error) {
       console.error("Error in connection handler:", error);
       socket.emit('error', {

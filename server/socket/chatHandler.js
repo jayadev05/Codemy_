@@ -7,82 +7,85 @@ const chatHandler =(io, socket, onlineStudents, onlineTutors)=>{
 
 
   //send message event
-  socket.on('send-message',async(data)=>{
+  socket.on('send-message', async (data) => {
+    const { chatId, messageId, sender, receiver, content, timestamps } = data;
+    console.log('Timestamps:', timestamps);
 
-    const{
-      chatId,
-      messageId,
-      sender,
-      receiver,
-      content,
-      timestamps
-    } = data;
-
-    const senderId = sender.userId;
-    const receiverId = receiver.userId;
-
-    console.log("data",data);
-
+  
+    console.log('Send message event triggered:', data);
+    
     try {
-      
-      const chat = await Chat.findOne({_id:chatId});
-
-      if(!chat){
-        console.log("Chat not found");
-        return (new Error("Chat not found"));
+      const chat = await Chat.findOne({ _id: chatId });
+      if (!chat) {
+        console.log('Chat not found for chatId:', chatId);
+        socket.emit('error', { message: "Chat not found" });
+        return;
       }
-
-
-      const receiverOnline = socket.user.userType==='tutor' ? onlineTutors[receiverId] : onlineStudents[receiverId]
-
-      if(receiverOnline){
-        io.to(receiverOnline.socketId).emit('recieve-message',{
-          messageId,
-          senderId,
-          chatId,
-          content,
-          timestamps,
-          chatData:chat
-        });
+  
+      console.log('Receiver Info:', receiver);
+      console.log('Online Students:', onlineStudents);
+      console.log('Online Tutors:', onlineTutors);
+  
+      // Check both mappings for the receiver
+      const receiverSocketId =
+        onlineTutors[receiver.userId]?.socketId || 
+        onlineStudents[receiver.userId]?.socketId;
+  
+      console.log('Resolved Receiver Socket ID:', receiverSocketId);
+  
+      if (!receiverSocketId) {
+        console.log('Receiver is offline or not found:', receiver.userId);
+        socket.emit('message-delivery-status', { status: 'offline', receiverId: receiver.userId });
+        return;
       }
-
-      else {
-        console.log("Receiver is not online")
-      }
-
+  
+      io.to(receiverSocketId).emit('receive-message', {
+        messageId,
+        sender,
+        receiver,
+        chatId,
+        content,
+        timestamps,
+        chatData: chat
+      });
+  
+      console.log('Message sent to receiver:', receiverSocketId);
     } catch (error) {
-        console.log("Error saving message",error);
-    } 
+      console.error("Error in send-message:", error);
+      socket.emit('error', { message: "Failed to process message" });
+    }
+  });
+  
+  
 
-
-
-  })
 
   //typing event indicator event
-  socket.on('typing',(data)=>{
-    const {receiverId} = data;
-
-    if(onlineUsers[receiverId]){
-      io.to(onlineUsers[receiverId].socketId).emit('typing',{
-        senderId:socket.user.userId
-      })
+  socket.on('typing', (data) => {
+    const { chatId, senderId, receiverId } = data;
+    const receiverOnline = onlineUsers[receiverId];
+    
+    if (receiverOnline) {
+      io.to(receiverOnline.socketId).emit('typing', {
+        chatId,
+        senderId
+      });
     }
-});
-
+  });
 
 //stopped typing indicator event 
 
-socket.on('stop-typing',(data)=>{
-
-  const {receiverId}=data;
-
-  if(onlineUsers[receiverId]){
-    io.to(onlineUsers[receiverId].socketId).emit('stop-typing',{
-      senderId:socket.user.userId
-    })
+socket.on('stop-typing', (data) => {
+  const { chatId, senderId, receiverId } = data;
+  const receiverOnline = onlineUsers[receiverId];
+  
+  if (receiverOnline) {
+    io.to(receiverOnline.socketId).emit('stop-typing', {
+      chatId,
+      senderId
+    });
   }
+});
 
-})
 
 }
 

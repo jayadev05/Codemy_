@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Header from "@/components/layout/Header";
 import MainHeader from "@/components/layout/user/MainHeader";
 import Tabs from "@/components/layout/user/Tabs";
@@ -27,7 +27,7 @@ export default function TutorChatPage() {
   const [composeOpen, setComposeOpen] = useState(false);
   const [students, setStudents] = useState([]);
 
-
+  const messagesEndRef = useRef(null);
 
   const userType = getUserRoleFromToken();
 
@@ -56,8 +56,8 @@ export default function TutorChatPage() {
       setChats(response.data);
     } catch (error) {
       console.error("Error fetching chats:", error);
-    } 
-  };  
+    }
+  };
 
   // Fetch messages for a specific chat
   const fetchMessages = async (chatId) => {
@@ -74,12 +74,12 @@ export default function TutorChatPage() {
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      
-      const response = await axiosInstance.get(`/chat/get-students/${tutor._id}` );
 
+      const response = await axiosInstance.get(
+        `/chat/get-students/${tutor._id}`
+      );
 
       setStudents(response.data.students);
-
     } catch (error) {
       console.error("Error fetching tutors:", error);
     } finally {
@@ -90,6 +90,12 @@ export default function TutorChatPage() {
   useEffect(() => {
     fetchStudents();
   }, []);
+  // Scroll to bottom when messages update or typing status changes
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isTyping]);
 
   const handleCreateChat = (newChat) => {
     setChats((prev) => [newChat, ...prev]);
@@ -100,45 +106,60 @@ export default function TutorChatPage() {
   // Initialize chat data and socket connection
   useEffect(() => {
     const initializeChat = async () => {
+      if (!tutor?._id) return;
+
       setLoading(true);
       await fetchChats();
       setLoading(false);
-    };
 
-    if (tutor?._id) {
-      initializeChat();
+      const token = localStorage.getItem("accessToken");
+      const refreshToken = localStorage.getItem("refreshToken");
+
+      if (!token) return;
 
       // Socket connection
-      const token = localStorage.getItem("accessToken");
-      if (token) {
-        socketService.connect(token);
+      socketService.connect(token, refreshToken);
 
-        // Socket event listeners
-        socketService.onReceiveMessage((message) => {
-          setMessages((prev) => [...prev, message]);
-          // Update last message in chat list
-          updateChatLastMessage(message);
-        });
+      // Socket event listeners
+      const handleMessage = (message) => {
+        console.log('Received message:', message);
+        
+        // Only add the message if it's not already in the messages array
+        if (message.chatId === selectedChat?._id) {
+          setMessages((prevMessages) => {
+            if (prevMessages.some((m) => m._id === message._id)) return prevMessages;
+            return [...prevMessages, message];
+          });
+        }
+        updateChatLastMessage(message);
+      };
 
-        socketService.onTyping(({ senderId }) => {
-          if (
-            selectedChat?.userId === senderId ||
-            selectedChat?.tutorId === senderId
-          ) {
-            setIsTyping(true);
-          }
-        });
+      const handleTyping = ({ senderId }) => {
+        if (
+          selectedChat?.userId === senderId ||
+          selectedChat?.tutorId === senderId
+        ) {
+          setIsTyping(true);
+        }
+      };
 
-        socketService.onStopTyping(() => {
-          setIsTyping(false);
-        });
+      const handleStopTyping = () => {
+        setIsTyping(false);
+      };
 
-        return () => {
-          socketService.disconnect();
-        };
-      }
-    }
-  }, [tutor?._id]);
+      socketService.on("receive-message", handleMessage);
+      socketService.on("typing", handleTyping);
+      socketService.on("stop-typing", handleStopTyping);
+      return () => {
+        socketService.off("receive-message", handleMessage);
+        socketService.off("typing", handleTyping);
+        socketService.off("stop-typing", handleStopTyping);
+        socketService.disconnect();
+      };
+    };
+
+    initializeChat();
+  }, [tutor?._id, localStorage.getItem("accessToken")]);
 
   // Update chat's last message
   const updateChatLastMessage = (message) => {
@@ -158,56 +179,61 @@ export default function TutorChatPage() {
     );
   };
 
+  const markMessagesAsRead = async (chatId, userType) => {
+    try {
+      await axiosInstance.put(`/chat/messages-read/${chatId}`, {
+        userType
+      });
+    } catch (error) {
+      console.error('Error marking messages as read:', error);
+    }
+  };
+
   // Handle chat selection
   const handleChatSelect = async (chat) => {
     setSelectedChat(chat);
     await fetchMessages(chat._id);
+
     // Mark messages as read
-    await axiosInstance.post("/api/messages/read", {
-      chatId: chat._id,
-      userType,
-    });
+    await markMessagesAsRead(chat._id,userType);
+
   };
 
   // Handle sending messages
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!inputMessage.trim() || !selectedChat) return;
-
+  
     try {
       const messageData = {
         chatId: selectedChat._id,
-        sender: {
-          userId: tutor._id,
-          role: userType,
-        },
+        sender: { userId: tutor._id, role: userType },
         receiver: {
-          userId:
-            userType === "user"
-              ? selectedChat.tutorId._id
-              : selectedChat.userId._id,
+          userId: userType === "user" ? selectedChat.tutorId._id : selectedChat.userId._id,
           role: userType === "user" ? "tutor" : "user",
         },
         content: inputMessage,
       };
-
-      const response = await axiosInstance.post("/chat/create-message", {...messageData});
-      setMessages((prev) => [...prev, response.data]);
-      updateChatLastMessage(response.data);
+    
+      const response = await axiosInstance.post("/chat/create-message", messageData);
+    
+      // Optimistically update UI
+      setMessages((prevMessages) => [...prevMessages, response.data]);
+    
       setInputMessage("");
-
+      updateChatLastMessage(response.data);
+    
       // Emit socket event
       socketService.sendMessage({
         ...messageData,
         messageId: response.data._id,
-        timestamps: response.data.createdAt
+        timestamps: response.data.createdAt,
       });
-
     } catch (error) {
       console.error("Error sending message:", error);
     }
+    
   };
-
   // Handle typing events
   const handleTyping = () => {
     if (selectedChat) {
@@ -227,21 +253,23 @@ export default function TutorChatPage() {
   };
 
   return (
-    <>
-      <div className="flex">
-        <Sidebar activeSection="Message"/>
+    <div className="flex">
+      <Sidebar activeSection="Messages" />
 
-    <div className="flex flex-col flex-1 ">
-    <header className="flex items-center justify-between border-b bg-white px-6 py-4 ">
+      <div className="flex-1">
+        {/* Header */}
+        <header className="flex items-center justify-between border-b bg-white p-4">
           <div>
-            <h1 className="text-xl font-semibold">Messages</h1>
-            <p className="text-sm text-gray-500">Good Morning</p>
+            <h1 className="text-lg lg:text-xl font-semibold">Messages</h1>
+            <p className="text-sm text-gray-500 hidden sm:block">
+              Good Morning
+            </p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="relative">
+          <div className="flex items-center gap-2 lg:gap-4">
+            <div className="relative hidden sm:block">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
-                className="w-64 pl-9 pr-3 py-2 rounded-md border border-gray-300"
+                className="w-48 lg:w-64 pl-9 pr-3 py-2 rounded-md border border-gray-300"
                 placeholder="Search"
               />
             </div>
@@ -251,258 +279,312 @@ export default function TutorChatPage() {
             <img
               referrerPolicy="no-referrer"
               crossOrigin="anonymous"
-              src={tutor.profileImg || defProfile}
-              className="w-12 h-12 rounded-full"
+              src={tutor?.profileImg || defProfile}
+              className="w-8 h-8 lg:w-12 lg:h-12 rounded-full"
               alt=""
             />
           </div>
         </header>
-      <div className="flex h-[78vh] bg-white">
-        {/* Sidebar */}
-        <div className="w-80 border-r flex flex-col">
-          <div className="p-4 border-b">
-            <div className="flex items-center justify-between mb-4">
-              <h1 className="text-xl font-semibold">Chat</h1>
-              <Button
-                className="bg-blue-100 hover:bg-blue-200 text-blue-700"
-                size="sm"
-                onClick={() => setComposeOpen(true)}
-              >
-                + Compose
-              </Button>
-            </div>
-            <div className="relative">
-              <Input
-                className="pl-8 bg-gray-50"
-                placeholder="Search"
-                type="search"
-              />
-              <svg
-                className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                />
-              </svg>
-            </div>
-          </div>
-          <ScrollArea className="flex-1">
-            <div className="divide-y">
-              {chats.map((chat) => {
-                const otherUser =
-                  userType === "user" ? chat.tutorId : chat.userId;
 
-                return (
-                  <div
-                    key={chat._id}
-                    className={`p-4 hover:bg-gray-50 cursor-pointer ${
-                      selectedChat?._id === chat._id ? "bg-orange-50" : ""
-                    }`}
-                    onClick={() => handleChatSelect(chat)}
-                  >
-                    <div className="flex gap-3">
-                      <div className="relative">
-                        <Avatar className="h-12 w-12">
-                          <img
-                            referrerPolicy="no-referrer"
-                            crossOrigin="anonymous"
-                            src={otherUser.profileImg || "/placeholder.svg"}
-                            alt={`${otherUser.fullName}'s avatar`}
-                          />
-                          <AvatarFallback>
-                            {otherUser.fullName?.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span
-                          className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white ${
-                            chat.isOnline[
-                              userType === "user" ? "tutor" : "student"
-                            ]
-                              ? "bg-green-500"
-                              : "bg-gray-300"
-                          }`}
-                        />
-                      </div>
-                      <div className="flex-1 overflow-hidden">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-semibold truncate">
-                            {otherUser.fullName}
-                          </h3>
-                          <span className="text-xs text-gray-500">
-                            {chat.lastMessage?.timestamp &&
-                              formatTime(chat.lastMessage.timestamp)}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                        <p className="text-sm text-gray-600 truncate">
-                          {chat.lastMessage?.content || "Start a conversation"}
-                        </p>
-                        <p className="text-xs bg-orange-400 px-[9px] py-[3px] rounded-full">{chat.unreadCount?.tutor}</p>      
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </ScrollArea>
-        </div>
-
-        {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col">
-          {selectedChat ? (
-            <>
-              <div className="flex items-center justify-between p-4 border-b">
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <Avatar className="h-10 w-10">
-                      <img
-                        crossOrigin="anonymus"
-                        referrerPolicy="no-referrer"
-                        src={
-                          userType === "user"
-                            ? selectedChat.tutorId.profileImg
-                            : selectedChat.userId.profileImg
-                        }
-                        alt="Chat partner's avatar"
-                      />
-                      <AvatarFallback>
-                        {userType === "user"
-                          ? selectedChat.tutorId.fullName?.charAt(0)
-                          : selectedChat.userId.fullName?.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span
-                      className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
-                        selectedChat.isOnline[
-                          userType === "user" ? "tutor" : "student"
-                        ]
-                          ? "bg-green-500"
-                          : "bg-gray-300"
-                      }`}
-                    />
-                  </div>
-                  <div>
-                    <h2 className="font-semibold">
-                      {userType === "user"
-                        ? selectedChat.tutorId.fullName
-                        : selectedChat.userId.fullName}
-                    </h2>
-                    <p
-                      className={`text-sm ${
-                        selectedChat.isOnline[
-                          userType === "user" ? "tutor" : "student"
-                        ]
-                          ? "text-green-600"
-                          : "text-gray-500"
-                      }`}
-                    >
-                      {selectedChat.isOnline[
-                        userType === "user" ? "tutor" : "student"
-                      ]
-                        ? "Active Now"
-                        : "Offline"}
-                    </p>
-                  </div>
-                </div>
-                <Button variant="ghost" size="icon">
-                  <MoreHorizontal className="h-5 w-5" />
+        {/* Chat Container */}
+        <div className="flex h-[calc(100vh-73px)] bg-white">
+          {/* Chat List */}
+          <div
+            className={`${
+              selectedChat ? "hidden" : "w-full"
+            } md:block md:w-80 border-r flex flex-col`}
+          >
+            <div className="p-3 lg:p-4 border-b">
+              <div className="flex items-center justify-between mb-3">
+                <h1 className="text-lg font-semibold">Chat</h1>
+                <Button
+                  className="bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm"
+                  size="sm"
+                  onClick={() => setComposeOpen(true)}
+                >
+                  + Compose
                 </Button>
               </div>
-
-              <ScrollArea className="flex-1 p-4">
-                <div className="space-y-4">
-                  {messages.map((message) => (
-                    <div
-                      key={message._id}
-                      className={`flex gap-3 max-w-xl ${
-                        message.sender.userId === tutor._id
-                          ? "justify-end ml-auto"
-                          : ""
-                      }`}
-                    >
-                      {message.sender.userId !== tutor._id && (
-                        <Avatar className="h-8 w-8 mt-1">
-                          <AvatarImage
-                            src={
-                              userType === "user"
-                                ? selectedChat.tutorId.profileImg
-                                : selectedChat.userId.profileImg
-                            }
-                            alt="Sender's avatar"
-                          />
-                          <AvatarFallback>
-                            {userType === "tutor"
-                              ? selectedChat.tutorId.fullName?.charAt(0)
-                              : selectedChat.userId.fullName?.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
-                      <div>
-                        <div
-                          className={`rounded-2xl p-3 ${
-                            message.sender.userId === tutor._id
-                              ? "bg-[#ff6738] text-white"
-                              : "bg-gray-100"
-                          }`}
-                        >
-                          <p>{message.content}</p>
-                        </div>
-                        <span className="text-xs text-gray-500 ml-2">
-                          {formatTime(message.createdAt)}
-                        </span>
-                      </div>
-                      {message.sender.userId === tutor._id && (
-                        <Avatar className="h-8 w-8 mt-1">
-                          <AvatarImage
-                            src={tutor.profileImg}
-                            alt="Your avatar"
-                          />
-                          <AvatarFallback>
-                            {tutor.fullName.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
-                    </div>
-                  ))}
-                  {isTyping && (
-                    <div className="text-sm text-gray-500">Typing...</div>
-                  )}
-                </div>
-              </ScrollArea>
-
-              <div className="p-4 border-t">
-                <form onSubmit={handleSendMessage} className="flex gap-2">
-                  <Input
-                    className="flex-1"
-                    placeholder="Type your message"
-                    value={inputMessage}
-                    onChange={(e) => {
-                      setInputMessage(e.target.value);
-                      handleTyping();
-                    }}
-                  />
-                  <Button
-                    type="submit"
-                    className="bg-[#ff4f38] hover:bg-[#e63f2a]"
-                  >
-                    <span>Send</span>
-                    <Send className="ml-2 h-4 w-4" />
-                  </Button>
-                </form>
+              <div className="relative">
+                <Input
+                  className="pl-8 bg-gray-50 text-sm"
+                  placeholder="Search"
+                  type="search"
+                />
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
               </div>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-gray-500">
-              Select a chat to start messaging
             </div>
-          )}
+
+            <ScrollArea className="flex-1">
+              <div className="divide-y">
+                {chats
+                  .filter((chat) => {
+                    // Filter out undefined/null chats and ensure required properties exist
+                    return (
+                      chat &&
+                      chat._id &&
+                      ((userType === "user" && chat.tutorId) ||
+                        (userType === "tutor" && chat.userId))
+                    );
+                  })
+                  .map((chat) => {
+                    const otherUser =
+                      userType === "user" ? chat.tutorId : chat.userId;
+
+                    // Additional validation to ensure otherUser exists
+                    if (!otherUser) {
+                      return null;
+                    }
+
+                    return (
+                      <div
+                        key={chat._id}
+                        className={`p-4 hover:bg-gray-50 cursor-pointer ${
+                          selectedChat?._id === chat._id ? "bg-orange-50" : ""
+                        }`}
+                        onClick={() => handleChatSelect(chat)}
+                      >
+                        <div className="flex gap-3">
+                          <div className="relative">
+                            <Avatar className="h-12 w-12">
+                              {otherUser.profileImg ? (
+                                <AvatarImage
+                                  referrerPolicy="no-referrer"
+                                  crossOrigin="anonymous"
+                                  src={otherUser.profileImg}
+                                  alt={`${
+                                    otherUser.fullName || "User"
+                                  }'s avatar`}
+                                  onError={(e) => {
+                                    e.target.src = "/placeholder.svg"; // Fallback image
+                                  }}
+                                />
+                              ) : (
+                                <AvatarFallback>
+                                  {(otherUser.fullName || "?").charAt(0)}
+                                </AvatarFallback>
+                              )}
+                            </Avatar>
+                            <span
+                              className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white ${
+                                chat.isOnline?.[
+                                  userType === "user" ? "tutor" : "student"
+                                ]
+                                  ? "bg-green-500"
+                                  : "bg-gray-300"
+                              }`}
+                            />
+                          </div>
+                          <div className="flex-1 overflow-hidden">
+                            <div className="flex items-center justify-between">
+                              <h3 className="font-semibold truncate">
+                                {otherUser.fullName || "Unknown User"}
+                              </h3>
+                              <span className="text-xs text-gray-500">
+                                {chat.lastMessage?.timestamp &&
+                                  formatTime(chat.lastMessage.timestamp)}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <p className="text-sm text-gray-600 truncate">
+                                {chat.lastMessage?.content ||
+                                  "Start a conversation"}
+                              </p>
+                              {chat.unreadCount?.[
+                                userType === "user" ? "student" : "tutor"
+                              ] > 0 && (
+                                <p className="text-xs bg-orange-400 px-[9px] py-[3px] rounded-full text-white">
+                                  {
+                                    chat.unreadCount[
+                                      userType === "user" ? "student" : "tutor"
+                                    ]
+                                  }
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </ScrollArea>
+          </div>
+
+          {/* Chat Area */}
+          <div
+            className={`${
+              !selectedChat ? "hidden" : "flex flex-col w-full"
+            } md:flex md:flex-1`}
+          >
+            {selectedChat ? (
+              <>
+                <div className="flex items-center justify-between p-3 border-b">
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="md:hidden"
+                      onClick={() => setSelectedChat(null)}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 19l-7-7 7-7"
+                        />
+                      </svg>
+                    </button>
+                    <div className="relative">
+                      <Avatar className="h-8 w-8">
+                        <img
+                          crossOrigin="anonymous"
+                          referrerPolicy="no-referrer"
+                          src={
+                            userType === "user"
+                              ? selectedChat.tutorId.profileImg
+                              : selectedChat.userId.profileImg
+                          }
+                          alt="Chat partner's avatar"
+                        />
+                        <AvatarFallback>
+                          {userType === "user"
+                            ? selectedChat.tutorId.fullName?.charAt(0)
+                            : selectedChat.userId.fullName?.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span
+                        className={`absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white ${
+                          selectedChat.isOnline[
+                            userType === "user" ? "tutor" : "student"
+                          ]
+                            ? "bg-green-500"
+                            : "bg-gray-300"
+                        }`}
+                      />
+                    </div>
+                    <div>
+                      <h2 className="font-semibold text-sm">
+                        {userType === "user"
+                          ? selectedChat.tutorId.fullName
+                          : selectedChat.userId.fullName}
+                      </h2>
+                      <p
+                        className={`text-xs ${
+                          selectedChat.isOnline[
+                            userType === "user" ? "tutor" : "student"
+                          ]
+                            ? "text-green-600"
+                            : "text-gray-500"
+                        }`}
+                      >
+                        {selectedChat.isOnline[
+                          userType === "user" ? "tutor" : "student"
+                        ]
+                          ? "Active Now"
+                          : "Offline"}
+                      </p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="icon">
+                    <MoreHorizontal className="h-5 w-5" />
+                  </Button>
+                </div>
+
+                <ScrollArea className="flex-1 p-3">
+                  <div className="space-y-3">
+                    {messages.map((message) => (
+                      <div
+                        key={message._id}
+                        className={`flex gap-2 max-w-[85%] ${
+                          message.sender.userId === tutor._id
+                            ? "justify-end ml-auto"
+                            : ""
+                        }`}
+                      >
+                        {message.sender.userId !== tutor._id && (
+                          <Avatar className="h-6 w-6 mt-1">
+                            <AvatarImage
+                              src={
+                                userType === "user"
+                                  ? selectedChat.tutorId.profileImg
+                                  : selectedChat.userId.profileImg
+                              }
+                              alt="Sender's avatar"
+                            />
+                            <AvatarFallback>
+                              {userType === "tutor"
+                                ? selectedChat.tutorId.fullName?.charAt(0)
+                                : selectedChat.userId.fullName?.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                        <div>
+                          <div
+                            className={`rounded-2xl p-2 text-sm ${
+                              message.sender.userId === tutor._id
+                                ? "bg-[#ff6738] text-white"
+                                : "bg-[#ffeee8]"
+                            }`}
+                          >
+                            <p>{message.content}</p>
+                          </div>
+                          <span className="text-xs text-gray-500 ml-2">
+                            {formatTime(message.createdAt)}
+                          </span>
+                        </div>
+                        {message.sender.userId === tutor._id && (
+                          <Avatar className="h-6 w-6 mt-1">
+                            <AvatarImage
+                              src={tutor.profileImg}
+                              alt="Your avatar"
+                            />
+                            <AvatarFallback>
+                              {tutor.fullName.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                      </div>
+                    ))}
+                    {isTyping && (
+                      <div className="text-xs text-gray-500">Typing...</div>
+                    )}
+                    <div ref={messagesEndRef}></div>
+                  </div>
+                </ScrollArea>
+
+                <div className="p-3 border-t">
+                  <form onSubmit={handleSendMessage} className="flex gap-2">
+                    <Input
+                      className="flex-1 text-sm"
+                      placeholder="Type your message"
+                      value={inputMessage}
+                      onChange={(e) => {
+                        setInputMessage(e.target.value);
+                        handleTyping();
+                      }}
+                    />
+                    <Button
+                      type="submit"
+                      className="bg-[#ff4f38] hover:bg-[#e63f2a]"
+                    >
+                      <span className="hidden sm:inline">Send</span>
+                      <Send className="h-4 w-4 sm:ml-2" />
+                    </Button>
+                  </form>
+                </div>
+              </>
+            ) : (
+              <div className="hidden md:flex flex-1 items-center justify-center text-gray-500 text-sm">
+                Select a chat to start messaging
+              </div>
+            )}
+          </div>
         </div>
 
         <ComposeModal
@@ -514,10 +596,5 @@ export default function TutorChatPage() {
         />
       </div>
     </div>
-       
-
-      </div>
-     
-    </>
   );
 }

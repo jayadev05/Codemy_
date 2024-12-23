@@ -35,7 +35,6 @@ import CheckoutPage from "./pages/course/CheckoutPage";
 import PurchaseCompleted from "./pages/course/PurchaseSuccess";
 import PaymentFailed from "./pages/course/paymentFailurePage";
 import CoursePlayer from "./pages/user/coursePlayer/VideoPlayerPage";
-import { ScrollRestoration } from 'react-router-dom';
 import ScrollToTop from "./components/utils/ScrollToTop";
 import PurchaseHistory from "./pages/user/PurchaseHistory";
 import ReportManagement from "./pages/admin/reportManagement";

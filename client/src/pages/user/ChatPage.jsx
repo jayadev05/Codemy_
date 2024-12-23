@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Header from "@/components/layout/Header";
 import MainHeader from "@/components/layout/user/MainHeader";
 import Tabs from "@/components/layout/user/Tabs";
@@ -17,6 +17,7 @@ import { jwtDecode } from "jwt-decode";
 
 export default function ChatInterface() {
   const user = useSelector(selectUser);
+
   const [chats, setChats] = useState([]);
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
@@ -26,8 +27,11 @@ export default function ChatInterface() {
   const [composeOpen, setComposeOpen] = useState(false);
   const [tutors, setTutors] = useState([]);
 
+  const messagesEndRef = useRef(null);
+
   const courseIds = user.activeCourses;
 
+  console.log(messages);
 
   const userType = getUserRoleFromToken();
 
@@ -72,10 +76,9 @@ export default function ChatInterface() {
     try {
       setLoading(true);
 
-      const response = await axiosInstance.get(
-        "/chat/get-tutors",
-        { params: { courseIds } }
-      );
+      const response = await axiosInstance.get("/chat/get-tutors", {
+        params: { courseIds },
+      });
 
       console.log("response", response);
 
@@ -91,6 +94,13 @@ export default function ChatInterface() {
     fetchTutors();
   }, []);
 
+  // Scroll to bottom when messages update or typing status changes
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, isTyping]);
+
   const handleCreateChat = (newChat) => {
     setChats((prev) => [newChat, ...prev]);
     setSelectedChat(newChat);
@@ -100,45 +110,66 @@ export default function ChatInterface() {
   // Initialize chat data and socket connection
   useEffect(() => {
     const initializeChat = async () => {
+      if (!user?._id) return;
+
       setLoading(true);
       await fetchChats();
       setLoading(false);
-    };
 
-    if (user?._id) {
-      initializeChat();
+      const token = localStorage.getItem("accessToken");
+      const refreshToken = localStorage.getItem("refreshToken");
+
+      if (!token) return;
 
       // Socket connection
-      const token = localStorage.getItem("accessToken");
-      if (token) {
-        socketService.connect(token);
+      socketService.connect(token, refreshToken);
 
-        // Socket event listeners
-        socketService.onReceiveMessage((message) => {
-          setMessages((prev) => [...prev, message]);
-          // Update last message in chat list
-          updateChatLastMessage(message);
-        });
+      // Socket event listeners
+      const handleMessage = (message) => {
+        console.log("Received message:", message);
 
-        socketService.onTyping(({ senderId }) => {
-          if (
-            selectedChat?.userId === senderId ||
-            selectedChat?.tutorId === senderId
-          ) {
-            setIsTyping(true);
-          }
-        });
+        if (message.chatId === selectedChat?._id) {
+          setMessages((prevMessages) => {
+            if (prevMessages.some((m) => m._id === message._id))
+              return prevMessages;
+            return [...prevMessages, message];
+          });
+        }
+        updateChatLastMessage(message);
+      };
 
-        socketService.onStopTyping(() => {
-          setIsTyping(false);
-        });
+      const handleTyping = ({ senderId }) => {
+        if (
+          selectedChat?.userId === senderId ||
+          selectedChat?.tutorId === senderId
+        ) {
+          setIsTyping(true);
+        }
+      };
 
-        return () => {
-          socketService.disconnect();
-        };
-      }
-    }
-  }, [user?._id]);
+      const handleStopTyping = () => {
+        setIsTyping(false);
+      };
+
+      socketService.on("receive-message", handleMessage);
+      socketService.on("typing", handleTyping);
+      socketService.on("stop-typing", handleStopTyping);
+
+      return () => {
+        socketService.off("receive-message", handleMessage);
+        socketService.off("typing", handleTyping);
+        socketService.off("stop-typing", handleStopTyping);
+        socketService.disconnect();
+      };
+    };
+
+    initializeChat();
+  }, [user?._id, localStorage.getItem("accessToken")]);
+
+  socketService.on("error", (error) => {
+    console.error("Socket error:", error);
+    // Handle error appropriately (show toast, notification, etc.)
+  });
 
   // Update chat's last message
   const updateChatLastMessage = (message) => {
@@ -162,11 +193,15 @@ export default function ChatInterface() {
   const handleChatSelect = async (chat) => {
     setSelectedChat(chat);
     await fetchMessages(chat._id);
-    // Mark messages as read
-    await axiosInstance.post("/api/messages/read", {
-      chatId: chat._id,
-      userType,
-    });
+
+    // // Mark messages as read
+    // await axiosInstance.put("/chat/messages-read", {
+    //   params:{
+    //   chatId: chat._id,
+    //   userType,
+    // }
+
+    // })
   };
 
   // Handle sending messages
@@ -177,10 +212,7 @@ export default function ChatInterface() {
     try {
       const messageData = {
         chatId: selectedChat._id,
-        sender: {
-          userId: user._id,
-          role: userType,
-        },
+        sender: { userId: user._id, role: userType },
         receiver: {
           userId:
             userType === "user"
@@ -191,18 +223,23 @@ export default function ChatInterface() {
         content: inputMessage,
       };
 
-      const response = await axiosInstance.post("/chat/create-message", {...messageData});
-      setMessages((prev) => [...prev, response.data]);
-      updateChatLastMessage(response.data);
+      const response = await axiosInstance.post(
+        "/chat/create-message",
+        messageData
+      );
+
+      // Optimistically update UI
+      setMessages((prevMessages) => [...prevMessages, response.data]);
+
       setInputMessage("");
+      updateChatLastMessage(response.data);
 
       // Emit socket event
       socketService.sendMessage({
         ...messageData,
         messageId: response.data._id,
-        timestamps: response.data.createdAt
+        timestamps: response.data.createdAt,
       });
-
     } catch (error) {
       console.error("Error sending message:", error);
     }
@@ -214,6 +251,10 @@ export default function ChatInterface() {
       socketService.sendTyping({
         chatId: selectedChat._id,
         senderId: user._id,
+        receiverId:
+          userType === "user"
+            ? selectedChat.tutorId._id
+            : selectedChat.userId._id,
       });
     }
   };
@@ -268,64 +309,94 @@ export default function ChatInterface() {
           </div>
           <ScrollArea className="flex-1">
             <div className="divide-y">
-              {chats.map((chat) => {
-                const otherUser =
-                  userType === "user" ? chat.tutorId : chat.userId;
+              {chats
+                .filter((chat) => {
+                  // Filter out undefined/null chats and ensure required properties exist
+                  return (
+                    chat &&
+                    chat._id &&
+                    ((userType === "user" && chat.tutorId) ||
+                      (userType === "tutor" && chat.userId))
+                  );
+                })
+                .map((chat) => {
+                  const otherUser =
+                    userType === "user" ? chat.tutorId : chat.userId;
 
-                return (
-                  <div
-                    key={chat._id}
-                    className={`p-4 hover:bg-gray-50 cursor-pointer ${
-                      selectedChat?._id === chat._id ? "bg-orange-50" : ""
-                    }`}
-                    onClick={() => handleChatSelect(chat)}
-                  >
-                    <div className="flex gap-3">
-                      <div className="relative">
-                        <Avatar className="h-12 w-12">
-                          <img
-                            referrerPolicy="no-referrer"
-                            crossOrigin="anonymous"
-                            src={otherUser.profileImg || "/placeholder.svg"}
-                            alt={`${otherUser.fullName}'s avatar`}
+                  // Additional validation to ensure otherUser exists
+                  if (!otherUser) {
+                    return null;
+                  }
+
+                  return (
+                    <div
+                      key={chat._id}
+                      className={`p-4 hover:bg-gray-50 cursor-pointer ${
+                        selectedChat?._id === chat._id ? "bg-orange-50" : ""
+                      }`}
+                      onClick={() => handleChatSelect(chat)}
+                    >
+                      <div className="flex gap-3">
+                        <div className="relative">
+                          <Avatar className="h-12 w-12">
+                            {otherUser.profileImg ? (
+                              <AvatarImage
+                                referrerPolicy="no-referrer"
+                                crossOrigin="anonymous"
+                                src={otherUser.profileImg}
+                                alt={`${otherUser.fullName || "User"}'s avatar`}
+                                onError={(e) => {
+                                  e.target.src = "/placeholder.svg"; // Fallback image
+                                }}
+                              />
+                            ) : (
+                              <AvatarFallback>
+                                {(otherUser.fullName || "?").charAt(0)}
+                              </AvatarFallback>
+                            )}
+                          </Avatar>
+                          <span
+                            className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white ${
+                              chat.isOnline?.[
+                                userType === "user" ? "tutor" : "student"
+                              ]
+                                ? "bg-green-500"
+                                : "bg-gray-300"
+                            }`}
                           />
-                          <AvatarFallback>
-                            {otherUser.fullName?.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span
-                          className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white ${
-                            chat.isOnline[
-                              userType === "user" ? "tutor" : "student"
-                            ]
-                              ? "bg-green-500"
-                              : "bg-gray-300"
-                          }`}
-                        />
-                      </div>
-                      <div className="flex-1 overflow-hidden">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-semibold truncate">
-                            {otherUser.fullName}
-                          </h3>
-                          <span className="text-xs text-gray-500">
-                            {chat.lastMessage?.timestamp &&
-                              formatTime(chat.lastMessage.timestamp)}
-                          </span>
                         </div>
-                        
-                        <div className="flex items-center justify-between">
-                        <p className="text-sm text-gray-600 truncate">
-                          {chat.lastMessage?.content || "Start a conversation"}
-                        </p>
-                        <p className="text-xs bg-orange-400 px-[9px] py-[3px] rounded-full">{chat.unreadCount?.student}</p>      
+                        <div className="flex-1 overflow-hidden">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-semibold truncate">
+                              {otherUser.fullName || "Unknown User"}
+                            </h3>
+                            <span className="text-xs text-gray-500">
+                              {chat.lastMessage?.timestamp &&
+                                formatTime(chat.lastMessage.timestamp)}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm text-gray-600 truncate">
+                              {chat.lastMessage?.content ||
+                                "Start a conversation"}
+                            </p>
+                            {chat.unreadCount?.[
+                              userType === "user" ? "student" : "tutor"
+                            ] > 0 && (
+                              <p className="text-xs bg-orange-400 px-[9px] py-[3px] rounded-full text-white">
+                                {
+                                  chat.unreadCount[
+                                    userType === "user" ? "student" : "tutor"
+                                  ]
+                                }
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           </ScrollArea>
         </div>
@@ -425,7 +496,7 @@ export default function ChatInterface() {
                           className={`rounded-2xl p-3 ${
                             message.sender.userId === user._id
                               ? "bg-[#ff6738] text-white"
-                              : "bg-gray-100"
+                              : "bg-[#ffeee8]"
                           }`}
                         >
                           <p>{message.content}</p>
@@ -450,6 +521,7 @@ export default function ChatInterface() {
                   {isTyping && (
                     <div className="text-sm text-gray-500">Typing...</div>
                   )}
+                  <div ref={messagesEndRef}></div>
                 </div>
               </ScrollArea>
 

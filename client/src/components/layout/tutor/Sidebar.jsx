@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -13,31 +13,55 @@ import defProfile from "../../../assets/user-profile.png";
 import { useNavigate } from "react-router";
 import { toast } from "react-hot-toast";
 import { logoutTutor, selectTutor } from "../../../store/slices/tutorSlice";
-import axios from 'axios'
-import logo from '../../../assets/logo_cap.png'
+import axios from "axios";
+import logo from "../../../assets/logo_cap.png";
+import axiosInstance from "@/config/axiosConfig";
 
 const Sidebar = ({ activeSection }) => {
-  const dispatch=useDispatch()
+  const tutor = useSelector(selectTutor);
 
-  const navigate=useNavigate()
 
-  const onLogout=()=>{
+  const dispatch = useDispatch();
+
+  const navigate = useNavigate();
+
+  const [chats, setChats] = useState([]);
+
+
+  const messageCount=chats.reduce((sum,chat)=>{
+    return sum + chat.unreadCount?.tutor||0
+  },0);
+ 
+
+  useEffect(() => {
+    fetchChats();
+  }, []);
+
+  const fetchChats = async () => {
     try {
-      const response=axios.post("http://localhost:3000/tutor/logout");
+      const response = await axiosInstance.get(
+        `/chat/get-all-chats/${tutor._id}`
+      );
+      setChats(response.data);
+    } catch (error) {
+      console.error("Error fetching chats:", error);
+    }
+  };
+
+  const onLogout = () => {
+    try {
+      const response = axios.post("http://localhost:3000/tutor/logout");
 
       dispatch(logoutTutor(tutor));
-      toast.success("Logged out successfully",{style:{borderRadius: '10px',
-        background: '#111826',
-        color: '#fff',}});
-      navigate('/login');
-
-      
+      toast.success("Logged out successfully", {
+        style: { borderRadius: "10px", background: "#111826", color: "#fff" },
+      });
+      navigate("/login");
     } catch (error) {
       console.log(error.message);
-      toast.error(error.message || "Error Logging out user")
+      toast.error(error.message || "Error Logging out user");
     }
-     
-}
+  };
 
   const menuItems = [
     {
@@ -59,10 +83,10 @@ const Sidebar = ({ activeSection }) => {
       isActive: activeSection === "My Courses",
     },
     {
-      title: "Message",
+      title: "Messages",
       icon: CreditCard,
       href: "/tutor/messages",
-      isActive: activeSection === "Message",
+      isActive: activeSection === "Messages",
     },
     {
       title: "Settings and profile",
@@ -78,7 +102,10 @@ const Sidebar = ({ activeSection }) => {
     },
   ];
 
-  const tutor = useSelector(selectTutor);
+ 
+
+
+
 
   return (
     <div className="flex h-screen w-[240px] flex-col bg-gray-900">
@@ -92,8 +119,8 @@ const Sidebar = ({ activeSection }) => {
         {menuItems.map((item) => (
           <a
             key={item.title}
-            onClick={()=>navigate(`${item.href}`)}
-            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            onClick={() => navigate(`${item.href}`)}
+            className={`flex items-center cursor-pointer gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
               item.isActive
                 ? "bg-orange-600 text-white hover:bg-orange-700"
                 : "text-gray-300 hover:bg-gray-800 hover:text-white"
@@ -101,6 +128,12 @@ const Sidebar = ({ activeSection }) => {
           >
             <item.icon className="h-5 w-5" />
             {item.title}
+
+            {activeSection!=='Messages' && item.title === "Messages" && messageCount > 0 && (
+        <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-red-600 text-xs font-semibold text-white">
+          {messageCount}
+        </span>
+      )}
           </a>
         ))}
       </nav>

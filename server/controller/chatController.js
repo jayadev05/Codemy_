@@ -198,7 +198,7 @@ const createMessage = async (req, res) => {
 
 const markMessageAsRead = async (req, res) => {
   try {
-    const { chatId, userType } = req.body;
+    const { chatId,userType } = req.body;
     const chat = await Chat.findById(chatId);
 
     if (!chat) {
