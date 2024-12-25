@@ -23,7 +23,7 @@ const getChatsByUserId = async (req, res) => {
         model: populateModel,
         select: 'fullName profileImg userId'
       })
-      .select('userId tutorId lastMessage isOnline unreadCount');
+      .select('userId tutorId lastMessage isOnline unreadCount deletedBy');
 
     res.status(200).json(chats);
     console.log(chats);
@@ -107,19 +107,19 @@ const getStudentsByUserId = async (req, res) => {
 
 const createChat = async (req, res) => {
   try {
-
     const { userId, tutorId } = req.body;
-    const  userType  = req.user?.type;
-
+    const userType = req.user?.type;
     const isUser = userType === "user";
+    const currentUserId = isUser ? userId : tutorId;
+    
     const populateField = isUser ? "tutorId" : "userId";
     const populateModel = isUser ? "Tutor" : "User";
 
     let chat = await Chat.findOne({ userId, tutorId });
 
     if (!chat) {
-      chat = await Chat.create({ 
-        userId, 
+      chat = await Chat.create({
+        userId,
         tutorId,
         isOnline: {
           student: false,
@@ -137,13 +137,20 @@ const createChat = async (req, res) => {
       });
     }
 
+    if (chat?.deletedBy?.includes(currentUserId)) {
+      chat.deletedBy = chat.deletedBy.filter(
+        (id) => id.toString() !== currentUserId.toString()
+      );
+      await chat.save();
+    }
+
     const populatedChat = await Chat.findById(chat._id)
       .populate({
         path: populateField,
         model: populateModel,
         select: 'fullName profileImg userId'
       })
-      .select('userId tutorId lastMessage isOnline unreadCount');
+      .select('userId tutorId lastMessage isOnline unreadCount deletedBy');
 
     res.status(200).json(populatedChat);
   } catch (error) {
@@ -166,7 +173,7 @@ const getMessagesByChatId = async (req, res) => {
 
 const createMessage = async (req, res) => {
   try {
-    const { chatId, sender, receiver, content } = req.body;
+    const { chatId, sender, receiver, content,status } = req.body;
 
     console.log(req.body);
 
@@ -175,7 +182,7 @@ const createMessage = async (req, res) => {
       sender,
       receiver,
       content,
-      isRead: false
+      status
     });
 
     // Update last message in chat
@@ -217,9 +224,9 @@ const markMessageAsRead = async (req, res) => {
       { 
         chatId,
         'receiver.role': userType,
-        isRead: false
+        status: 'delivered'
       },
-      { isRead: true }
+      { status: 'read' }
     );
 
     res.status(200).json({ message: "Messages marked as read" });
@@ -229,47 +236,30 @@ const markMessageAsRead = async (req, res) => {
   }
 };
 
-const deleteChat = async (req, res) => {
+const deleteChat= async (req, res) => {
+  const { chatId, userId } = req.body;
+
   try {
-    const { chatId } = req.params;
-    
-    // Delete all messages in the chat
-    await Message.deleteMany({ chatId });
-    
-    // Delete the chat
-    const chat = await Chat.findByIdAndDelete(chatId);
-    
+    const chat = await Chat.findById(chatId);
+
     if (!chat) {
-      return res.status(404).json({ message: "Chat not found" });
+      return res.status(404).json({ message: 'Chat not found' });
     }
 
-    res.status(200).json({ message: "Chat and messages deleted successfully" });
+    // Prevent duplicate entries in deletedBy
+    if (!chat.deletedBy.includes(userId)) {
+      chat.deletedBy.push(userId);
+    }
+
+    await chat.save();
+
+    res.status(200).json({ message: 'Chat marked as deleted' });
+
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ error: error.message });
   }
 };
 
-const updateOnlineStatus = async (req, res) => {
-  try {
-    const { chatId, userType, isOnline } = req.body;
-    
-    const updateField = `isOnline.${userType === 'user' ? 'student' : 'tutor'}`;
-    
-    const chat = await Chat.findByIdAndUpdate(
-      chatId,
-      { [updateField]: isOnline },
-      { new: true }
-    );
-
-    if (!chat) {
-      return res.status(404).json({ message: "Chat not found" });
-    }
-
-    res.status(200).json(chat);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
 
 module.exports = {
   getChatsByUserId,
@@ -278,7 +268,7 @@ module.exports = {
   deleteChat,
   createMessage,
   markMessageAsRead,
-  updateOnlineStatus,
   getTutorsByUserId,
-  getStudentsByUserId
+  getStudentsByUserId,
+
 };

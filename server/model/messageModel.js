@@ -37,10 +37,11 @@ const messageSchema = new mongoose.Schema(
       maxLength: 5000
     },
 
-    isRead: {
-      type: Boolean,
-      default: false, 
-    },
+  status :{
+    type:String,
+    enum:['sent','delivered','read'],
+     default: 'sent'
+  }
   },
   { 
     timestamps: true,

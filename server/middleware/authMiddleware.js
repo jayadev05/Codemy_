@@ -4,9 +4,8 @@ const jwt = require("jsonwebtoken");
 const verifyUser = async (req, res, next) => {
    
 
-       
     const accessToken = req.cookies.accessToken || req.headers.authorization && req.headers.authorization.startsWith("Bearer ") 
-        ? req.headers.authorization.split(" ")[1]  
+        ? req.headers.authorization?.split(" ")[1]  
         : null;
 
     const refreshToken = req.headers['x-refresh-token'] || req.cookies.refreshToken;  

@@ -7,6 +7,8 @@ import {
   Settings,
   Ticket,
   LogOut,
+  MessageCircle,
+  MessageCircleDashed,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import defProfile from "../../../assets/user-profile.png";
@@ -16,6 +18,7 @@ import { logoutTutor, selectTutor } from "../../../store/slices/tutorSlice";
 import axios from "axios";
 import logo from "../../../assets/logo_cap.png";
 import axiosInstance from "@/config/axiosConfig";
+
 
 const Sidebar = ({ activeSection }) => {
   const tutor = useSelector(selectTutor);
@@ -53,6 +56,7 @@ const Sidebar = ({ activeSection }) => {
       const response = axios.post("http://localhost:3000/tutor/logout");
 
       dispatch(logoutTutor(tutor));
+
       toast.success("Logged out successfully", {
         style: { borderRadius: "10px", background: "#111826", color: "#fff" },
       });
@@ -84,7 +88,7 @@ const Sidebar = ({ activeSection }) => {
     },
     {
       title: "Messages",
-      icon: CreditCard,
+      icon: MessageCircle,
       href: "/tutor/messages",
       isActive: activeSection === "Messages",
     },

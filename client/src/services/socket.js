@@ -42,7 +42,7 @@ class SocketService {
 
   setupDefaultListeners() {
     this.socket.on('connect', () => {
-      console.log('[SocketService] Connected to socket server');
+      console.log('[SocketService] Connected to socket server',this.socket.id);
     });
 
     this.socket.on('connect_error', (error) => {
@@ -66,6 +66,7 @@ class SocketService {
       this.eventHandlers.forEach((handlers, event) => {
         handlers.forEach(handler => this.socket.off(event, handler));
       });
+      this.socket.emit('disconnect');
       this.eventHandlers.clear();
       this.socket.disconnect();
       this.socket = null;
@@ -102,16 +103,35 @@ class SocketService {
     if (this.isConnected()) {
       const messageData = {
         chatId: data.chatId,
-        messageId: data.messageId,
+        _id: data._id,
         sender: data.sender,
         receiver: data.receiver,
         content: data.content,
         timestamps: data.timestamps
       };
+
+
       this.socket.emit('send-message', messageData);
+
       console.log('[SocketService] Sending message:', messageData);
+
     } else {
       console.warn('[SocketService] Cannot send message: Socket not connected');
+    }
+  }
+
+  markMessagesDelivered(data) {
+    if (this.isConnected()) {
+      this.socket.emit('message-delivered', data);
+      console.log('[SocketService] Marking messages as read:', data);
+    }
+  }
+
+
+  markMessagesRead(data) {
+    if (this.isConnected()) {
+      this.socket.emit('message-read', data);
+      console.log('[SocketService] Marking messages as read:', data);
     }
   }
 

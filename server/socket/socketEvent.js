@@ -28,7 +28,7 @@ const initializeSocket = (server) => {
     const accessToken = auth.token || headers.authorization?.replace("Bearer ", "");
     const refreshToken = auth.refreshToken;
   
-    console.log("Socket handshake tokens:", { accessToken, refreshToken });
+    
   
     if (!accessToken && !refreshToken) {
       return next(new Error("Authentication tokens missing"));
@@ -75,6 +75,7 @@ const initializeSocket = (server) => {
   // establish connected users
   io.on('connection', async (socket) => {
     console.log('New client connected',socket.id);
+    
     const { userId, userType } = socket.user;
 
     try {

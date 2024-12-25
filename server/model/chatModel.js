@@ -24,9 +24,14 @@ const chatSchema = new mongoose.Schema(
       content: { type: String, default: '' },
       senderId: { type: mongoose.Schema.Types.ObjectId },
       timestamp: { type: Date, default: Date.now }
-    }
+    },
+    deletedBy : [
+      {
+        type : mongoose.Schema.Types.ObjectId
+      }
+    ]
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model('Chat', chatSchema);
+module.exports = mongoose.model('Chat', chatSchema);    

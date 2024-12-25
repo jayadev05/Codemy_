@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, MoreHorizontal } from "lucide-react";
+import { Send, MoreHorizontal, AlertTriangle, Trash2Icon, Check, CheckCheck } from "lucide-react";
 import { socketService } from "@/services/socket";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/userSlice";
@@ -14,6 +14,11 @@ import axiosInstance from "@/config/axiosConfig";
 import ComposeModal from "@/components/layout/user/chat/TutorListModal";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+import TypingIndicator from "@/components/utils/TypingIndicator";
+import { Socket } from "socket.io-client";
+import toast from "react-hot-toast";
+import { handleChatDeletion } from "@/utils/ChatUtils";
+import { updateChatsList } from "@/utils/ChatUtils";
 
 export default function ChatInterface() {
   const user = useSelector(selectUser);
@@ -26,12 +31,15 @@ export default function ChatInterface() {
   const [loading, setLoading] = useState(true);
   const [composeOpen, setComposeOpen] = useState(false);
   const [tutors, setTutors] = useState([]);
+  const [typingTimeout, setTypingTimeout] = useState(null);
+  const [optionsModalOpen, setOptionsModalOpen] = useState(false);
+  
 
   const messagesEndRef = useRef(null);
 
   const courseIds = user.activeCourses;
 
-  console.log(messages);
+  console.log("message length", messages.length);
 
   const userType = getUserRoleFromToken();
 
@@ -55,7 +63,29 @@ export default function ChatInterface() {
       const response = await axiosInstance.get(
         `/chat/get-all-chats/${user._id}`
       );
-      setChats(response.data);
+
+      const filteredChat = response.data.filter((chat) => {
+        if (chat.deletedBy.length > 0) {
+          return !chat.deletedBy.includes(user._id);
+        }
+        return true;
+      });
+
+      setChats(filteredChat);
+
+      if (selectedChat) {
+        const chatStillExists = filteredChat.find(
+          (chat) => chat._id === selectedChat._id
+        );
+        if (!chatStillExists) {
+          setSelectedChat(null);
+        } else {
+          const updatedSelectedChat = filteredChat.find(
+            (chat) => chat._id === selectedChat._id
+          );
+          setSelectedChat(updatedSelectedChat);
+        }
+      }
     } catch (error) {
       console.error("Error fetching chats:", error);
     }
@@ -69,6 +99,12 @@ export default function ChatInterface() {
     } catch (error) {
       console.error("Error fetching messages:", error);
     }
+  };
+
+  const handleCreateChat = (newChat) => {
+    setChats((prev) => [newChat, ...prev]);
+    setSelectedChat(newChat);
+    fetchMessages(newChat._id);
   };
 
   // Fetch tutors when modal opens
@@ -101,12 +137,6 @@ export default function ChatInterface() {
     }
   }, [messages, isTyping]);
 
-  const handleCreateChat = (newChat) => {
-    setChats((prev) => [newChat, ...prev]);
-    setSelectedChat(newChat);
-    fetchMessages(newChat._id);
-  };
-
   // Initialize chat data and socket connection
   useEffect(() => {
     const initializeChat = async () => {
@@ -125,50 +155,157 @@ export default function ChatInterface() {
       socketService.connect(token, refreshToken);
 
       // Socket event listeners
-      const handleMessage = (message) => {
-        console.log("Received message:", message);
 
-        if (message.chatId === selectedChat?._id) {
+      const handleStatusUpdate = async () => {
+
+       await fetchChats();
+
+        
+      };
+      
+      const handleRecieveMessage = (message) => {
+
+        console.log("recieved message");
+        
+        updateChatLastMessage(message);
+      
+        // Update messages if we're in the relevant chat
+        if (selectedChat?._id === message.chatId) {
           setMessages((prevMessages) => {
-            if (prevMessages.some((m) => m._id === message._id))
+            // Avoid duplicate messages
+            if (prevMessages.some((m) => m._id === message._id)) {
               return prevMessages;
+            }
             return [...prevMessages, message];
           });
+
+          socketService.markMessagesRead({
+            chatId:selectedChat._id,
+            userType,
+            userId: user._id,
+          });
+
+        } else {
+          // If message is for a different chat, update the unread count
+          setChats((prevChats) =>
+            prevChats.map((chat) => {
+              if (chat._id === message.chatId) {
+                return {
+                  ...chat,
+                  unreadCount: {
+                    ...chat.unreadCount,
+                    [userType === "user" ? "student" : "tutor"]: 
+                      (chat.unreadCount?.[userType === "user" ? "student" : "tutor"] || 0) + 1
+                  }
+                };
+              }
+              return chat;
+            })
+          );
         }
-        updateChatLastMessage(message);
       };
 
       const handleTyping = ({ senderId }) => {
-        if (
-          selectedChat?.userId === senderId ||
-          selectedChat?.tutorId === senderId
-        ) {
-          setIsTyping(true);
-        }
+        console.log("Typing event received from:", senderId);
+
+        setIsTyping(true);
       };
 
-      const handleStopTyping = () => {
+      const handleStopTyping = ({ senderId }) => {
+        console.log("Stop typing event received from:", senderId);
+
         setIsTyping(false);
       };
 
-      socketService.on("receive-message", handleMessage);
+      const handleMessageDelivered =({ messageId }) => {
+        setMessages(prevMessages =>
+          prevMessages.map(msg =>
+            msg._id === messageId
+              ? { ...msg, status: 'delivered' }
+              : msg
+          )
+        );
+      }
+      
+      const handleMessageRead = (data) => {
+        if (!data) {
+          console.error('handleMessageRead received undefined data');
+          return;
+        }
+      
+        const { chatId, userType, unreadCount, messageIds = [] } = data;
+        console.log('message-read event received:', { chatId, userType, unreadCount, messageIds });
+      
+        // Update unread count in chats
+        setChats((prevChats) =>
+          prevChats.map((chat) =>
+            chat._id === chatId
+              ? {
+                  ...chat,
+                  unreadCount,
+                }
+              : chat
+          )
+        );
+      
+        // Update the status of all read messages
+        if (messageIds.length > 0) {
+          setMessages((prevMessages) =>
+            prevMessages.map((msg) =>
+              messageIds.includes(msg._id) ? { ...msg, status: 'read' } : msg
+            )
+          );
+        }
+      };
+      
+      
+  
+     
+
+      socketService.on("user-status-update", handleStatusUpdate);
+      socketService.on("receive-message", handleRecieveMessage);
+      socketService.on('message-delivered',handleMessageDelivered);
+      socketService.on('message-read', handleMessageRead);
       socketService.on("typing", handleTyping);
       socketService.on("stop-typing", handleStopTyping);
 
       return () => {
-        socketService.off("receive-message", handleMessage);
+        socketService.off("user-status-update", handleStatusUpdate);
+        socketService.off("receive-message", handleRecieveMessage);
+        socketService.off("message-read", handleMessageRead);
+        socketService.off('message-delivered');
         socketService.off("typing", handleTyping);
         socketService.off("stop-typing", handleStopTyping);
+
+        if (typingTimeout) clearTimeout(typingTimeout);
+
         socketService.disconnect();
       };
     };
 
     initializeChat();
-  }, [user?._id, localStorage.getItem("accessToken")]);
+  }, [user?._id, localStorage.getItem("accessToken"),selectedChat?._id]);
+
+
+
+  useEffect(() => {
+    if (!selectedChat) {
+      setMessages([]);
+    }
+
+    if (selectedChat) {
+      socketService.markMessagesRead({
+        chatId:selectedChat._id,
+        userType,
+        userId: user._id,
+      });
+    }
+      
+  }, [selectedChat,socketService]);
+  
 
   socketService.on("error", (error) => {
     console.error("Socket error:", error);
-    // Handle error appropriately (show toast, notification, etc.)
   });
 
   // Update chat's last message
@@ -189,74 +326,151 @@ export default function ChatInterface() {
     );
   };
 
+  const markMessagesAsRead = async (chatId, userType) => {
+    try {
+      await axiosInstance.put(`/chat/messages-read`, {
+        chatId,
+        userType,
+      });
+
+      socketService.markMessagesRead({
+        chatId,
+        userType,
+        userId: user._id,
+      });
+
+      setChats((prevChats) =>
+        prevChats.map((chat) => {
+          if (chat._id === chatId) {
+            return {
+              ...chat,
+              unreadCount: {
+                ...chat.unreadCount,
+                [userType === "user" ? "student" : "tutor"]: 0,
+              },
+            };
+          }
+          return chat;
+        })
+      );
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
+    }
+  };
+
   // Handle chat selection
   const handleChatSelect = async (chat) => {
-    setSelectedChat(chat);
-    await fetchMessages(chat._id);
-
-    // // Mark messages as read
-    // await axiosInstance.put("/chat/messages-read", {
-    //   params:{
-    //   chatId: chat._id,
-    //   userType,
-    // }
-
-    // })
+    try {
+      // Fetch messages before updating selectedChat
+      const response = await axiosInstance.get(`/chat/get-messages/${chat._id}`);
+      
+      // Update messages first
+      setMessages(response.data);
+      
+      // Then update selectedChat
+      setSelectedChat(chat);
+  
+      // Mark messages as read
+      const hasUnreadMessages = chat.unreadCount?.[userType === "user" ? "student" : "tutor"] > 0;
+      if (hasUnreadMessages) {
+        await markMessagesAsRead(chat._id, userType);
+      }
+    } catch (error) {
+      console.error("Error in chat selection:", error);
+    }
   };
 
   // Handle sending messages
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!inputMessage.trim() || !selectedChat) return;
-
+  
     try {
       const messageData = {
         chatId: selectedChat._id,
         sender: { userId: user._id, role: userType },
         receiver: {
-          userId:
-            userType === "user"
-              ? selectedChat.tutorId._id
-              : selectedChat.userId._id,
+          userId: userType === "user" ? selectedChat.tutorId._id : selectedChat.userId._id,
           role: userType === "user" ? "tutor" : "user",
         },
         content: inputMessage,
+       
       };
-
-      const response = await axiosInstance.post(
-        "/chat/create-message",
-        messageData
-      );
-
+    
+      const response = await axiosInstance.post("/chat/create-message", messageData);
+    
       // Optimistically update UI
       setMessages((prevMessages) => [...prevMessages, response.data]);
-
+    
       setInputMessage("");
       updateChatLastMessage(response.data);
-
+    
       // Emit socket event
       socketService.sendMessage({
         ...messageData,
-        messageId: response.data._id,
-        timestamps: response.data.createdAt,
+        _id: response.data._id,
+        timestamps:response.data.createdAt,
       });
     } catch (error) {
       console.error("Error sending message:", error);
     }
+    
   };
-
   // Handle typing events
   const handleTyping = () => {
     if (selectedChat) {
+      const receiverId =
+        userType === "user"
+          ? selectedChat.tutorId._id
+          : selectedChat.userId._id;
+
       socketService.sendTyping({
         chatId: selectedChat._id,
-        senderId: user._id,
-        receiverId:
-          userType === "user"
-            ? selectedChat.tutorId._id
-            : selectedChat.userId._id,
+        senderId: user._id, 
+        receiverId: receiverId,
       });
+
+      // Clear existing timeout
+      if (typingTimeout) clearTimeout(typingTimeout);
+
+      // Set new timeout to stop typing
+      const timeout = setTimeout(() => {
+        socketService.sendStopTyping({
+          chatId: selectedChat._id,
+          senderId: user._id, 
+          receiverId: receiverId,
+        });
+      }, 1000); 
+
+      setTypingTimeout(timeout);
     }
+  };
+
+  //deleting chat
+  const handleDeleteChat = async () => {
+    await handleChatDeletion(selectedChat._id, user._id, axiosInstance, {
+      onSuccess: () => {
+        setSelectedChat(null);
+        setChats(prevChats => updateChatsList(prevChats, selectedChat._id));
+        setOptionsModalOpen(false);
+      },
+      onError: () => toast.error("Failed to delete chat")
+    });
+  };
+
+  const handleOptionsModalOpen = () => {
+    setOptionsModalOpen(!optionsModalOpen);
+  };
+
+  const MessageStatus = ({ status }) => {
+    if (!status || status === 'sent') {
+      return <Check className="h-4 w-4 text-gray-400" />;
+    } else if (status === 'delivered') {
+      return <CheckCheck className="h-4 w-4 text-gray-400" />;
+    } else if (status === 'read') {
+      return <CheckCheck className="h-4 w-4 text-blue-500" />;
+    }
+    return null;
   };
 
   // Format timestamp
@@ -340,7 +554,7 @@ export default function ChatInterface() {
                         <div className="relative">
                           <Avatar className="h-12 w-12">
                             {otherUser.profileImg ? (
-                              <AvatarImage
+                              <img
                                 referrerPolicy="no-referrer"
                                 crossOrigin="anonymous"
                                 src={otherUser.profileImg}
@@ -425,15 +639,7 @@ export default function ChatInterface() {
                           : selectedChat.userId.fullName?.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
-                    <span
-                      className={`absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white ${
-                        selectedChat.isOnline[
-                          userType === "user" ? "tutor" : "student"
-                        ]
-                          ? "bg-green-500"
-                          : "bg-gray-300"
-                      }`}
-                    />
+                    
                   </div>
                   <div>
                     <h2 className="font-semibold">
@@ -453,14 +659,35 @@ export default function ChatInterface() {
                       {selectedChat.isOnline[
                         userType === "user" ? "tutor" : "student"
                       ]
-                        ? "Active Now"
+                        ? "Online"
                         : "Offline"}
                     </p>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon">
-                  <MoreHorizontal className="h-5 w-5" />
-                </Button>
+                <div className="relative">
+                  <Button
+                    onClick={() => handleOptionsModalOpen()}
+                    variant="ghost"
+                    size="icon"
+                  >
+                    <MoreHorizontal className="h-5 w-5" />
+                  </Button>
+                  {optionsModalOpen && (
+                    <div className="absolute right-4 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50 border border-gray-200">
+                      <button className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors">
+                        <AlertTriangle className="w-4 h-4 mr-2 text-orange-500" />
+                        Block Tutor
+                      </button>
+                      <button
+                        onClick={handleDeleteChat}
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors"
+                      >
+                        <Trash2Icon className="w-4 h-4 mr-2 text-orange-500" />
+                        Delete chat
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <ScrollArea className="flex-1 p-4">
@@ -501,13 +728,22 @@ export default function ChatInterface() {
                         >
                           <p>{message.content}</p>
                         </div>
-                        <span className="text-xs text-gray-500 ml-2">
-                          {formatTime(message.createdAt)}
+                        <div className="flex mt-1">
+                      
+                        {message.sender.userId === user._id && (
+                    <MessageStatus status={message.status} />
+                  )}
+                    <span className="text-xs text-gray-500 ml-2">
+                          {formatTime(message.createdAt || message.timestamps)}
                         </span>
+                        </div>
+                       
                       </div>
                       {message.sender.userId === user._id && (
                         <Avatar className="h-8 w-8 mt-1">
-                          <AvatarImage
+                          <img
+                            crossOrigin="anonymous"
+                            referrerPolicy="no-referrer"
                             src={user.profileImg}
                             alt="Your avatar"
                           />
@@ -518,9 +754,7 @@ export default function ChatInterface() {
                       )}
                     </div>
                   ))}
-                  {isTyping && (
-                    <div className="text-sm text-gray-500">Typing...</div>
-                  )}
+                  {isTyping && <TypingIndicator />}
                   <div ref={messagesEndRef}></div>
                 </div>
               </ScrollArea>

@@ -17,7 +17,7 @@ const server = require("http").createServer(app);
 // Update CORS options to include Socket.IO specific settings
 const corsOptions = {
   origin: 'http://localhost:5173',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT','PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-refresh-token'],
   credentials: true,
   allowEIO3: true // Enable Socket.IO version 3
