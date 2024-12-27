@@ -359,6 +359,8 @@ const toggleNotifications = async (req, res) => {
   try {
     const { userId, notificationId } = req.body;
 
+    console.log(req.body)
+
 
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -377,19 +379,19 @@ const toggleNotifications = async (req, res) => {
 };
 
 const deleteNotification=async(req,res)=>{
-  const {userId,notificationId}=req.query;
-  if(!userId || !notificationId) return res.status(404).json({message:"UserID or NotficationId is missing "});
+  const {userId}=req.params;
+  if(!userId ) return res.status(404).json({message:"UserID  is missing "});
 
   try {
     
     const updatedUser= await User.findById(userId);
     if(!updatedUser) return res.staus(404).json({message:"User not found"});
 
-    updatedUser.notifications.filter((n)=> n._id !== notificationId);
+    updatedUser.notifications=[];
 
     await updatedUser.save();
 
-    res.status(200).json({message:"notification deleted",updatedUser});
+    res.status(200).json({message:"notifications deleted",updatedUser});
 
   } catch (error) {
     console.log("Error deleting notification",error);

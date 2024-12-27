@@ -27,6 +27,7 @@ import { useSelector } from "react-redux";
 import { selectUser } from "../../../store/slices/userSlice";
 import toast from "react-hot-toast";
 import ReportModal from "../../../components/utils/ReportModal";
+import { selectCourse } from "@/store/slices/courseSlice";
 
 export default function CoursePlayer() {
   const user = useSelector(selectUser);
@@ -47,7 +48,7 @@ export default function CoursePlayer() {
   const completedLessons = useRef(new Set());
   const videoRef = useRef(null);
   const navigate = useNavigate();
-  const { courseId } = useParams();
+  const courseId=useSelector(selectCourse);
 
   const [courseRating, setCourseRating] = useState(0);
   const [hoveredRating, setHoveredRating] = useState(0);

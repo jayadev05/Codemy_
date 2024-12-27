@@ -143,16 +143,7 @@ export default function TutorChatPage() {
       await fetchChats();
       setLoading(false);
 
-      const token = localStorage.getItem("accessToken");
-      const refreshToken = localStorage.getItem("refreshToken");
-
-      if (!token) return;
-
-      // Socket connection
-      socketService.connect(token, refreshToken);
-
-
-
+   
       // Socket event listeners
 
       const handleStatusUpdate = async () => {
@@ -216,15 +207,22 @@ export default function TutorChatPage() {
         
       };
 
-      const handleMessageDelivered =({ messageId }) => {
-        setMessages(prevMessages =>
-          prevMessages.map(msg =>
-            msg._id === messageId
-              ? { ...msg, status: 'delivered' }
+      const handleMessageDelivered = (data) => {
+        if (!data?.messageIds?.length) {
+          console.error('Invalid message-delivered data:', data);
+          return;
+        }
+  
+        const { messageIds } = data;
+        
+        setMessages((prevMessages) =>
+          prevMessages.map((msg) =>
+            messageIds.includes(msg._id) 
+              ? { ...msg, status: 'delivered' } 
               : msg
           )
         );
-      }
+      };
       
       const handleMessageRead = (data) => {
         if (!data) {
@@ -268,7 +266,7 @@ export default function TutorChatPage() {
 
       return () => {
 
- socketService.off("user-status-update", handleStatusUpdate);
+        socketService.off("user-status-update", handleStatusUpdate);
         socketService.off("receive-message", handleRecieveMessage);
         socketService.off('message-delivered',handleMessageDelivered);
         socketService.off('message-read', handleMessageRead);
@@ -277,12 +275,12 @@ export default function TutorChatPage() {
 
         if (typingTimeout) clearTimeout(typingTimeout);;
         
-        socketService.disconnect();
+     
       };
     };
 
     initializeChat();
-  }, [tutor?._id, localStorage.getItem("accessToken"),selectedChat?._id]);
+  }, [tutor?._id,selectedChat?._id]);
 
   useEffect(() => {
     if (!selectedChat) {

@@ -57,7 +57,9 @@ const validateForm = () => {
   if (!formData.lastName.trim()) {
     newErrors.lastName = 'Last name is required';
   }
-  else if(!/^[a-zA-Z]$/.test(formData.lastName)) newErrors.lastName ="only letters are allowed"
+
+
+  else if(!/^[a-zA-Z\s]+$/.test(formData.lastName)) newErrors.lastName ="only letters are allowed"
 
   // Username Validation
   if (!formData.username.trim()) {
@@ -162,11 +164,7 @@ const validateForm = () => {
 
       // Set both errors if applicable
       if (emailExists || userNameExists) {
-        setErrors(prev => ({
-          ...prev,
-          email: emailExists ? 'Email is already registered' : null,
-          username: userNameExists ? 'Username is already in use' : null
-        }));
+        toast.error(`${emailExists?'Email':'Username'} is already in use.`);
         return;
       }
       await handleSendOtp() ;

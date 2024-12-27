@@ -18,12 +18,14 @@ const getChatsByUserId = async (req, res) => {
     const chats = await Chat.find({
       $or: [{ userId:userId }, { tutorId: userId }],
     })
+    .sort({'lastMessage.timestamp':-1})
       .populate({
         path: populateField,
         model: populateModel,
         select: 'fullName profileImg userId'
       })
-      .select('userId tutorId lastMessage isOnline unreadCount deletedBy');
+      .select('userId tutorId lastMessage isOnline unreadCount deletedBy ');
+    
 
     res.status(200).json(chats);
     console.log(chats);
@@ -37,33 +39,30 @@ const getTutorsByUserId = async (req, res) => {
   try {
     const { courseIds } = req.query;
 
-    console.log('courseIds',courseIds);
-
     if (!courseIds) {
       return res.status(400).json({ message: "CourseIds are missing" });
     }
 
-    // Find courses by IDs
-    const courses = await Course.find({ _id: { $in: courseIds } });
+    // Find courses and populate tutors
+    const courses = await Course.find({ _id: { $in: courseIds } })
+      .populate('tutorId', 'fullName profileImg')
+      .exec();
 
     if (!courses || courses.length === 0) {
       return res.status(404).json({ message: "No courses found for the given IDs" });
     }
 
-    // Populate tutors for each course
-    const tutors = await Promise.all(
-      courses.map(async (course) => {
-        await course.populate('tutorId', 'fullName profileImg');
-        return course.tutorId; // Return the populated tutor
-      })
-    );
+    // Extract unique tutors
+    const uniqueTutors = Array.from(
+      new Set(courses.map(course => course.tutorId?._id?.toString()))
+    ).map(tutorId => courses.find(course => course.tutorId._id.toString() === tutorId).tutorId);
 
     res.status(200).json({
       message: "Tutors list fetched successfully",
-      tutors,
+      tutors: uniqueTutors,
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching tutors:", error);
     res.status(500).json({ message: "Failed to get tutor list" });
   }
 };

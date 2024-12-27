@@ -21,6 +21,7 @@ import { handleChatDeletion } from "@/utils/ChatUtils";
 import { updateChatsList } from "@/utils/ChatUtils";
 
 export default function ChatInterface() {
+
   const user = useSelector(selectUser);
 
   const [chats, setChats] = useState([]);
@@ -38,6 +39,8 @@ export default function ChatInterface() {
   const messagesEndRef = useRef(null);
 
   const courseIds = user.activeCourses;
+  console.log("user:",user)
+  console.log("user coruses:",user.activeCourses)
 
   console.log("message length", messages.length);
 
@@ -146,13 +149,6 @@ export default function ChatInterface() {
       await fetchChats();
       setLoading(false);
 
-      const token = localStorage.getItem("accessToken");
-      const refreshToken = localStorage.getItem("refreshToken");
-
-      if (!token) return;
-
-      // Socket connection
-      socketService.connect(token, refreshToken);
 
       // Socket event listeners
 
@@ -217,15 +213,22 @@ export default function ChatInterface() {
         setIsTyping(false);
       };
 
-      const handleMessageDelivered =({ messageId }) => {
-        setMessages(prevMessages =>
-          prevMessages.map(msg =>
-            msg._id === messageId
-              ? { ...msg, status: 'delivered' }
+      const handleMessageDelivered = (data) => {
+        if (!data?.messageIds?.length) {
+          console.error('Invalid message-delivered data:', data);
+          return;
+        }
+  
+        const { messageIds } = data;
+        
+        setMessages((prevMessages) =>
+          prevMessages.map((msg) =>
+            messageIds.includes(msg._id) 
+              ? { ...msg, status: 'delivered' } 
               : msg
           )
         );
-      }
+      };
       
       const handleMessageRead = (data) => {
         if (!data) {
@@ -258,9 +261,7 @@ export default function ChatInterface() {
         }
       };
       
-      
-  
-     
+   
 
       socketService.on("user-status-update", handleStatusUpdate);
       socketService.on("receive-message", handleRecieveMessage);
@@ -273,13 +274,13 @@ export default function ChatInterface() {
         socketService.off("user-status-update", handleStatusUpdate);
         socketService.off("receive-message", handleRecieveMessage);
         socketService.off("message-read", handleMessageRead);
-        socketService.off('message-delivered');
+        socketService.off('message-delivered',handleMessageDelivered);
         socketService.off("typing", handleTyping);
         socketService.off("stop-typing", handleStopTyping);
 
         if (typingTimeout) clearTimeout(typingTimeout);
 
-        socketService.disconnect();
+      
       };
     };
 

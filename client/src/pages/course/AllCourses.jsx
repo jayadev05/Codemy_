@@ -11,6 +11,7 @@ import logo from "../../assets/logo_cap.png";
 import { addToWishlist, setWishlistItems } from "../../store/slices/wishlistSlice";
 import MainHeader from "../../components/layout/user/MainHeader";
 import { addToCart, selectCart } from "../../store/slices/cartSlice";
+import { setCurrentCourse } from "@/store/slices/courseSlice";
 
 export default function CourseListing() {
   const user = useSelector(selectUser);
@@ -29,7 +30,7 @@ export default function CourseListing() {
     categories: [],
     ratings: [],
     levels: [],
-    priceRange: { min: 0, max: 2000 },
+    priceRange: { min: 0, max: 5000 },
   });
 
   const [categories, setCategories] = useState([]);
@@ -56,8 +57,8 @@ export default function CourseListing() {
 
   const handleCourseView= (courseId)=>{
     try {
-      
-      navigate(`/course/details/${courseId}`);
+      dispatch(setCurrentCourse(courseId));
+      navigate(`/course/details`);
 
     } catch (error) {
       console.log(error);

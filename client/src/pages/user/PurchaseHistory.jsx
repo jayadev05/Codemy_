@@ -1,11 +1,13 @@
+"use client"
+
 import React, { useEffect, useState } from "react";
+import { ArrowUp, ArrowDown, CreditCard, IndianRupeeIcon, RefreshCw, X } from 'lucide-react';
 import {
-  ArrowUp,
-  ArrowDown,
-  CreditCard,
-  IndianRupeeIcon,
-  RefreshCw,
-} from "lucide-react";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import Header from "../../components/layout/Header";
 import MainHeader from "../../components/layout/user/MainHeader";
 import SecondaryFooter from "../../components/layout/user/SecondaryFooter";
@@ -23,10 +25,12 @@ const PurchaseHistory = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const orderPerPage = 3;
 
-  const dispatch=useDispatch();
-  const navigate=useNavigate();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -127,6 +131,11 @@ const PurchaseHistory = () => {
     });
   };
 
+  const handleOrderClick = (order) => {
+    setSelectedOrder(order);
+    setIsModalOpen(true);
+  };
+
   const renderPaymentMethodIcon = (method) => {
     switch (method.toUpperCase()) {
       case "UPI":
@@ -200,6 +209,7 @@ const PurchaseHistory = () => {
                 return (
                   <div
                     key={order.orderId}
+                    onClick={() => handleOrderClick(order)}
                     className="overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-md"
                   >
                     <div className="flex gap-6 p-6">
@@ -218,7 +228,7 @@ const PurchaseHistory = () => {
                         <div className="flex items-start justify-between gap-4">
                           <div className="space-y-1">
                             <h3 className="font-semibold text-gray-900">
-                              {course.title}
+                              {order.course.length>1? `${course.title.slice(0,25)} ...+${order.course?.length-1}`:course.title}
                             </h3>
                             <div className="flex items-center gap-3">
                               <span
@@ -278,11 +288,84 @@ const PurchaseHistory = () => {
                         <ArrowDown className="h-5 w-5 text-red-500 flex-shrink-0" />
                       )}
                     </div>
+
                   </div>
                 );
               })}
             </div>
-
+            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Order Details</DialogTitle>
+              </DialogHeader>
+              {selectedOrder && (
+                <div className="mt-4">
+                  <div className="space-y-4">
+                    <div className="flex justify-between border-b pb-4">
+                      <span className="font-medium">Order ID</span>
+                      <span className="text-gray-600">{selectedOrder.orderId}</span>
+                    </div>
+                    <div className="flex justify-between border-b pb-4">
+                      <span className="font-medium">Date</span>
+                      <span className="text-gray-600">
+                        {formatDate(selectedOrder.purchaseDate)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between border-b pb-4">
+                      <span className="font-medium">Status</span>
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        selectedOrder.orderStatus === "Completed"
+                          ? "bg-green-50 text-green-700"
+                          : selectedOrder.orderStatus === "Pending"
+                          ? "bg-yellow-50 text-yellow-700"
+                          : "bg-red-50 text-red-700"
+                      }`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${
+                          selectedOrder.orderStatus === "Completed"
+                            ? "bg-green-600"
+                            : selectedOrder.orderStatus === "Pending"
+                            ? "bg-yellow-600"
+                            : "bg-red-600"
+                        }`} />
+                        {selectedOrder.orderStatus}
+                      </span>
+                    </div>
+                    <div className="space-y-4">
+                      <h3 className="font-medium">Purchased Courses</h3>
+                      {selectedOrder.course.map((course, index) => (
+                        <div key={index} className="flex items-center gap-4 border-b pb-4">
+                          <img
+                            src={course.thumbnail || "/placeholder-course.png"}
+                            alt={course.title}
+                            className="h-16 w-24 rounded object-cover"
+                          />
+                          <div>
+                            <h4 className="font-medium">{course.title}</h4>
+                            <p className="text-sm text-gray-600">
+                              Instructor: {course.tutor}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex justify-between border-b pb-4">
+                      <span className="font-medium">Payment Method</span>
+                      <span className="inline-flex items-center gap-1.5 text-gray-600">
+                        {renderPaymentMethodIcon(selectedOrder.paymentMethod)}
+                        {selectedOrder.paymentMethod}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Total Amount</span>
+                      <span className="text-lg font-semibold">
+                        ₹{(selectedOrder.totalAmount/100).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
             <Pagination
               className="flex justify-center mt-6"
               dataPerPage={orderPerPage}

@@ -23,7 +23,11 @@ const corsOptions = {
   allowEIO3: true // Enable Socket.IO version 3
 };
 
+
 app.use(cors(corsOptions));
+
+
+
 
 // Other middleware
 app.use(cookieParser());

@@ -9,10 +9,6 @@ const chatHandler =(io, socket, onlineStudents, onlineTutors)=>{
   //send message event
   socket.on('send-message', async (data) => {
     const { chatId, _id, sender, receiver, content, timestamps } = data;
-
-
-
-
     
     try {
       const chat = await Chat.findOne({ _id: chatId });
@@ -22,39 +18,60 @@ const chatHandler =(io, socket, onlineStudents, onlineTutors)=>{
         return;
       }
   
-     
-  
       // Check both mappings for the receiver
-      const receiverSocketId =
+      const receiverSocketId = 
         onlineTutors[receiver.userId]?.socketId || 
         onlineStudents[receiver.userId]?.socketId;
   
-     
+      // If receiver is online, mark as delivered
+      if (receiverSocketId) {
+        // Update message status
+        await Message.findByIdAndUpdate(_id, { status: 'delivered' });
   
-      if (!receiverSocketId) {
-        console.log('Receiver is offline or not found:', receiver.userId);
-        socket.emit('message-delivery-status', { status: 'offline', receiverId: receiver.userId });
-        return;
+        // Emit to receiver
+        io.to(receiverSocketId).emit('receive-message', {
+          _id,
+          sender,
+          receiver,
+          chatId,
+          content,
+          timestamps,
+          chatData: chat,
+          status: 'delivered'
+        });
+  
+        // Notify sender about delivery
+        io.to(socket.id).emit('message-delivered', {
+          chatId,
+          messageIds: [_id]
+        });
+      } else {
+        // Receiver offline - just send the message (status will be 'sent' by default)
+        io.to(receiverSocketId).emit('receive-message', {
+          _id,
+          sender,
+          receiver,
+          chatId,
+          content,
+          timestamps,
+          chatData: chat
+        });
       }
   
-      io.to(receiverSocketId).emit('receive-message', {
-        _id,
-        sender,
-        receiver,
-        chatId,
-        content,
-        timestamps,
-        chatData: chat
-      });
-  
-      console.log('Message sent to receiver:', receiverSocketId);
-
     } catch (error) {
       console.error("Error in send-message:", error);
       socket.emit('error', { message: "Failed to process message" });
     }
   });
-  
+
+  socket.on('join', (roomId) => {
+    if (roomId) {
+      socket.join(roomId);
+      console.log('User', socket.id, 'joined room:', roomId);
+    } else {
+      console.log('No room ID provided for join');
+    }
+  });
 
   //typing event indicator event
   socket.on('typing', async (data) => {
@@ -95,19 +112,6 @@ const chatHandler =(io, socket, onlineStudents, onlineTutors)=>{
     }
   });
 
- // Handle message delivered status
-  socket.on('message-delivered', async ({ messageId, chatId, receiverId }) => {
-    console.log("message delivered sadasd" ,messageId,chatId);
-    try {
-      await Message.findByIdAndUpdate(messageId, { status: 'delivered' });
-      
-      // Notify sender that message was delivered
-      io.to(chatId).emit('message-delivered', { messageId });
-
-    } catch (error) {
-      console.error('Error updating message delivery status:', error);
-    }
-  });
 
   // Handle message read status
   socket.on('message-read', async (data) => {
@@ -140,13 +144,6 @@ const chatHandler =(io, socket, onlineStudents, onlineTutors)=>{
 
       console.log('Updated Message IDs:', updatedMessageIds); 
 
-      console.log('Emitting message-read event:', {
-        chatId,
-        userType,
-        messageIds: updatedMessageIds,
-      });
-      
-      
   
       // Update unread count in the chat document
       const chat = await Chat.findById(chatId);

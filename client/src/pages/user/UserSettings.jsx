@@ -39,7 +39,7 @@ const SettingsForm = () => {
     confirmPassword: "",
   });
 
-  const NAME_REGEX = /^[a-zA-Z\s]{5,50}$/;
+  const NAME_REGEX = /^[a-zA-Z\s]{3,50}$/;
   const USERNAME_REGEX = /^(?!.*_{2,})[a-zA-Z0-9_]{5,16}$/;
 
   const validateForm = () => {
@@ -228,9 +228,9 @@ const SettingsForm = () => {
       const fileUrl = await handleFileUploadToCloudinary(resizedFile, fileType);
 
       if (fileUrl) {
-        setThumbnail(fileUrl);
+        setProfileImage(fileUrl);
 
-        setThumbnailPreview(fileUrl);
+        setPreviewImg(fileUrl);
       }
 
       e.target.value = null;
@@ -270,7 +270,7 @@ const SettingsForm = () => {
       if (!formData.firstName.trim()) {
         validationErrors.firstName = "First name is required";
       } else if (!NAME_REGEX.test(formData.firstName.trim())) {
-        validationErrors.firstname = "First name must be 5 letters, no symbols";
+        validationErrors.firstname = "First name must be at least 3 letters, no symbols";
       }
 
       // Phone Validation

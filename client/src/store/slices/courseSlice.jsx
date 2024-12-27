@@ -36,6 +36,11 @@ const courseSlice = createSlice({
       };
     },
 
+    setCurrentCourse(state, action) {
+      state.course = action.payload;
+    },
+    
+
     updateCourse: (state, action) => {
       return { ...state, ...action.payload };
     },
@@ -47,7 +52,7 @@ const courseSlice = createSlice({
 });
 
 // Export actions
-export const { addCourse, clearCourse ,updateCourse} = courseSlice.actions;
+export const { addCourse, clearCourse ,updateCourse ,setCurrentCourse} = courseSlice.actions;
 
 // Export selector
 export const selectCourse = (state) => state.course.course;

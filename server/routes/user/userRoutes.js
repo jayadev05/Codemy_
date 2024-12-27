@@ -14,7 +14,7 @@ userRoute.put('/update-profile', updateUser);
 
 
 userRoute.put('/toggle-notifications', toggleNotifications);
-userRoute.delete('/delete-notification', deleteNotification);
+userRoute.patch('/clear-notifications/:userId', deleteNotification);
 
 userRoute.post("/logout", logoutUser);
 

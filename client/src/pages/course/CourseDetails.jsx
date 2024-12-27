@@ -13,6 +13,7 @@ import {
   setWishlistItems,
 } from "../../store/slices/wishlistSlice";
 import { addToCart, selectCart } from "../../store/slices/cartSlice";
+import { selectCourse } from "@/store/slices/courseSlice";
 
 export default function CourseDetails() {
   
@@ -22,10 +23,12 @@ export default function CourseDetails() {
   const dispatch = useDispatch();
   const navigate=useNavigate();
 
-  const { courseId } = useParams();
+  const courseId=useSelector(selectCourse);
 
   const [course, setCourse] = useState([]);
   const [wishlist, setWishlist] = useState([]);
+
+  console.log(wishlist)
 
   const features = [
     "Comprehensive course materials and resources",
@@ -180,6 +183,13 @@ export default function CourseDetails() {
     }
   };
 
+  const inWishlist=(courseId)=>{
+    const filtered  = wishlist.filter((course)=> course.courseId._id===courseId);
+    if(filtered.length>0)return true
+    return false
+    
+  }
+
   return (
     <div className="bg-gray-50 min-h-screen">
       <Header />
@@ -321,18 +331,19 @@ export default function CourseDetails() {
                   <span className="text-2xl font-bold text-gray-800">
                     ₹{course?.price?.$numberDecimal}
                   </span>
+                  
                   {user && (
                     <button
                       onClick={() => handleWishlist(course._id)}
-                      className="p-2 text-gray-500 hover:text-red-500 transition-colors "
+                      className={`p-2 text-gray-500  hover:text-red-500 transition-colors `}
                       aria-label="Add to Wishlist"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-6 w-6"
-                        fill="none"
+                        fill={`${inWishlist(course._id)? 'red' : 'none'}`}
                         viewBox="0 0 24 24"
-                        stroke="currentColor"
+                        stroke={`${inWishlist(course._id)? 'red' : 'currentColor'}`}
                       >
                         <path
                           strokeLinecap="round"

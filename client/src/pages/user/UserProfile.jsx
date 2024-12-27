@@ -5,11 +5,12 @@ import MainHeader from "../../components/layout/user/MainHeader";
 import Tabs from "../../components/layout/user/Tabs";
 import SecondaryFooter from "../../components/layout/user/SecondaryFooter";
 import { Heart, Play, Download, Loader2 } from "lucide-react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { selectWishlist } from "../../store/slices/wishlistSlice";
 import { selectCart } from "../../store/slices/cartSlice";
 import { selectUser } from "../../store/slices/userSlice";
 import axios from "axios";
+import { setCurrentCourse } from "@/store/slices/courseSlice";
 
 const Courses = () => {
   const user = useSelector(selectUser);
@@ -17,6 +18,7 @@ const Courses = () => {
   const [loadingCertificates, setLoadingCertificates] = useState({});
   
   const navigate = useNavigate();
+  const dispatch=useDispatch()
 
   useEffect(() => {
     const fetchCourseByUserId = async () => {
@@ -61,7 +63,8 @@ const Courses = () => {
   };
 
   const handlePlayCourse = (courseId) => {
-    navigate(`/user/play-course/${courseId}`);
+    dispatch(setCurrentCourse(courseId));
+    navigate(`/user/play-course`);
   };
   
 

@@ -86,10 +86,12 @@ const verifyPayment = async (req, res) => {
     if (!order) throw new Error("Order not found");
 
     // Update student's active courses
-    await User.updateOne(
+    const updatedUser = await User.findOneAndUpdate(
       { _id: order.userId },
       { $addToSet: { activeCourses: { $each: order.courses } } }
     );
+
+   
 
     // Increment enrollment counts for courses
     await Course.updateMany(
@@ -139,14 +141,15 @@ const verifyPayment = async (req, res) => {
       .json({
         success: true,
         message: "Payment verified and courses enrolled successfully",
-        orderId:razorpay_order_id
+        orderId:razorpay_order_id,
+        updatedUser
       });
+
   } catch (error) {
     console.error("Error verifying payment:", error);
     res.status(500).json({ error: "Failed to verify payment." });
   }
 };
-
 
 const getOrderDetails =async (req,res)=>{
   try {
@@ -177,7 +180,7 @@ const getOrderHistory=async(req,res)=>{
     const courseIds = [...new Set(orders.flatMap(order => order.courses))];
 
     const courses = await Course.find({ _id: { $in: courseIds } })
-    .select('title price thumbnail');
+    .select('title price thumbnail tutorId').populate('tutorId','fullName');
 
 //response data
   const data = orders.map(order => {
@@ -201,7 +204,8 @@ const getOrderHistory=async(req,res)=>{
             courseId: course._id,
             title: course.title,
             price: course.price,
-            thumbnail: course.thumbnail
+            thumbnail: course.thumbnail,
+            tutor:course.tutorId.fullName
       };
     }).filter(Boolean); // Remove any null entries
     
@@ -224,7 +228,6 @@ const getOrderHistory=async(req,res)=>{
     res.status(500).json({message:"Orders fetching failed"});
   }
 }
-
 
 
 module.exports = {

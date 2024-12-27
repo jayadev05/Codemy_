@@ -6,6 +6,7 @@ const Report = require("../model/reportModel");
 const InstructorApplication = require("../model/tutorApplication");
 const Category = require("../model/categoryModel");
 const mongoose = require("mongoose");
+const { ObjectId } = require('mongodb');
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const path = require("path");
@@ -18,6 +19,7 @@ const {
   passwordResetTemplate,
 } = require("../utils/nodeMailer");
 const generateDefaultPassword = require("../utils/generateDefaultPasswordd");
+const { getIO } = require("../socket/socketEvent");
 require("dotenv").config();
 
 // Controllers
@@ -896,7 +898,7 @@ const openReport = async (req, res) => {
       return res.status(400).json({ error: "Invalid target type" });
     }
 
-    const existingReport = await Report.findOne({ reportedBy, targetType });
+    const existingReport = await Report.findOne({ reportedBy, targetId });
 
     if (existingReport)
       return res.status(409).json({
@@ -922,9 +924,24 @@ const openReport = async (req, res) => {
 
 const getReports = async (req, res) => {
   try {
-    const reports = await Report.find().populate("reportedBy", "fullName _id");
+    const reports = await Report.find()
+    .populate({ path: "reportedBy", select: "fullName _id" })
+    .sort({ createdAt: -1 });
+  
 
-    res.status(200).json({ message: "Reports fetched successfully", reports });
+
+  const repopulatedReports = await Promise.all(
+    reports.map((report) =>
+      report.populate({
+        path: "targetId",
+        select: report.targetType === "Course" ? "title" : "fullName",
+      })
+    )
+  );
+
+  console.log(repopulatedReports)
+
+    res.status(200).json({ message: "Reports fetched successfully", repopulatedReports });
   } catch (error) {
     console.log("Error fetching reports", error);
     res
@@ -968,14 +985,26 @@ const sendNotification = async (req, res) => {
     }
 
     const notification = {
+      _id: new ObjectId(),
       type: "ReportAction",
       title: "Report Review Update",
       content: actionTaken,
       isRead: false,
+      createdAt: new Date(), 
     };
+    
 
     user.notifications.push(notification);
     await user.save();
+
+      // Get the io instance and emit
+      const io = getIO();
+
+      console.log('Active socket rooms:', io.sockets.adapter.rooms);
+
+      io.to(userId).emit('newNotification', notification);
+
+      console.log('emitted notification',userId,notification);
 
     res
       .status(200)

@@ -2,10 +2,12 @@ const { Server } = require('socket.io');
 require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const Chat = require('../model/chatModel');
+const Message=require('../model/messageModel')
 const { chatHandler } = require("./chatHandler");
 
 let onlineTutors = {};
 let onlineStudents = {};
+let ioInstance;
 
 const initializeSocket = (server) => {
   const io = new Server(server, {
@@ -18,6 +20,8 @@ const initializeSocket = (server) => {
     pingTimeout: 60000,
     pingInterval: 25000,
   });
+
+  ioInstance = io;
 
   // authenticate user
   io.use(async (socket, next) => {
@@ -74,44 +78,95 @@ const initializeSocket = (server) => {
 
   // establish connected users
   io.on('connection', async (socket) => {
-    console.log('New client connected',socket.id);
+    console.log('New client connected', socket.id);
     
     const { userId, userType } = socket.user;
-
-    try {
-      const updateQuery = userType === 'tutor' 
-      ? { tutorId: userId }
-      : { userId };
     
-    const updateField = userType === 'tutor' 
-      ? "isOnline.tutor" 
-      : "isOnline.student";
-
-    await Chat.updateMany(
-      updateQuery,
-      { $set: { [updateField]: true } }
-    );
-
-    // Store socket info
-    if (userType === 'tutor') {
-      onlineTutors[userId] = { socketId: socket.id, userId };
-    } else {
-      onlineStudents[userId] = { socketId: socket.id, userId };
-    }
-
-    // Broadcast status update
-    socket.broadcast.emit('user-status-update');
-
-      // Initialize chat handler for this socket
+    try {
+      // Update online status in chats
+      const updateQuery = userType === 'tutor' 
+        ? { tutorId: userId }
+        : { userId };
+      
+      const updateField = userType === 'tutor'
+        ? "isOnline.tutor"
+        : "isOnline.student";
+      
+      await Chat.updateMany(
+        updateQuery,
+        { $set: { [updateField]: true } }
+      );
+  
+      // Store socket info
+      if (userType === 'tutor') {
+        onlineTutors[userId] = { socketId: socket.id, userId };
+      } else {
+        onlineStudents[userId] = { socketId: socket.id, userId };
+      }
+  
+      // Handle undelivered messages when user comes online
+      const undeliveredMessages = await Message.find({
+        'receiver.userId': userId,
+        status: 'sent'
+      }).select('_id chatId');
+  
+      if (undeliveredMessages.length > 0) {
+        // Group messages by chatId
+        const messagesByChatId = undeliveredMessages.reduce((acc, msg) => {
+          if (!acc[msg.chatId]) {
+            acc[msg.chatId] = [];
+          }
+          acc[msg.chatId].push(msg._id);
+          return acc;
+        }, {});
+  
+        // Update all messages to delivered
+        await Message.updateMany(
+          {
+            'receiver.userId': userId,
+            status: 'sent'
+          },
+          { status: 'delivered' }
+        );
+  
+        // Notify senders for each chat
+        for (const [chatId, messageIds] of Object.entries(messagesByChatId)) {
+          const chat = await Chat.findById(chatId);
+          const senderId = userType === 'user' ? chat.tutorId : chat.userId;
+          
+          // Get sender's socket if they're online
+          const senderSocketId = userType === 'user' 
+            ? onlineTutors[senderId]?.socketId 
+            : onlineStudents[senderId]?.socketId;
+  
+          if (senderSocketId) {
+            io.to(senderSocketId).emit('message-delivered', {
+              chatId,
+              userType,
+              messageIds
+            });
+          }
+        }
+      }
+  
+      // Broadcast status update
+      socket.broadcast.emit('user-status-update');
+  
+      // Initialize chat handler
       chatHandler(io, socket, onlineTutors, onlineStudents);
-
+  
+      socket.on('join', ({ userId }) => {
+        socket.join(userId);
+        console.log(`User ${userId} joined their room`);
+      });
+  
       // Handle disconnect
       socket.on('disconnect', async () => {
         const { userId, userType } = socket.user || {};
-
+        
         try {
           if (!userId) return;
-
+          
           if (userType === 'tutor') {
             await Chat.updateMany(
               { tutorId: userId },
@@ -125,14 +180,13 @@ const initializeSocket = (server) => {
             );
             delete onlineStudents[userId];
           }
-
+          
           socket.broadcast.emit('user-status-update');
-
         } catch (error) {
           console.error("Error in disconnect handler:", error);
         }
       });
-
+      
     } catch (error) {
       console.error("Error in connection handler:", error);
       socket.emit('error', {
@@ -142,8 +196,17 @@ const initializeSocket = (server) => {
     }
   });
 
+
+
   return io;
   
 };
 
-module.exports = { initializeSocket };
+const getIO = () => {
+  if (!ioInstance) {
+    throw new Error('Socket.io not initialized');
+  }
+  return ioInstance;
+};
+
+module.exports = { initializeSocket ,getIO};

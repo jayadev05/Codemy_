@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { clearCart, selectCart } from "../../store/slices/cartSlice";
-import { selectUser } from "../../store/slices/userSlice";
+import { addUser, selectUser } from "../../store/slices/userSlice";
 import Header from "../../components/layout/Header";
 import MainHeader from "../../components/layout/user/MainHeader";
 import SecondaryFooter from "../../components/layout/user/SecondaryFooter";
@@ -42,9 +42,7 @@ export default function CheckoutPage() {
 
       const response=await axios.post('http://localhost:3000/checkout/order-create',{amount:total,userId:user._id,courses,paymentMethod})
 
-      const {id:razorpayOrderId, amount,currency}=response.data.order;
-
-     
+      const {id:razorpayOrderId, amount,currency}=response.data.order;  
      
   
       //Razorpay payment option
@@ -147,10 +145,11 @@ export default function CheckoutPage() {
       const response=await axios.post('http://localhost:3000/checkout/verify-payment',{razorpay_order_id,razorpay_payment_id,razorpay_signature});
 
       if(response.status===200){
-        console.log(response,"asdasd")
+  
         const orderId=response.data.orderId
         navigate(`/user/payment-success/${orderId}`)
         dispatch(clearCart(cart));
+        dispatch(addUser(response.data?.updatedUser))
         toast.success("Course purchased successfully!");
       }
     } catch (error) {

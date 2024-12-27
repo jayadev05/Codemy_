@@ -10,6 +10,7 @@ import axios from 'axios'
 import { toast } from 'react-hot-toast';
 import Pagination from '../../components/utils/Pagination'
 import axiosInstance from '../..//config/axiosConfig'
+import { socketService } from '@/services/socket'
 
 const StatusBadge = ({ status }) => {
   const styles = {
@@ -49,10 +50,10 @@ export default function ReportManagement() {
   const [filteredReports, setFilteredReports] = useState(reports)
 
   const [currentPage,setCurrentPage]=useState(1);
-  const dataPerPage=3;
+  const dataPerPage=2;
 
   const [status,setStatus]=useState('');
-  console.log(reports)
+ 
 
   const paginateData = (data) => {
     const startIndex = currentPage * dataPerPage - dataPerPage;
@@ -69,12 +70,40 @@ fetchReports();
 
 },[])
 
+ useEffect(() => {
+       const initializeChat = async () => {
+         if (!admin?._id) return;
+ 
+   
+         const token = localStorage.getItem("accessToken");
+         const refreshToken = localStorage.getItem("refreshToken");
+   
+         if (!token) return;
+   
+         // Socket connection
+         socketService.connect(token, refreshToken);
+   
+   
+
+   
+   
+         return () => {      
+           socketService.disconnect();
+         };
+       };
+   
+       initializeChat();
+     }, [admin?._id]);
+
 
   useEffect(() => {
+
+    console.log(reports)
+
     const results = reports.filter(report =>
       report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       report.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      report.reportedBy.toLowerCase().includes(searchTerm.toLowerCase())
+      report.reportedBy.fullName.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredReports(results);
   }, [searchTerm,reports]);
@@ -85,7 +114,7 @@ fetchReports();
     try {
   
       const response=await axiosInstance.get('http://localhost:3000/admin/get-reports');
-      setReports(response.data.reports);
+      setReports(response.data.repopulatedReports);
   
     } catch (error) {
       console.log("Error fetching reports",error);
@@ -246,7 +275,7 @@ fetchReports();
       
         </div>
         <div className='mb-4'>
-          <h2 className='font-bold text-lg text-gray-900'>Open Reports (<span className='text-orange-500'>{openReportsCount}</span>)</h2>
+          <h2 className='font-bold text-lg text-gray-900'>Open Reports {`(${openReportsCount})`}</h2>
         </div>
 
         {/* Reports List */}
@@ -262,7 +291,13 @@ fetchReports();
                     {report.title}
                   </h3>
                   <p className="text-sm text-gray-500">
-                    Reported by {report.reportedBy.fullName} • {report.date}
+                    Reported By : {report.reportedBy.fullName}  {report.date}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Issue Type : {report.type}  {report.date}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Report Target : {report.targetId?.title || report.targetId?.fullName}  {report.date}
                   </p>
                 </div>
                 <StatusBadge status={report.status} />
@@ -270,6 +305,7 @@ fetchReports();
               
               <p className="text-gray-700 mb-4">{report.description}</p>
               
+              {report.status==="Open" &&  
               <div className="flex gap-3">
                 <button
                   onClick={() => {
@@ -291,7 +327,9 @@ fetchReports();
                   <X className="h-4 w-4" />
                   Reject
                 </button>
-              </div>
+              </div> }
+             
+
             </div>
           ))}
         </div>
@@ -305,8 +343,8 @@ fetchReports();
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-4 text-orange-800">Send Action to Reporter</h2>
-            <p className="text-sm text-orange-600 mb-4">
+            <h2 className="text-xl font-semibold mb-4 text-black">Send Action to Reporter</h2>
+            <p className="text-sm text-black mb-4">
               Report: {selectedReport.title} by {selectedReport.reportedBy.fullName}
             </p>
             <textarea

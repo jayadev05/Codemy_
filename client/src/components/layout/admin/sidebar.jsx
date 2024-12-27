@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -17,7 +17,10 @@ import { useNavigate } from "react-router";
 import { toast } from "react-toastify";
 import axios from 'axios'
 
+
 const Sidebar = ({ activeSection }) => {
+
+  const admin = useSelector(selectAdmin);
   const dispatch=useDispatch()
 
   const navigate=useNavigate()
@@ -93,7 +96,9 @@ const Sidebar = ({ activeSection }) => {
     },
   ];
 
-  const admin = useSelector(selectAdmin);
+  
+
+
 
   return (
     <div className="flex h-screen w-[240px] flex-col bg-gray-900">
@@ -109,7 +114,7 @@ const Sidebar = ({ activeSection }) => {
         </div>
         <span className="text-sm font-medium text-gray-200">Admin</span>
       </div>
-      <nav className="flex-1 space-y-1.5 px-3">
+      <nav className="flex-1 space-y-1.5 px-3 cursor-pointer">
         {menuItems.map((item) => (
           <a
             key={item.title}

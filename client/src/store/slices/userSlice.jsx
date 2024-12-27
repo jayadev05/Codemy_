@@ -38,6 +38,7 @@ export const { addUser, logoutUser } = userSlice.actions;
 
 // Export selector
 export const selectUser = (state) => state.user.currentUser;
+export const selectUserNotifications = state => state.user?.notifications || [];
 
 // Export reducer
 export default userSlice.reducer;

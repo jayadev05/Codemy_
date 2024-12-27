@@ -4,13 +4,17 @@ import axios from "axios"
 import { Heart, LogOut, Search, ShoppingCart, Bell, X, Mail, AlertCircle, CheckCircle2, Clock, MessageSquare, Trash2 } from 'lucide-react'
 import { useDispatch, useSelector } from "react-redux"
 import { toast } from "react-hot-toast"
-import { addUser, logoutUser, selectUser } from "../../../store/slices/userSlice"
+import { addUser, logoutUser, selectUser, selectUserNotifications } from "../../../store/slices/userSlice"
 import logo from '../../../assets/logo_cap.png'
 import { useNavigate } from "react-router"
 import { selectCart } from "../../../store/slices/cartSlice"
 import { selectWishlist } from "../../../store/slices/wishlistSlice"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import NotificationDetailModal from "./NotificationDetailsModal"
+import defProfile from '../../../assets/user-profile.png'
+import { socketService } from "@/services/socket"
+
+
 
 
 
@@ -27,36 +31,47 @@ const formatTimeAgo = (date) => {
   return 'Just now'
 }
 
-const handleDeleteNotification = async (userId, notificationId) => {
-  try {
-    const response = await axios.delete(`http://localhost:3000/user/delete-notification/${userId}/${notificationId}`);
-    dispatch(addUser(response.data.user));
-  } catch (error) {
-    toast.error('Failed to delete notification');
-  }
-};
 
 const MainHeader = () => {
+
   const navigate = useNavigate()
   const dispatch = useDispatch()
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [selectedNotification, setSelectedNotification] = useState(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
 
-  const user = useSelector(selectUser)
+ const user=useSelector(selectUser);
+
   const wishlist = useSelector(selectWishlist)
   const cart = useSelector(selectCart)
-  const notifications = user?.notifications || []
 
-  const handleLogout = async () => {
-    try {
-      await axios.post("http://localhost:3000/user/logout")
-      dispatch(logoutUser(user))
-      toast.success("Logged out successfully")
-    } catch (error) {
-      toast.error(error.message || "Error logging out user")
-    }
-  }
+  const notifications=user?.notifications;
+  notifications?.sort((a,b)=> new Date(b.createdAt)-new Date(a.createdAt));
+
+  console.log("notificationss",notifications)
+
+
+  useEffect(() => {
+
+    const handleNotification = async (notification) => {
+      console.log("recieved notification")
+      dispatch(addUser({
+        ...user,
+        notifications: [...user.notifications, notification]
+      }));
+  
+    };
+  
+    // Attach the event listener
+    socketService.on('newNotification', handleNotification);
+  
+    
+    return () => {
+      socketService.off('newNotification', handleNotification);
+    };
+  }, [user._id]);
+  
+
 
   const getIcon = (type) => {
     switch(type) {
@@ -71,10 +86,34 @@ const MainHeader = () => {
     }
   }
 
+
+  const handleLogout = async () => {
+    try {
+      await axios.post("http://localhost:3000/user/logout")
+      dispatch(logoutUser(user))
+      toast.success("Logged out successfully")
+    } catch (error) {
+      toast.error(error.message || "Error logging out user")
+    }
+  }
+
+  const handleDeleteNotification = async (userId) => {
+    try {
+      const response = await axios.patch(`http://localhost:3000/user/clear-notifications/${userId}`);
+      dispatch(addUser(response.data.updatedUser));
+    } catch (error) {
+      console.log(error)
+      toast.error('Failed to delete notification');
+    }
+  };
+  
+
   const handleNotificationClick = async (notification,userId,notificationId) => {
 
     setSelectedNotification(notification)
     setIsDetailModalOpen(true)
+
+    console.log("notidaoidasd",userId,notificationId)
 
     try {
    
@@ -143,87 +182,93 @@ const MainHeader = () => {
 
               {/* Modal Backdrop */}
               {isNotificationsOpen && (
+
                 <div
                   className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50"
                   onClick={() => setIsNotificationsOpen(false)}
                 />
+
               )}
 
-              {/* Notifications Modal */}
-              <div className={`
-                absolute right-[-200px] top-full mt-3 w-96 max-h-[85vh]
-                bg-white rounded-lg shadow-xl border border-gray-200
-                transform transition-all duration-200 ease-in-out z-50
-                ${isNotificationsOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 pointer-events-none'}
-              `}>
-                <div className="flex items-center justify-between p-4 border-b border-gray-200">
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-800">Notifications</h2>
-                    <p className="text-sm text-gray-500">{notifications.length} notifications</p>
-                  </div>
-                  <button
-                    onClick={() => setIsNotificationsOpen(false)}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                    aria-label="Close notifications"
-                  >
-                    <X className="w-5 h-5 text-gray-500" />
-                  </button>
-                </div>
+            {/* Notifications Modal */}
+<div className={`
+  absolute right-[-200px] top-full mt-3 w-96 max-h-[85vh]
+  bg-white rounded-lg shadow-xl border border-gray-200
+  transform transition-all duration-200 ease-in-out z-50
+  ${isNotificationsOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 pointer-events-none'}
+`}>
+  <div className="flex items-center justify-between p-4 border-b border-gray-200">
+    <div className="flex items-center gap-4">
+      <div>
+        <h2 className="text-lg font-semibold text-gray-800">Notifications</h2>
+        <p className="text-sm text-gray-500">{notifications.length} notifications</p>
+      </div>
+      {notifications.length > 0 && (
+        <button
+          onClick={() => {      
+            handleDeleteNotification(user._id);
+          }}
+          className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+        >
+          Clear all
+        </button>
+      )}
+    </div>
+    <button
+      onClick={() => setIsNotificationsOpen(false)}
+      className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+      aria-label="Close notifications"
+    >
+      <X className="w-5 h-5 text-gray-500" />
+    </button>
+  </div>
 
-                <div className="overflow-y-auto max-h-[60vh]">
-                  {notifications.length === 0 ? (
-                    <div className="p-8 text-center text-gray-500">
-                      <Bell className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                      <p>No notifications yet</p>
-                    </div>
-                  ) : (
-                    notifications.map((notification) => (
-                      <div
-                        key={notification._id}
-                        onClick={() => handleNotificationClick(notification,user._id,notification._id)}
-                        className={`
-                          p-4 border-b border-gray-100 last:border-0
-                          hover:${notification.isRead ?"bg-gray-300":"bg-gray-50"} transition-colors cursor-pointer
-                          ${notification.isRead ? 'bg-gray-200' : 'bg-white'}
-                        `}
-                      >
-                        <div className="flex gap-3">
-                          <div className="flex-shrink-0 mt-1">
-                            {getIcon(notification.type)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2">
-                              <p className={`text-sm font-medium ${notification.isRead ? 'text-gray-700' : 'text-gray-900'}`}>
-                                {notification.title}
-                              </p>
-                              <time 
-                                className="text-xs text-gray-500 whitespace-nowrap flex items-center gap-1"
-                                dateTime={notification.createdAt}
-                              >
-                                <Clock className="w-3 h-3" />
-                                {formatTimeAgo(notification.createdAt)}
-                              </time>
-                            </div>
-                            <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">
-                              {notification.content}
-                            </p>
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation(); 
-                              handleDeleteNotification(user._id, notification._id);
-                            }}
-                            className="text-gray-400 hover:text-red-500 transition-colors"
-                            aria-label="Delete notification"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
+  <div className="overflow-y-auto max-h-[60vh]">
+    {notifications.length === 0 ? (
+      <div className="p-8 text-center text-gray-500">
+        <Bell className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+        <p>No notifications yet</p>
+      </div>
+    ) : (
+      notifications.map((notification) => (
+        <div
+          key={notification._id}
+          onClick={() => handleNotificationClick(notification,user._id,notification._id)}
+          className={`
+            p-4 border-b border-gray-100 last:border-0
+            hover:${notification.isRead ?"bg-gray-300":"bg-gray-50"} transition-colors cursor-pointer
+            ${notification.isRead ? 'bg-gray-200' : 'bg-white'}
+          `}
+        >
+          <div className="flex gap-3">
+            <div className="flex-shrink-0 mt-1">
+              {getIcon(notification.type)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2">
+                <p className={`text-sm font-medium ${notification.isRead ? 'text-gray-700' : 'text-gray-900'}`}>
+                  {notification.title}
+                </p>
+                <time 
+                  className="text-xs text-gray-500 whitespace-nowrap flex items-center gap-1"
+                  dateTime={notification.createdAt}
+                >
+                  <Clock className="w-3 h-3" />
+                  {formatTimeAgo(notification.createdAt)}
+                </time>
               </div>
+              <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">
+                {notification.content}
+              </p>
+            </div>
+            
+          </div>
+        </div>
+      ))
+    )}
+  </div>
+</div>
+
             </div>
 
             <button

@@ -11,6 +11,7 @@ const adminSlice = createSlice({
     addAdmin: (state, action) => {
       // action.payload will be the userData from your API response
       state.currentUser = {
+        _id:action.payload._id,
         fullName: action.payload.fullName,
         userName: action.payload.userName,
         email: action.payload.email,

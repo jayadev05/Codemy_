@@ -60,19 +60,36 @@ class SocketService {
     });
   }
 
+  clearAllListeners() {
+    if (this.socket) {
+      this.eventHandlers.forEach((callbacks, event) => {
+        callbacks.forEach((callback) => {
+          this.socket.off(event, callback);
+        });
+      });
+      this.eventHandlers.clear();
+    }
+  }
+
+  onConnect(callback) {
+    if (this.socket) {
+      this.socket.on('connect', callback);
+    }
+  }
+
+  onError(callback) {
+    if (this.socket) {
+      this.socket.on('connect_error', callback);
+    }
+  }
+  
   disconnect() {
     if (this.socket) {
-      // Remove all event listeners
-      this.eventHandlers.forEach((handlers, event) => {
-        handlers.forEach(handler => this.socket.off(event, handler));
-      });
-      this.socket.emit('disconnect');
-      this.eventHandlers.clear();
+      this.clearAllListeners()
       this.socket.disconnect();
       this.socket = null;
     }
   }
-  
 
   isConnected() {
     return this.socket?.connected || false;
@@ -120,12 +137,7 @@ class SocketService {
     }
   }
 
-  markMessagesDelivered(data) {
-    if (this.isConnected()) {
-      this.socket.emit('message-delivered', data);
-      console.log('[SocketService] Marking messages as read:', data);
-    }
-  }
+
 
 
   markMessagesRead(data) {
@@ -134,6 +146,17 @@ class SocketService {
       console.log('[SocketService] Marking messages as read:', data);
     }
   }
+
+
+joinRoom(roomId) {
+  if (this.isConnected()) {
+    this.socket.emit('join', roomId); // Send just the room ID directly
+    console.log('[SocketService] Attempting to join room:', roomId);
+  }
+  else {
+    console.log('Cannot join room - socket not connected');
+  }
+}
 
   sendTyping(data) {
     if (this.isConnected()) {

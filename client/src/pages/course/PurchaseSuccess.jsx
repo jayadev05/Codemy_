@@ -38,7 +38,7 @@ const PurchaseCompleted = () => {
     <>
     <Header/>
     <MainHeader/>
-    <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4 lg:mt-[-60px]">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-neutral-100 overflow-hidden">
         <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-center py-8 px-6">
           <div className="mb-4 inline-flex items-center justify-center w-20 h-20 bg-white rounded-full mx-auto shadow-md">
