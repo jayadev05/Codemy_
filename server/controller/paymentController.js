@@ -6,46 +6,82 @@ const Cart = require("../model/cartModel");
 const Lesson = require("../model/lessonModel");
 const Course = require("../model/courseModel");
 const CourseProgress = require("../model/courseProgressModel");
+const Coupon = require('./models/couponModel');
+
 
 const createOrder = async (req, res) => {
-  const { amount, userId, courses, paymentMethod } = req.body;
+  const { amount, userId, courses, paymentMethod, couponCode } = req.body;
 
   const amountInPaise = Math.round(amount * 100);
-
-  const options = {
-    amount: amountInPaise,
-    currency: "INR",
-    receipt: `order_${Date.now()}_${Math.random()
-      .toString(36)
-      .substring(2, 9)}`,
-  };
+  let discountAmount = 0;
 
   try {
+    
+    // Validate the coupon code
+    if (couponCode) {
+      const coupon = await Coupon.findOne({ code: couponCode, isActive: true });
+
+      
+
+      const now = new Date();
+      if (now < coupon.validFrom || now > coupon.validTo) {
+        return res.status(400).json({ message: 'Coupon has expired.' });
+      }
+
+      if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
+        return res.status(400).json({ message: 'Coupon usage limit exceeded.' });
+      }
+
+      // Calculate discount
+      if (coupon.discountType === 'Percentage') {
+        discountAmount = (amountInPaise * coupon.discountValue) / 100;
+      } else if (coupon.discountType === 'Flat') {
+        discountAmount = coupon.discountValue * 100; 
+      }
+
+      // Ensure discount does not exceed the total amount
+      discountAmount = Math.min(discountAmount, amountInPaise);
+
+      // Increment used count for the coupon
+      await Coupon.findByIdAndUpdate(coupon._id, { $inc: { usedCount: 1 } });
+    }
+
+    const options = {
+      amount: amountInPaise - discountAmount, // Apply discount
+      currency: 'INR',
+      receipt: `order_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+    };
+
     // Create Razorpay order
     const razorpayOrder = await razorpayInstance.orders.create(options);
 
-
+    // Create order in the database
     const order = await Order.create({
       orderId: razorpayOrder.id,
       userId,
       courses,
       totalAmount: amountInPaise,
+      discount: {
+        couponCode,
+        discountAmount,
+      },
       payment: {
         paymentId: null,
-        status: "Pending",
-        paymentMethod: paymentMethod || "UPI",
+        status: 'Pending',
+        paymentMethod: paymentMethod || 'UPI',
       },
-      orderStatus: "Processing",
+      orderStatus: 'Processing',
     });
 
     res.status(200).json({
-      message: "Order created successfully",
+      message: 'Order created successfully',
       order: razorpayOrder,
     });
   } catch (error) {
-    console.error("Failed to create an Order:", error);
+    console.error('Failed to create an Order:', error);
     res.status(500).json({
-      message: "Failed to create order.",error
+      message: 'Failed to create order.',
+      error,
     });
   }
 };
