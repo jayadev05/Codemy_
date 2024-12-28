@@ -22,6 +22,7 @@ const chatSchema = new mongoose.Schema(
     },
     lastMessage: {
       content: { type: String, default: '' },
+      contentType:{type:String,default:'text' , enum:['text','media']},
       senderId: { type: mongoose.Schema.Types.ObjectId },
       timestamp: { type: Date, default: Date.now }
     },

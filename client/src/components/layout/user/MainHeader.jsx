@@ -69,7 +69,7 @@ const MainHeader = () => {
     return () => {
       socketService.off('newNotification', handleNotification);
     };
-  }, [user._id]);
+  }, [user?._id]);
   
 
 

@@ -37,6 +37,14 @@ const messageSchema = new mongoose.Schema(
       maxLength: 5000
     },
 
+    contentType: {
+      type: String,
+      enum: ['text', 'media'],
+      default: 'text',
+    },
+
+
+
   status :{
     type:String,
     enum:['sent','delivered','read'],

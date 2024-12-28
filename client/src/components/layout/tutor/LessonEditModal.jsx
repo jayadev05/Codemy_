@@ -58,17 +58,26 @@ const LessonEditModal = ({
     }));
   };
 
+  //backend
+
   const handleFileUploadToCloudinary = async (file, fileType) => {
     try {
       const cloudName = "diwjeqkca";
       const uploadPreset = "unsigned_upload";
-
+  
       const formData = new FormData();
       formData.append("file", file);
       formData.append("upload_preset", uploadPreset);
-
+      
+      // Add specific handling for PDFs
+      if (fileType === 'file' && file.type === 'application/pdf') {
+        formData.append("resource_type", "auto");
+        // Add a flag to indicate this is a document
+        formData.append("flags", "attachment");
+      }
+  
       const res = await axios.post(
-        `https://api.cloudinary.com/v1_1/${cloudName}/upload`,
+        `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
         formData,
         {
           onUploadProgress: (progressEvent) => {
@@ -79,81 +88,95 @@ const LessonEditModal = ({
           },
         }
       );
-
-      // // For PDFs, always use Google Docs viewer
-      // if (fileType === "file") {
-      //   return `https://docs.google.com/viewer?url=${encodeURIComponent(
-      //     res.data.secure_url
-      //   )}&embedded=true`;
-      // }
-
+  
+      // For PDFs, construct a special URL that forces download/display
+      if (fileType === 'file' && file.type === 'application/pdf') {
+        // Add fl_attachment to force proper PDF handling
+        const url = res.data.secure_url.replace('/upload/', '/upload/fl_attachment/');
+        const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(res.data.secure_url)}&embedded=true`;
+        
+      console.log(viewerUrl)
+        console.log("PDF URL:", url);
+        return url;
+      }
+  
+      console.log("res.data:", res.data);
+      
       return res.data.secure_url;
+      
     } catch (error) {
       console.error("Detailed Cloudinary upload error:", error);
+      if (error.response) {
+        console.error("Error response:", error.response.data);
+        console.error("Error status:", error.response.status);
+        console.error("Error headers:", error.response.headers);
+      }
       toast.error("File upload failed. Please try again.");
       setProgress(0);
       return null;
     }
   };
-
+  
   const validateAndUploadFile = async (inputRef, fileType) => {
     const input = inputRef.current;
-
+  
     if (!input || !input.files) {
       console.error("File input reference is not available.");
       return null;
     }
-
+  
     const file = input.files[0];
     if (!file) {
       console.error("No file selected");
       return null;
     }
-
+  
     // Validation options for different file types
     const validationOptions = {
       video: {
         maxSize: 4 * 1024 * 1024 * 1024, // 4GB
         allowedTypes: ["video/mp4", "video/mpeg", "video/quicktime"],
-        maxSizeLabel: "4 GB",
+        maxSizeLabel: "4 GB"
       },
       image: {
-        maxSize: 5 * 1024 * 1024, // 5MB
+        maxSize: 10 * 1024 * 1024, // 10MB
         allowedTypes: ["image/jpeg", "image/png", "image/gif"],
-        maxSizeLabel: "5 MB",
+        maxSizeLabel: "10 MB"
       },
       file: {
         maxSize: 10 * 1024 * 1024, // 10MB
         allowedTypes: ["application/pdf"],
-        maxSizeLabel: "10 MB",
+        maxSizeLabel: "10 MB"
       }
     };
-
+  
     const options = validationOptions[fileType];
     const { maxSize, allowedTypes, maxSizeLabel } = options;
-
+  
     // File size check
     if (file.size > maxSize) {
       toast.error(`File size should be less than ${maxSizeLabel}`);
       input.value = null; // Reset file input
       return null;
     }
-
+  
     // File type check
     if (!allowedTypes.includes(file.type)) {
       toast.error(`Invalid file type. Allowed types: ${allowedTypes.join(", ")}`);
       input.value = null; // Reset file input
       return null;
     }
-
+  
     // Upload file
     const fileUrl = await handleFileUploadToCloudinary(file, fileType);
-    
+  
     // Reset input after upload
     input.value = null;
-
+  
     return fileUrl;
   };
+
+  //ui
 
   const handleVideoUpload = async () => {
     const videoUrl = await validateAndUploadFile(videoInputRef, 'video');

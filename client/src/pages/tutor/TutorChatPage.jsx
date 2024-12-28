@@ -3,7 +3,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, MoreHorizontal, Search, Bell, Check, CheckCheck, AlertTriangle, Trash2Icon } from "lucide-react";
+import {
+  Send,
+  MoreHorizontal,
+  Search,
+  Bell,
+  Check,
+  CheckCheck,
+  AlertTriangle,
+  Trash2Icon,
+  ImageIcon,
+  X,
+} from "lucide-react";
 import { socketService } from "@/services/socket";
 import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/userSlice";
@@ -16,6 +27,7 @@ import toast from "react-hot-toast";
 import { handleChatDeletion } from "@/utils/ChatUtils";
 import { updateChatsList } from "@/utils/ChatUtils";
 import ComposeModalUser from "@/components/layout/tutor/chat/StudentList";
+import axios from "axios";
 
 export default function TutorChatPage() {
   const tutor = useSelector(selectTutor);
@@ -29,15 +41,14 @@ export default function TutorChatPage() {
   const [students, setStudents] = useState([]);
   const [typingTimeout, setTypingTimeout] = useState(null);
   const [optionsModalOpen, setOptionsModalOpen] = useState(false);
-
+  const [selectedFile, setSelectedFile] = useState("");
+  const [previewUrl, setPreviewUrl] = useState("");
+  const fileInputRef = useRef(null);
+  const [progress, setProgress] = useState(0);
 
   const messagesEndRef = useRef(null);
 
   const userType = getUserRoleFromToken();
-
-
-
-
 
   //get userType form token
   function getUserRoleFromToken() {
@@ -70,23 +81,27 @@ export default function TutorChatPage() {
       setChats(filteredChat);
 
       if (selectedChat) {
+        console.log(selectedChat);
+
         const chatStillExists = filteredChat.find(
           (chat) => chat._id === selectedChat._id
         );
+        console.log("caht existrs?", chatStillExists);
         if (!chatStillExists) {
           setSelectedChat(null);
+          console.log("no chat");
         } else {
           const updatedSelectedChat = filteredChat.find(
             (chat) => chat._id === selectedChat._id
           );
           setSelectedChat(updatedSelectedChat);
+          console.log(updatedSelectedChat);
         }
       }
     } catch (error) {
       console.error("Error fetching chats:", error);
     }
   };
-
 
   // Fetch messages for a specific chat
   const fetchMessages = async (chatId) => {
@@ -120,7 +135,6 @@ export default function TutorChatPage() {
     fetchStudents();
   }, []);
 
-
   // Scroll to bottom when messages update or typing status changes
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -136,166 +150,160 @@ export default function TutorChatPage() {
 
   // Initialize chat data and socket connection
   useEffect(() => {
-    const initializeChat = async () => {
-      if (!tutor?._id) return;
+    let isSubscribed = true;
+    let currentTypingTimeout = null;
 
-      setLoading(true);
-      await fetchChats();
-      setLoading(false);
+    const handleStatusUpdate = async () => {
+      if (isSubscribed) {
+        console.log("fetching chats");
+        await fetchChats();
+      }
+    };
 
-   
-      // Socket event listeners
+    const handleRecieveMessage = (message) => {
+      if (!isSubscribed) return;
 
-      const handleStatusUpdate = async () => {
-        await fetchChats();  
-      };
-      
+      console.log("Received message event triggered:", message);
+      updateChatLastMessage(message);
 
-      const handleRecieveMessage = (message) => {
-
-        console.log("recieved message");
-
-        updateChatLastMessage(message);
-      
-        // Update messages if we're in the relevant chat
-        if (selectedChat?._id === message.chatId) {
+      setSelectedChat((currentSelectedChat) => {
+        // If message belongs to currently selected chat
+        if (currentSelectedChat?._id === message.chatId) {
           setMessages((prevMessages) => {
-            // Avoid duplicate messages
             if (prevMessages.some((m) => m._id === message._id)) {
               return prevMessages;
             }
             return [...prevMessages, message];
           });
+
           socketService.markMessagesRead({
-            chatId:selectedChat._id,
+            chatId: currentSelectedChat._id,
             userType,
             userId: tutor._id,
           });
         } else {
-          // If message is for a different chat, update the unread count
+          // Update unread counts for non-selected chats
           setChats((prevChats) =>
             prevChats.map((chat) => {
               if (chat._id === message.chatId) {
+                const isFromOtherUser = message.sender.userId !== user._id;
+                const isNotCurrentChat = currentSelectedChat?._id !== chat._id;
+
                 return {
                   ...chat,
                   unreadCount: {
                     ...chat.unreadCount,
-                    [userType === "user" ? "student" : "tutor"]: 
-                      (chat.unreadCount?.[userType === "user" ? "student" : "tutor"] || 0) + 1
-                  }
+                    [userType === "user" ? "student" : "tutor"]:
+                      isFromOtherUser && isNotCurrentChat
+                        ? (chat.unreadCount?.[
+                            userType === "user" ? "student" : "tutor"
+                          ] || 0) + 1
+                        : chat.unreadCount?.[
+                            userType === "user" ? "student" : "tutor"
+                          ] || 0,
+                  },
                 };
               }
               return chat;
             })
           );
         }
-      };
 
-      const handleTyping = ({ senderId }) => {
-       
-        console.log('Typing event received from:', senderId);
-       
-        
-          setIsTyping(true);
-        
-      };
+        return currentSelectedChat; // Keep current selected chat
+      });
+    };
 
-      const handleStopTyping = ({ senderId }) => {
-        console.log('Stop typing event received from:', senderId);
-        
-          setIsTyping(false);
-        
-      };
+    const handleTyping = ({ senderId }) => {
+      if (!isSubscribed) return;
+      console.log("Typing event received from:", senderId);
+      setIsTyping(true);
+    };
 
-      const handleMessageDelivered = (data) => {
-        if (!data?.messageIds?.length) {
-          console.error('Invalid message-delivered data:', data);
-          return;
-        }
-  
-        const { messageIds } = data;
-        
+    const handleStopTyping = ({ senderId }) => {
+      if (!isSubscribed) return;
+      console.log("Stop typing event received from:", senderId);
+      setIsTyping(false);
+    };
+
+    const handleMessageDelivered = (data) => {
+      if (!isSubscribed || !data?.messageIds?.length) return;
+
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) =>
+          data.messageIds.includes(msg._id)
+            ? { ...msg, status: "delivered" }
+            : msg
+        )
+      );
+    };
+
+    const handleMessageRead = (data) => {
+      if (!isSubscribed || !data) return;
+
+      const { chatId, userType, unreadCount, messageIds = [] } = data;
+      console.log("message-read event received:", {
+        chatId,
+        userType,
+        unreadCount,
+        messageIds,
+      });
+
+      setChats((prevChats) =>
+        prevChats.map((chat) =>
+          chat._id === chatId ? { ...chat, unreadCount } : chat
+        )
+      );
+
+      if (messageIds.length > 0) {
         setMessages((prevMessages) =>
           prevMessages.map((msg) =>
-            messageIds.includes(msg._id) 
-              ? { ...msg, status: 'delivered' } 
-              : msg
+            messageIds.includes(msg._id) ? { ...msg, status: "read" } : msg
           )
         );
-      };
-      
-      const handleMessageRead = (data) => {
-        if (!data) {
-          console.error('handleMessageRead received undefined data');
-          return;
-        }
-      
-        const { chatId, userType, unreadCount, messageIds = [] } = data;
-        console.log('message-read event received:', { chatId, userType, unreadCount, messageIds });
-      
-        // Update unread count in chats
-        setChats((prevChats) =>
-          prevChats.map((chat) =>
-            chat._id === chatId
-              ? {
-                  ...chat,
-                  unreadCount,
-                }
-              : chat
-          )
-        );
-      
-        // Update the status of all read messages
-        if (messageIds.length > 0) {
-          setMessages((prevMessages) =>
-            prevMessages.map((msg) =>
-              messageIds.includes(msg._id) ? { ...msg, status: 'read' } : msg
-            )
-          );
-        }
-      };
-      
-      
+      }
+    };
 
-      socketService.on("user-status-update", handleStatusUpdate);
-      socketService.on("receive-message", handleRecieveMessage);
-      socketService.on('message-delivered',handleMessageDelivered);
-      socketService.on('message-read', handleMessageRead);
-      socketService.on("typing", handleTyping);
-      socketService.on("stop-typing", handleStopTyping);
+    const initializeChat = async () => {
+      if (!tutor?._id) return;
 
-      return () => {
+      console.log("Socket connection initialized");
 
-        socketService.off("user-status-update", handleStatusUpdate);
-        socketService.off("receive-message", handleRecieveMessage);
-        socketService.off('message-delivered',handleMessageDelivered);
-        socketService.off('message-read', handleMessageRead);
-        socketService.off("typing", handleTyping);
-        socketService.off("stop-typing", handleStopTyping)
+      setLoading(true);
+      await fetchChats();
+      setLoading(false);
 
-        if (typingTimeout) clearTimeout(typingTimeout);;
-        
-     
-      };
+      // Only attach listeners if still subscribed
+      if (isSubscribed) {
+        socketService.on("user-status-update", handleStatusUpdate);
+        socketService.on("receive-message", handleRecieveMessage);
+        socketService.on("message-delivered", handleMessageDelivered);
+        socketService.on("message-read", handleMessageRead);
+        socketService.on("typing", handleTyping);
+        socketService.on("stop-typing", handleStopTyping);
+      }
     };
 
     initializeChat();
-  }, [tutor?._id,selectedChat?._id]);
 
-  useEffect(() => {
-    if (!selectedChat) {
-      setMessages([]);
-    }
+    // Cleanup function
+    return () => {
+      isSubscribed = false;
 
-    if (selectedChat) {
-      socketService.markMessagesRead({
-        chatId:selectedChat._id,
-        userType,
-        userId: tutor._id,
-      });
-    }
-      
-  }, [selectedChat,socketService]);
+      socketService.off("user-status-update", handleStatusUpdate);
+      socketService.off("receive-message", handleRecieveMessage);
+      socketService.off("message-read", handleMessageRead);
+      socketService.off("message-delivered", handleMessageDelivered);
+      socketService.off("typing", handleTyping);
+      socketService.off("stop-typing", handleStopTyping);
+
+      if (currentTypingTimeout) {
+        clearTimeout(currentTypingTimeout);
+      }
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+      }
+    };
+  }, [tutor?._id]);
 
   // Update chat's last message
   const updateChatLastMessage = (message) => {
@@ -306,6 +314,7 @@ export default function TutorChatPage() {
               ...chat,
               lastMessage: {
                 content: message.content,
+                contentType:message.contentType,
                 senderId: message.sender.userId,
                 timestamp: message.createdAt,
               },
@@ -319,33 +328,31 @@ export default function TutorChatPage() {
     try {
       await axiosInstance.put(`/chat/messages-read`, {
         chatId,
-        userType
+        userType,
       });
 
       socketService.markMessagesRead({
         chatId,
         userType,
-        userId: tutor._id 
+        userId: tutor._id,
       });
 
-      setChats(prevChats => 
-        prevChats.map(chat => {
+      setChats((prevChats) =>
+        prevChats.map((chat) => {
           if (chat._id === chatId) {
             return {
               ...chat,
               unreadCount: {
                 ...chat.unreadCount,
-                [userType === 'user' ? 'student' : 'tutor']: 0
-              }
+                [userType === "user" ? "student" : "tutor"]: 0,
+              },
             };
           }
           return chat;
         })
       );
-
-      
     } catch (error) {
-      console.error('Error marking messages as read:', error);
+      console.error("Error marking messages as read:", error);
     }
   };
 
@@ -353,16 +360,19 @@ export default function TutorChatPage() {
   const handleChatSelect = async (chat) => {
     try {
       // Fetch messages before updating selectedChat
-      const response = await axiosInstance.get(`/chat/get-messages/${chat._id}`);
-      
+      const response = await axiosInstance.get(
+        `/chat/get-messages/${chat._id}`
+      );
+
       // Update messages first
       setMessages(response.data);
-      
+
       // Then update selectedChat
       setSelectedChat(chat);
-  
+
       // Mark messages as read
-      const hasUnreadMessages = chat.unreadCount?.[userType === "user" ? "student" : "tutor"] > 0;
+      const hasUnreadMessages =
+        chat.unreadCount?.[userType === "user" ? "student" : "tutor"] > 0;
       if (hasUnreadMessages) {
         await markMessagesAsRead(chat._id, userType);
       }
@@ -374,51 +384,60 @@ export default function TutorChatPage() {
   // Handle sending messages
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!inputMessage.trim() || !selectedChat) return;
-  
+    if ((!inputMessage.trim() && !selectedFile) || !selectedChat) return;
+
     try {
       const messageData = {
         chatId: selectedChat._id,
-        sender: { userId: tutor._id, role: userType },
+        sender: {
+          userId: tutor._id,
+          role: userType,
+        },
         receiver: {
-          userId: userType === "user" ? selectedChat.tutorId._id : selectedChat.userId._id,
+          userId:
+            userType === "user"
+              ? selectedChat.tutorId._id
+              : selectedChat.userId._id,
           role: userType === "user" ? "tutor" : "user",
         },
-        content: inputMessage,
-        
+        content: selectedFile || inputMessage,
+        contentType: selectedFile ? "media" : "text",
       };
-    
-      const response = await axiosInstance.post("/chat/create-message", messageData);
-    
-      // Optimistically update UI
+
+      const response = await axiosInstance.post(
+        "/chat/create-message",
+        messageData
+      );
+
+      // Update UI
       setMessages((prevMessages) => [...prevMessages, response.data]);
-    
       setInputMessage("");
+      clearSelectedFile();
       updateChatLastMessage(response.data);
-    
+
       // Emit socket event
       socketService.sendMessage({
-        ...messageData,
-        _id: response.data._id,
-        timestamps:response.data.createdAt,
+        ...response.data,
+        timestamps: response.data.createdAt,
       });
     } catch (error) {
       console.error("Error sending message:", error);
+      toast.error("Failed to send message");
     }
-    
   };
 
   // Handle typing events
   const handleTyping = () => {
     if (selectedChat) {
-      const receiverId = userType === "user" 
-        ? selectedChat.tutorId._id 
-        : selectedChat.userId._id;
+      const receiverId =
+        userType === "user"
+          ? selectedChat.tutorId._id
+          : selectedChat.userId._id;
 
       socketService.sendTyping({
         chatId: selectedChat._id,
-        senderId: tutor._id, 
-        receiverId: receiverId
+        senderId: tutor._id,
+        receiverId: receiverId,
       });
 
       // Clear existing timeout
@@ -428,24 +447,24 @@ export default function TutorChatPage() {
       const timeout = setTimeout(() => {
         socketService.sendStopTyping({
           chatId: selectedChat._id,
-          senderId: tutor._id, 
-          receiverId: receiverId
+          senderId: tutor._id,
+          receiverId: receiverId,
         });
-      }, 1000); 
+      }, 1000);
 
       setTypingTimeout(timeout);
     }
   };
 
-   //deleting chat
-   const handleDeleteChat = async () => {
+  //deleting chat
+  const handleDeleteChat = async () => {
     await handleChatDeletion(selectedChat._id, tutor._id, axiosInstance, {
       onSuccess: () => {
         setSelectedChat(null);
-        setChats(prevChats => updateChatsList(prevChats, selectedChat._id));
+        setChats((prevChats) => updateChatsList(prevChats, selectedChat._id));
         setOptionsModalOpen(false);
       },
-      onError: () => toast.error("Failed to delete chat")
+      onError: () => toast.error("Failed to delete chat"),
     });
   };
 
@@ -454,14 +473,203 @@ export default function TutorChatPage() {
   };
 
   const MessageStatus = ({ status }) => {
-    if (!status || status === 'sent') {
+    if (!status || status === "sent") {
       return <Check className="h-4 w-4 text-gray-400" />;
-    } else if (status === 'delivered') {
+    } else if (status === "delivered") {
       return <CheckCheck className="h-4 w-4 text-gray-400" />;
-    } else if (status === 'read') {
+    } else if (status === "read") {
       return <CheckCheck className="h-4 w-4 text-blue-500" />;
     }
     return null;
+  };
+
+  const renderMessageContent = (message) => {
+    if (message.contentType === "text") {
+      return <p>{message.content}</p>;
+    } else if (message.contentType === "media") {
+      if (message.content.match(/\.(jpg|jpeg|png|gif)$/i)) {
+        return (
+          <img
+            src={message.content}
+            alt="Shared media"
+            className="max-w-[300px] rounded-lg cursor-pointer"
+            onClick={() => window.open(message.content, "_blank")}
+          />
+        );
+      } else if (message.content.match(/\.(mp4)$/i)) {
+        return (
+          <video controls className="max-w-[300px] rounded-lg">
+            <source src={message.content} type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+        );
+      }
+    }
+    return <p>Unsupported content</p>;
+  };
+
+  const handleFileUploadToCloudinary = async (file, fileType = "image") => {
+    try {
+      const cloudName = "diwjeqkca";
+      const uploadPreset = "unsigned_upload";
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", uploadPreset);
+
+      // Add specific handling for PDFs
+      if (fileType === "file" && file.type === "application/pdf") {
+        formData.append("resource_type", "auto");
+        // Add a flag to indicate this is a document
+        formData.append("flags", "attachment");
+      }
+
+      const res = await axios.post(
+        `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
+        formData,
+        {
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total
+            );
+            setProgress(percentCompleted);
+          },
+        }
+      );
+
+      // For PDFs, construct a special URL that forces download/display
+      if (fileType === "file" && file.type === "application/pdf") {
+        // Add fl_attachment to force proper PDF handling
+        const url = res.data.secure_url.replace(
+          "/upload/",
+          "/upload/fl_attachment/"
+        );
+        const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(
+          res.data.secure_url
+        )}&embedded=true`;
+
+        console.log(viewerUrl);
+        console.log("PDF URL:", url);
+        return url;
+      }
+
+      console.log("res.data:", res.data);
+
+      return res.data.secure_url;
+    } catch (error) {
+      console.error("Detailed Cloudinary upload error:", error);
+      if (error.response) {
+        console.error("Error response:", error.response.data);
+        console.error("Error status:", error.response.status);
+        console.error("Error headers:", error.response.headers);
+      }
+      toast.error("File upload failed. Please try again.");
+      setProgress(0);
+      return null;
+    }
+  };
+
+  const validateAndUploadFile = async (inputRef, fileType = "image") => {
+    const input = inputRef.current;
+
+    if (!input || !input.files) {
+      console.error("File input reference is not available.");
+      return null;
+    }
+
+    const file = input.files[0];
+    if (!file) {
+      console.error("No file selected");
+      return null;
+    }
+
+    // Validation options for different file types
+    const validationOptions = {
+      video: {
+        maxSize: 4 * 1024 * 1024, // 4GB
+        allowedTypes: ["video/mp4", "video/mpeg", "video/quicktime"],
+        maxSizeLabel: "400 MB",
+      },
+      image: {
+        maxSize: 10 * 1024 * 1024, // 10MB
+        allowedTypes: ["image/jpeg", "image/png", "image/gif"],
+        maxSizeLabel: "10 MB",
+      },
+      file: {
+        maxSize: 10 * 1024 * 1024, // 10MB
+        allowedTypes: ["application/pdf"],
+        maxSizeLabel: "10 MB",
+      },
+    };
+
+    const options = validationOptions[fileType];
+    const { maxSize, allowedTypes, maxSizeLabel } = options;
+
+    // File size check
+    if (file.size > maxSize) {
+      toast.error(`File size should be less than ${maxSizeLabel}`);
+      input.value = null; // Reset file input
+      return null;
+    }
+
+    // File type check
+    if (!allowedTypes.includes(file.type)) {
+      toast.error(
+        `Invalid file type. Allowed types: ${allowedTypes.join(", ")}`
+      );
+      input.value = null; // Reset file input
+      return null;
+    }
+
+    // Upload file
+    const fileUrl = await handleFileUploadToCloudinary(file, fileType);
+
+    // Reset input after upload
+    input.value = null;
+
+    return fileUrl;
+  };
+
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Create preview URL for images
+    if (file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    try {
+      // Determine file type
+      let fileType = "file";
+      if (file.type.startsWith("image/")) {
+        fileType = "image";
+      } else if (file.type.startsWith("video/")) {
+        fileType = "video";
+      }
+
+      // Upload file to Cloudinary
+      const fileUrl = await validateAndUploadFile(fileInputRef, fileType);
+      if (fileUrl) {
+        setSelectedFile(fileUrl);
+      }
+    } catch (error) {
+      console.error("Error handling file:", error);
+      toast.error("Failed to process file");
+      clearSelectedFile();
+    }
+  };
+
+  const clearSelectedFile = () => {
+    setSelectedFile(null);
+    setPreviewUrl("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   // Format timestamp
@@ -539,7 +747,6 @@ export default function TutorChatPage() {
               <div className="divide-y">
                 {chats
                   .filter((chat) => {
-                   
                     return (
                       chat &&
                       chat._id &&
@@ -607,8 +814,8 @@ export default function TutorChatPage() {
                             </div>
                             <div className="flex items-center justify-between">
                               <p className="text-sm text-gray-600 truncate">
-                                {chat.lastMessage?.content ||
-                                  "Start a conversation"}
+                              {chat.lastMessage?.contentType==='media'? `Media 📷` :chat.lastMessage?.content ||
+                                "Start a conversation"}
                               </p>
                               {chat.unreadCount?.[
                                 userType === "user" ? "student" : "tutor"
@@ -678,7 +885,6 @@ export default function TutorChatPage() {
                             : selectedChat.userId?.fullName?.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
-                      
                     </div>
                     <div>
                       <h2 className="font-semibold text-sm">
@@ -704,97 +910,135 @@ export default function TutorChatPage() {
                     </div>
                   </div>
                   <div className="relative">
-                  <Button
-                    onClick={() => handleOptionsModalOpen()}
-                    variant="ghost"
-                    size="icon"
-                  >
-                    <MoreHorizontal className="h-5 w-5" />
-                  </Button>
-                  {optionsModalOpen && (
-                    <div className="absolute right-4 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50 border border-gray-200">
-                      <button className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors">
-                        <AlertTriangle className="w-4 h-4 mr-2 text-orange-500" />
-                        Block Tutor
-                      </button>
-                      <button
-                        onClick={handleDeleteChat}
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors"
-                      >
-                        <Trash2Icon className="w-4 h-4 mr-2 text-orange-500" />
-                        Delete chat
-                      </button>
-                    </div>
-                  )}
-                </div>
+                    <Button
+                      onClick={() => handleOptionsModalOpen()}
+                      variant="ghost"
+                      size="icon"
+                    >
+                      <MoreHorizontal className="h-5 w-5" />
+                    </Button>
+                    {optionsModalOpen && (
+                      <div className="absolute right-4 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50 border border-gray-200">
+                        <button className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors">
+                          <AlertTriangle className="w-4 h-4 mr-2 text-orange-500" />
+                          Block Tutor
+                        </button>
+                        <button
+                          onClick={handleDeleteChat}
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors"
+                        >
+                          <Trash2Icon className="w-4 h-4 mr-2 text-orange-500" />
+                          Delete chat
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <ScrollArea className="flex-1 p-3">
                   <div className="space-y-3">
-                   {messages.map((message) => (
-  <div
-    key={message._id}
-    className={`flex gap-2 max-w-[85%] ${
-      message.sender.userId === tutor._id ? "justify-end ml-auto" : ""
-    }`}
-  >
-    {message.sender.userId !== tutor._id && (
-      <Avatar className="h-6 w-6 mt-1">
-        <img
-        crossOrigin="anonymous"
-        referrerPolicy="no-referrer"
-          src={
-            userType === "user"
-              ? selectedChat.tutorId?.profileImg
-              : selectedChat.userId?.profileImg
-          }
-          alt="Sender's avatar"
-        />
-        <AvatarFallback>
-          {userType === "tutor"
-            ? selectedChat.tutorId?.fullName?.charAt(0)
-            : selectedChat.userId?.fullName?.charAt(0)}
-        </AvatarFallback>
-      </Avatar>
-    )}
-    <div>
-      <div
-        className={`rounded-2xl p-2 text-sm ${
-          message.sender.userId === tutor._id
-            ? "bg-[#ff6738] text-white"
-            : "bg-[#ffeee8]"
-        }`}
-      >
-        <p>{message.content}</p>
-      </div>
-      <div className="flex mt-1">
-                      
-                        {message.sender.userId === tutor._id && (
-                    <MessageStatus status={message.status} />
-                  )}
-                    <span className="text-xs text-gray-500 ml-2">
-                          {formatTime(message.createdAt || message.timestamps)}
-                        </span>
+                    {messages.map((message) => (
+                      <div
+                        key={message._id}
+                        className={`flex gap-2 max-w-[85%] ${
+                          message.sender.userId === tutor._id
+                            ? "justify-end ml-auto"
+                            : ""
+                        }`}
+                      >
+                        {message.sender.userId !== tutor._id && (
+                          <Avatar className="h-6 w-6 mt-1">
+                            <img
+                              crossOrigin="anonymous"
+                              referrerPolicy="no-referrer"
+                              src={
+                                userType === "user"
+                                  ? selectedChat.tutorId?.profileImg
+                                  : selectedChat.userId?.profileImg
+                              }
+                              alt="Sender's avatar"
+                            />
+                            <AvatarFallback>
+                              {userType === "tutor"
+                                ? selectedChat.tutorId?.fullName?.charAt(0)
+                                : selectedChat.userId?.fullName?.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                        <div>
+                          <div
+                            className={`rounded-2xl p-2 text-sm ${
+                              message.sender.userId === tutor._id
+                                ? "bg-[#ff6738] text-white"
+                                : "bg-[#ffeee8]"
+                            }`}
+                          >
+                            {renderMessageContent(message)}
+                          </div>
+                          <div className="flex mt-1">
+                            {message.sender.userId === tutor._id && (
+                              <MessageStatus status={message.status} />
+                            )}
+                            <span className="text-xs text-gray-500 ml-2">
+                              {formatTime(
+                                message.createdAt || message.timestamps
+                              )}
+                            </span>
+                          </div>
                         </div>
-    </div>
-    {message.sender.userId === tutor._id && (
-      <Avatar className="h-6 w-6 mt-1">
-        <AvatarImage src={tutor?.profileImg} alt="Your avatar" />
-        <AvatarFallback>{tutor?.fullName.charAt(0)}</AvatarFallback>
-      </Avatar>
-    )}
-  </div>
-))}
-{isTyping && <TypingIndicator />}
+                        {message.sender.userId === tutor._id && (
+                          <Avatar className="h-6 w-6 mt-1">
+                            <AvatarImage
+                              src={tutor?.profileImg}
+                              alt="Your avatar"
+                            />
+                            <AvatarFallback>
+                              {tutor?.fullName.charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                      </div>
+                    ))}
+                    {isTyping && <TypingIndicator />}
 
-
-                    
                     <div ref={messagesEndRef}></div>
                   </div>
                 </ScrollArea>
 
                 <div className="p-3 border-t">
+                  {selectedFile && (
+                    <div className="mb-2 relative inline-block">
+                      {previewUrl && (
+                        <img
+                          src={previewUrl}
+                          alt="Preview"
+                          className="h-20 w-20 object-cover rounded-lg"
+                        />
+                      )}
+                      <button
+                        onClick={clearSelectedFile}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
                   <form onSubmit={handleSendMessage} className="flex gap-2">
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileSelect}
+                      accept="image/jpeg,image/png,image/gif,video/mp4"
+                      className="hidden"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <ImageIcon className="h-5 w-5 text-gray-500" />
+                    </Button>
                     <Input
                       className="flex-1 text-sm"
                       placeholder="Type your message"
@@ -803,6 +1047,7 @@ export default function TutorChatPage() {
                         setInputMessage(e.target.value);
                         handleTyping();
                       }}
+                      disabled={!!selectedFile}
                     />
                     <Button
                       type="submit"

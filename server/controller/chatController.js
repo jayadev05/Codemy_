@@ -172,22 +172,27 @@ const getMessagesByChatId = async (req, res) => {
 
 const createMessage = async (req, res) => {
   try {
-    const { chatId, sender, receiver, content,status } = req.body;
 
-    console.log(req.body);
+    const { chatId, sender, receiver, content,contentType,status } = req.body;
 
+    if(!chatId || !sender || !receiver || !content || !contentType ) return res.status(400).json({message:"Formdata is incomplete",body:req.body})
+
+    
     const newMessage = await Message.create({
       chatId,
       sender,
       receiver,
       content,
+      contentType,
       status
+      
     });
 
     // Update last message in chat
     await Chat.findByIdAndUpdate(chatId, {
       lastMessage: {
         content,
+        contentType,
         senderId: sender.userId,
         timestamp: new Date()
       },
