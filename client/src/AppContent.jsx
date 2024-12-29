@@ -41,6 +41,7 @@ import { selectUser } from "./store/slices/userSlice";
 import { selectTutor } from "./store/slices/tutorSlice";
 import { selectAdmin } from "./store/slices/adminSlice";
 import { useSelector } from "react-redux";
+import CouponManagement from "./pages/admin/CouponManage";
 
 function AppContent() {
   const user = useSelector(selectUser);
@@ -101,6 +102,7 @@ function AppContent() {
         <Route path="/admin/manage-tutors" element={<ProtectedRoute userType="admin"><TutorManagement /></ProtectedRoute>} />
         <Route path="/admin/manage-students" element={<ProtectedRoute userType="admin"><StudentManagement /></ProtectedRoute>} />
         <Route path="/admin/category" element={<ProtectedRoute userType="admin"><CategoryManagement/></ProtectedRoute>} />
+        <Route path="/admin/offer-management" element={<ProtectedRoute userType="admin"><CouponManagement/></ProtectedRoute>} />
         <Route path="/admin/manage-reports" element={<ProtectedRoute userType="admin"><ReportManagement/></ProtectedRoute>} />
 
         {/* user routes */}

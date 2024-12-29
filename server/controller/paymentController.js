@@ -6,7 +6,7 @@ const Cart = require("../model/cartModel");
 const Lesson = require("../model/lessonModel");
 const Course = require("../model/courseModel");
 const CourseProgress = require("../model/courseProgressModel");
-const Coupon = require('./models/couponModel');
+const Coupon = require('../model/couponModel');
 
 
 const createOrder = async (req, res) => {
@@ -17,37 +17,8 @@ const createOrder = async (req, res) => {
 
   try {
     
-    // Validate the coupon code
-    if (couponCode) {
-      const coupon = await Coupon.findOne({ code: couponCode, isActive: true });
-
-      
-
-      const now = new Date();
-      if (now < coupon.validFrom || now > coupon.validTo) {
-        return res.status(400).json({ message: 'Coupon has expired.' });
-      }
-
-      if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
-        return res.status(400).json({ message: 'Coupon usage limit exceeded.' });
-      }
-
-      // Calculate discount
-      if (coupon.discountType === 'Percentage') {
-        discountAmount = (amountInPaise * coupon.discountValue) / 100;
-      } else if (coupon.discountType === 'Flat') {
-        discountAmount = coupon.discountValue * 100; 
-      }
-
-      // Ensure discount does not exceed the total amount
-      discountAmount = Math.min(discountAmount, amountInPaise);
-
-      // Increment used count for the coupon
-      await Coupon.findByIdAndUpdate(coupon._id, { $inc: { usedCount: 1 } });
-    }
-
     const options = {
-      amount: amountInPaise - discountAmount, // Apply discount
+      amount: amountInPaise , 
       currency: 'INR',
       receipt: `order_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
     };
@@ -119,7 +90,18 @@ const verifyPayment = async (req, res) => {
       { new: true }
     );
 
+    console.log("Order",order);
+
     if (!order) throw new Error("Order not found");
+
+    //Update coupon used count
+
+    const updatedCoupon = await Coupon.findOne({code:order.discount?.couponCode});
+
+    updatedCoupon.usedCount+=1;
+
+    await updatedCoupon.save()
+    
 
     // Update student's active courses
     const updatedUser = await User.findOneAndUpdate(

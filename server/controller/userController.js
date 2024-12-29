@@ -1,6 +1,7 @@
 const User = require("../model/userModel");
 const Tutor = require("../model/tutorModel");
 const Admin = require("../model/adminModel");
+const Coupon = require("../model/couponModel");
 const bcrypt = require("bcryptjs");
 require("dotenv").config();
 const otpSchema = require("../model/otpStore");
@@ -399,6 +400,42 @@ const deleteNotification=async(req,res)=>{
   }
 }
 
+const getCoupons=async(req,res)=>{
+  try {
+  
+
+    const currentDate = new Date(); // Get the current date and time
+
+    const coupons = await Coupon.aggregate([
+      {
+        $match: {
+          isActive: true,                   
+          validTill: { $gt: currentDate },   
+        },
+      },
+      {
+        $addFields: {
+          isUnderUsageLimit: { $lt: ["$usedCount", "$usageLimit"] }, // Add a field for usage limit comparison
+        },
+      },
+      {
+        $match: {
+          isUnderUsageLimit: true, // Only include coupons that meet the usage limit criteria
+        },
+      },
+    ]);
+    
+    console.log(coupons);
+    
+    
+    return res.status(200).json({message:"Coupons fetched successfully",coupons})
+  
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({message:"Internal server error"})
+  }
+  }
+
 
 module.exports = {
   googleLogin,
@@ -409,7 +446,8 @@ module.exports = {
   sendOtp,
   changePassword,
   toggleNotifications,
-  deleteNotification
+  deleteNotification,
+  getCoupons
   
   
 };

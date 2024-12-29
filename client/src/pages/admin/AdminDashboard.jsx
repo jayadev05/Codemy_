@@ -152,7 +152,7 @@ const handleDeleteConfirm = async() => {
         {/* Header */}
         <header className="flex items-center justify-between border-b bg-white px-6 py-4 ">
           <div>
-            <h1 className="text-xl font-semibold">Dashboard</h1>
+            <h1 className="text-3xl font-bold">Dashboard</h1>
             <p className="text-sm text-gray-500">Good Morning</p>
           </div>
           <div className="flex items-center gap-4">

@@ -1,8 +1,11 @@
 const express = require("express");
 const userRoute = express.Router();
-const { googleLogin,signUp, login, logoutUser, updateUser, sendOtp, changePassword, toggleNotifications, deleteNotification } = require('../../controller/userController');
+const { googleLogin,signUp, login, logoutUser, updateUser, sendOtp, changePassword, toggleNotifications, deleteNotification, getCoupons } = require('../../controller/userController');
 const { verifyOtp}  = require('../../middleware/verifyOtp');
 const verifyUser = require("../../middleware/authMiddleware");
+
+userRoute.get('/get-coupons', getCoupons);
+
 
 userRoute.post('/sendotp', sendOtp);
 userRoute.post('/create',verifyOtp, signUp);

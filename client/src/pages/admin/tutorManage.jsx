@@ -270,7 +270,7 @@ const TutorManagement = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="flex items-center justify-between border-b bg-white px-6 py-4 ">
           <div>
-            <h1 className="text-xl font-semibold">Tutor Management</h1>
+            <h1 className="text-3xl font-bold">Tutor Management</h1>
           </div>
           <div className="flex items-center gap-4">
             <button className="p-2 rounded-full hover:bg-gray-100">

@@ -91,8 +91,8 @@ const Sidebar = ({ activeSection }) => {
     {
       title: "Coupon management",
       icon: Ticket,
-      href: "#",
-      isActive: activeSection === "Coupon management",
+      href: "/admin/offer-management",
+      isActive: activeSection === "Coupons",
     },
   ];
 

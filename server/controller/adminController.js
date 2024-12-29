@@ -3,6 +3,7 @@ const Tutor = require("../model/tutorModel");
 const Admin = require("../model/adminModel");
 const Course = require("../model/courseModel");
 const Report = require("../model/reportModel");
+const Coupon = require("../model/couponModel");
 const InstructorApplication = require("../model/tutorApplication");
 const Category = require("../model/categoryModel");
 const mongoose = require("mongoose");
@@ -1016,6 +1017,93 @@ const sendNotification = async (req, res) => {
   }
 };
 
+const getCoupons=async(req,res)=>{
+try {
+
+  const coupons= await Coupon.find();
+  
+  return res.status(200).json({message:"Coupons fetched successfully",coupons})
+
+} catch (error) {
+  console.log(error);
+  res.status(500).json({message:"Internal server error"})
+}
+}
+
+const createCoupon = async(req,res)=>{
+try {
+
+  const { code,
+    discountType,
+    discountValue,
+    usageLimit,
+    validTill,
+    isActive}=req.body
+
+    console.log(req.body);
+
+    if(!code || !validTill || !discountType || !discountValue ) return res.status(400).json({message:"Some data recieved is missing or invalid"});
+
+    const coupon = await Coupon.findOne({code})
+    if(coupon) return res.status(409).json("Coupon with same coupon code already exists!")
+
+    const newCoupon = new Coupon ({
+      code,
+      discountType,
+      discountValue,
+      validTill,
+      isActive,
+      usageLimit
+    })
+
+    await newCoupon.save();
+
+    return res.status(200).json({message:"Coupon created successfully"});
+  
+} catch (error) {
+  console.log(error);
+  res.status(500).json({message:"Internal server error"})
+}
+}
+
+const toggleCouponStatus=async(req,res)=>{
+  try {
+    
+    const {couponId}=req.params;
+    if(!couponId) return res.status(400).json({Mesage:"CouponId is missing"})
+
+    const coupon= await Coupon.findById(couponId);
+    if(!coupon) return res.status(404).jsn({message:"Coupon not found"});
+
+    coupon.isActive = !coupon.isActive;
+
+    await coupon.save();
+
+    return res.status(200).json({message:"Succesfully changed coupon status"});
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({message:"Internal server error"})
+  }
+}
+
+const deleteCoupon=async(req,res)=>{
+  try {
+    const {couponId} = req.params;
+    if(!couponId)return res.status(400).json({message:"couponId not recieved"});
+  
+    const coupon= await Coupon.findByIdAndDelete(couponId);
+
+    return res.status(200).json({message:"Coupons deleted successfully"})
+  
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({message:"Internal server error"})
+  }
+  }
+
+
+
 module.exports = {
   forgotPassword,
   resetPassword,
@@ -1042,4 +1130,8 @@ module.exports = {
   getReports,
   sendNotification,
   handleReportStatus,
+  getCoupons,
+  createCoupon,
+  deleteCoupon,
+  toggleCouponStatus
 };

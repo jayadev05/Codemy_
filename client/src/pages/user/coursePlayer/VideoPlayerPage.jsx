@@ -17,6 +17,7 @@ import {
   LucideBadgePlus,
   LucideMessageCircleMore,
   LucideThumbsUp,
+  ThumbsUp,
 } from "lucide-react";
 import Header from "../../../components/layout/Header";
 import MainHeader from "../../../components/layout/user/MainHeader";
@@ -28,6 +29,10 @@ import { selectUser } from "../../../store/slices/userSlice";
 import toast from "react-hot-toast";
 import ReportModal from "../../../components/utils/ReportModal";
 import { selectCourse } from "@/store/slices/courseSlice";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function CoursePlayer() {
   const user = useSelector(selectUser);
@@ -51,6 +56,7 @@ export default function CoursePlayer() {
   const courseId=useSelector(selectCourse);
 
   const [courseRating, setCourseRating] = useState(0);
+  const [feedback, setFeedback] = useState('');
   const [hoveredRating, setHoveredRating] = useState(0);
   const [ratingModalOpen, setRatingModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
@@ -131,6 +137,7 @@ export default function CoursePlayer() {
         );
 
         setAlreadyRated(response.data?.hasRated || false);
+
       } catch (error) {
         if (error.response) {
           console.error("Error response:", error.response.data);
@@ -302,6 +309,7 @@ export default function CoursePlayer() {
           courseId: courseId,
           userId: user._id,
           rating: courseRating,
+          feedback
         }
       );
 
@@ -411,39 +419,60 @@ export default function CoursePlayer() {
         )}
 
         {ratingModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4 transform transition-all">
-              <div className="relative">
-                <button
-                  onClick={() => setRatingModalOpen(false)}
-                  className="absolute -right-2 -top-2 text-gray-500 hover:text-gray-700"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-                <div className="text-center">
-                  <div className="mb-3 inline-flex p-3 bg-yellow-100 rounded-full">
-                    <LucideThumbsUp className="w-12 h-12 text-yellow-500" />
-                  </div>
-                  <div className="flex justify-center items-center mb-3">
-                    {renderStarRating()}
-                  </div>
-
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2"></h3>
-                  <p className="text-gray-600 mb-6">
-                    You've completed the course! Please give the course a
-                    rating.
-                  </p>
-                  <button
-                    onClick={() => submitCourseReview()}
-                    disabled={!courseRating}
-                    className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-                  >
-                    Submit Rating
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+         <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4 transform transition-all">
+           <div className="relative">
+             <button
+               onClick={() => setRatingModalOpen(false)}
+               className="absolute -right-2 -top-2 text-gray-500 hover:text-gray-700"
+             >
+               <X className="w-6 h-6" />
+             </button>
+             
+             <div className="text-center">
+               <div className="mb-3 inline-flex p-3 bg-yellow-100 rounded-full">
+                 <ThumbsUp className="w-12 h-12 text-yellow-500" />
+               </div>
+               
+               <p className="text-gray-600 mb-6">
+                 You've completed the course! Please give the course a rating.
+               </p>
+   
+               <div className="flex justify-center items-center mb-6">
+                 {renderStarRating()}
+               </div>
+   
+               <div className="space-y-4 mb-6">
+                 <div className="space-y-2">
+                   <Label htmlFor="feedback" className="text-left block">Share your feedback</Label>
+                   <Textarea
+                     id="feedback"
+                     placeholder="Tell us what you think... Your feedback helps us improve."
+                     className="min-h-[120px] resize-none"
+                     value={feedback}
+                     onChange={(e) => setFeedback(e.target.value)}
+                     maxLength={250}
+                   />
+                 </div>
+                 <div className="text-sm text-muted-foreground text-right">
+                   {feedback.length}/250 characters
+                 </div>
+               </div>
+   
+               <button
+                 onClick={() => {
+                   submitCourseReview(feedback)
+                   setFeedback("")
+                 }}
+                 disabled={!courseRating}
+                 className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+               >
+                 Submit Rating
+               </button>
+             </div>
+           </div>
+         </div>
+       </div>
         )}
 
         <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">

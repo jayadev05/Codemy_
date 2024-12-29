@@ -713,7 +713,7 @@ const handleCertificate = async (req, res) => {
 };
 
 const rateCourse = async (req, res) => {
-  const { rating, courseId, userId } = req.body;
+  const { rating, feedback, courseId, userId } = req.body;
 
   if (!rating || !courseId || !userId) {
     return res.status(400).json({ message: "Missing or invalid details." });
@@ -726,6 +726,9 @@ const rateCourse = async (req, res) => {
     }
 
     const existingRating = await Ratings.findOne({ userId, courseId });
+
+    //checking if lesson has been updated 
+
     const courseLessons = await Lesson.find({ _id: { $in: course.lessons } });
     
     let isLessonUpdated = false;
@@ -741,11 +744,15 @@ const rateCourse = async (req, res) => {
 
  
     if (existingRating && isLessonUpdated) {
-     
+
+     //remove old rating
       course.ratings = course.ratings.filter(r => r !== existingRating.rating);
+
+    //add new rating
       course.ratings.push(rating);
 
       existingRating.rating = rating;
+      existingRating.feedback= feedback;
       existingRating.updatedAt= new Date();
 
       await existingRating.save();
@@ -763,9 +770,13 @@ const rateCourse = async (req, res) => {
     }
 
     // For initial rating
+
     course.ratings.push(rating);
+
+    //calcuate average rating
     const totalRatings = course.ratings.length;
     const averageRating = course.ratings.reduce((sum, value) => sum + value, 0) / totalRatings;
+
     course.averageRating = averageRating;
 
     await course.save();
@@ -775,6 +786,7 @@ const rateCourse = async (req, res) => {
       userId,
       courseId,
       rating,
+      feedback
     });
 
     await userRating.save();
@@ -791,7 +803,6 @@ const rateCourse = async (req, res) => {
 
 const getRatings = async (req, res) => {
   
-
   try {
     const { userId, courseId } = req.query;
 
@@ -807,6 +818,7 @@ const getRatings = async (req, res) => {
     console.log("Error in fetching ratings", error);
     res.status(500).json({ message: "Internal server error" });
   }
+
 };
 
 module.exports = {
