@@ -21,6 +21,7 @@ const {
 } = require("../utils/nodeMailer");
 const generateDefaultPassword = require("../utils/generateDefaultPasswordd");
 const { getIO } = require("../socket/socketEvent");
+const Payouts = require("../model/payoutRequestModel");
 require("dotenv").config();
 
 // Controllers
@@ -1102,6 +1103,69 @@ const deleteCoupon=async(req,res)=>{
   }
   }
 
+  const getPayoutRequests=async(req,res)=>{
+    try {
+    
+      const payoutRequests= await Payouts.find().populate('tutorId','fullName profileImg email').sort({requestedAt:-1});
+      
+      return res.status(200).json({message:"Payout requests fetched successfully",payoutRequests})
+    
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({message:"Internal server error"})
+    }
+    }
+
+    const handlePayoutRequest = async (req, res) => {
+      try {
+        const { action, requestId } = req.body;
+        if (!action || !requestId) {
+          return res.status(400).json({ message: "Payload data is missing/incorrect" });
+        }
+    
+  
+        const payoutRequest = await Payouts.findById(requestId);
+
+        const tutor = await Tutor.findById(payoutRequest.tutorId);
+        if (!tutor) {
+          throw new Error("Tutor not found");
+        }
+    
+        if (!payoutRequest) {
+          return res.status(404).json({ message: "Payout request not found for the given tutor" });
+        }
+    
+        // Update the status based on the action
+        if (action === 'approve') {
+          payoutRequest.status = 'approved';
+        } 
+        
+        else if (action === 'reject') {
+          payoutRequest.status = 'rejected';
+          tutor.amountWithdrawn = tutor.amountWithdrawn - payoutRequest.amount;
+        } 
+
+        else 
+        {
+          return res.status(400).json({ message: "Invalid action" });
+        }
+    
+        payoutRequest.processedAt=new Date();
+    
+        await payoutRequest.save();
+        await tutor.save();
+    
+        
+        res.status(200).json({
+          message: `Payout request ${action.toLowerCase()} successfully`,
+          payoutRequest,
+        });
+      } catch (error) {
+        console.log(error);
+        res.status(500).json({ message: "Internal server error" });
+      }
+    };
+    
 
 
 module.exports = {
@@ -1133,5 +1197,7 @@ module.exports = {
   getCoupons,
   createCoupon,
   deleteCoupon,
-  toggleCouponStatus
+  toggleCouponStatus,
+  getPayoutRequests,
+  handlePayoutRequest
 };

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { BookOpen,  Star, Users, Search, Bell } from 'lucide-react';
 import Sidebar from '../../components/layout/tutor/Sidebar';
@@ -7,6 +7,10 @@ import { logoutTutor, selectTutor } from '../../store/slices/tutorSlice';
 import defProfile from '../../assets/user-profile.png'
 import { useNavigate } from 'react-router';
 import { toast } from 'react-hot-toast';
+import { Button } from '@/components/ui/button';
+import { WithdrawDialog } from '@/components/layout/tutor/WithdrawalModal';
+import { WithdrawalHistory } from '@/components/layout/tutor/WithdrawalHistory';
+import axiosInstance from '@/config/axiosConfig';
 
 const chartData = [
   { name: "Mon", value1: 70, value2: 120, value3: 90 },
@@ -35,16 +39,47 @@ const StatCard = ({ icon: Icon, label, value, iconColor, iconBg }) => (
 const Dashboard = () => {
 
   const tutor =useSelector(selectTutor);
-  const navigate=useNavigate();
-  const dispatch=useDispatch();
 
- 
+  const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false)
+  const[payoutsHistory,setPayoutsHistory]=useState([]) 
+
+ useEffect(() => {
+  const fetchPayoutHistory = async () => {
+    if (!tutor._id) {
+      console.log('Tutor ID is missing');
+      return;
+    }
+
+    try {
+      const response = await axiosInstance.get(`/tutor/payouts-history/${tutor._id}`);
+      setPayoutsHistory(response.data.payouts);
+    } catch (error) {
+      console.log('Error fetching payout history:', error);
+    }
+  };
+
+  fetchPayoutHistory();
+
+}, [tutor._id]);  
+
+const getDecimalValue = (decimalObj) => {
+  if (!decimalObj) return 0;
+  return parseFloat(decimalObj.$numberDecimal || 0);
+};
+
+
+const totalRevenue = getDecimalValue(tutor.totalRevenue);
+const amountWithdrawn = getDecimalValue(tutor.amountWithdrawn);
+const availableBalance = totalRevenue - amountWithdrawn;
+
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
       {/* Sidebar */}
       
-   <Sidebar activeSection={"Dashboard"}/>
+      <div className="sticky top-0 h-screen">
+<Sidebar activeSection={"Dashboard"} />
+</div>
 
       {/* Main Content */}
       <main className="w-full">
@@ -110,24 +145,27 @@ const Dashboard = () => {
           <div className="mb-6 grid grid-cols-3 gap-6">
             <StatCard
               label="Total Revenue"
-              value="₹165,804"
+              value={`₹ ${totalRevenue.toLocaleString()}`}
               iconColor="text-orange-500"
               iconBg="bg-orange-50"
             />
             <StatCard
               label="Total Withdrawals"
-              value="₹132,184"
+              value={`₹ ${amountWithdrawn.toLocaleString()}`}
               iconColor="text-purple-500"
               iconBg="bg-purple-50"
             />
             <div className="flex items-center justify-between rounded-lg border bg-white p-6">
               <div>
                 <p className="text-sm text-gray-500">Available Balance</p>
-                <p className="text-2xl font-semibold">₹18,184</p>
+                <p className="text-2xl font-semibold">₹ {availableBalance.toLocaleString()}</p>
               </div>
-              <button className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
-                Withdraw Money
-              </button>
+              <Button
+                    className="bg-orange-500 hover:bg-orange-600"
+                    onClick={() => setWithdrawDialogOpen(true)}
+                  >
+                    Withdraw
+                  </Button>
             </div>
           </div>
 
@@ -195,9 +233,18 @@ const Dashboard = () => {
                 </ResponsiveContainer>
               </div>
             </div>
+            <WithdrawalHistory
+              withdrawals={payoutsHistory}
+            />
           </div>
         </div>
       </main>
+      <WithdrawDialog
+        open={withdrawDialogOpen}
+        onOpenChange={setWithdrawDialogOpen}
+        availableBalance={availableBalance}
+        tutorId={tutor._id}
+      />
     </div>
   );
 };

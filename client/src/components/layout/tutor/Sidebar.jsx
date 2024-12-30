@@ -98,12 +98,7 @@ const Sidebar = ({ activeSection }) => {
       href: "/tutor/settings",
       isActive: activeSection === "Settings and profile",
     },
-    {
-      title: "Offer management",
-      icon: Ticket,
-      href: "#",
-      isActive: activeSection === "Offer management",
-    },
+  
   ];
 
  

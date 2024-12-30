@@ -20,8 +20,10 @@ const tutorSlice = createSlice({
         jobTitle = '',
         bio = '',
         totalRevenue = 0,
+        amountWithdrawn = 0,
         credentials = [],
         isActive,
+
       } = action.payload;
 
       state.currentTutor = {
@@ -34,6 +36,7 @@ const tutorSlice = createSlice({
         jobTitle,
         bio,
         totalRevenue,
+        amountWithdrawn,
         credentials,
         isActive
       };

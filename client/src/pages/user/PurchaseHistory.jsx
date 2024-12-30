@@ -87,7 +87,7 @@ const PurchaseHistory = () => {
         theme: {
           color: "#fa7516",
         },
-        method: order.paymentMethod,
+        method: order.payment?.paymentMethod,
       };
 
       const razorpay = new window.Razorpay(options);

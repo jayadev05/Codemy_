@@ -1,6 +1,6 @@
 const express = require("express")
 const adminRoute = express.Router()
-const { logoutAdmin,getCertificates,forgotPassword,existsCheck,approveTutor,submitInstructorApplication,getInstructorApplications,getTutors,reviewInstructorApplication,resetPassword,getUsers,listUser,unlistUser,unlisTtutor,lisTtutor, getCategories, addCategory, updateCategory, deleteCategory, listCourse, unlistCourse, getReports, openReport, sendNotification, handleReportStatus, getCoupons, createCoupon, deleteCoupon, toggleCouponStatus} = require("../../controller/adminController")
+const { logoutAdmin,getCertificates,forgotPassword,existsCheck,approveTutor,submitInstructorApplication,getInstructorApplications,getTutors,reviewInstructorApplication,resetPassword,getUsers,listUser,unlistUser,unlisTtutor,lisTtutor, getCategories, addCategory, updateCategory, deleteCategory, listCourse, unlistCourse, getReports, openReport, sendNotification, handleReportStatus, getCoupons, createCoupon, deleteCoupon, toggleCouponStatus, getPayoutRequests, handlePayoutRequest} = require("../../controller/adminController")
 const handleTutorUpload = require('../../middleware/multer');
 const verifyUser = require("../../middleware/authMiddleware");
 
@@ -12,6 +12,7 @@ adminRoute.get('/get-categories',getCategories);
 adminRoute.get('/get-reports',verifyUser,getReports);
 adminRoute.get('/get-coupons',verifyUser,getCoupons);
 adminRoute.get('/certificates/:certificateId', getCertificates);
+adminRoute.get('/payout-requests', getPayoutRequests);
 
 adminRoute.post('/forgot-password', forgotPassword);
 adminRoute.post('/reset/:token', resetPassword);
@@ -31,6 +32,7 @@ adminRoute.put("/listtutor/:id",verifyUser,lisTtutor)
 adminRoute.put("/unlisttutor/:id",verifyUser,unlisTtutor)
 adminRoute.put("/unlistCourse/:id",verifyUser,unlistCourse)
 adminRoute.put("/listCourse/:id",verifyUser,listCourse)
+adminRoute.put("/handle-payout",verifyUser,handlePayoutRequest)
 adminRoute.put("/toggle-coupon-status/:couponId",verifyUser,toggleCouponStatus);
 adminRoute.put("/update-category/:id",verifyUser,updateCategory)
 adminRoute.put("/handle-report",verifyUser,handleReportStatus)

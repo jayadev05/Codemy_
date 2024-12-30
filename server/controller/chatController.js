@@ -28,7 +28,7 @@ const getChatsByUserId = async (req, res) => {
     
 
     res.status(200).json(chats);
-    console.log(chats);
+   
   } catch (error) {
     console.error("Error fetching chats:", error);
     res.status(500).json({ message: error.message });

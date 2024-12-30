@@ -1,23 +1,108 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Header from '../../components/layout/Header';
 import MainHeader from '../../components/layout/user/MainHeader';
 import SecondaryFooter from '../../components/layout/user/SecondaryFooter';
+import axiosInstance from '@/config/axiosConfig';
+import { clearCart } from '@/store/slices/cartSlice';
+import toast from 'react-hot-toast';
+import { useDispatch } from 'react-redux';
+import axios from 'axios';
 
 const PaymentFailed = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
+  const dispatch=useDispatch();
 
  
-  const order = {
-    orderId: orderId || 'ORD-404',
-    courseName: 'Advanced Web Development',
-    totalAmount: 3500,
+  const [order,setOrder]=useState({});
+
+  useEffect(()=>{
+    const fetchOrderDetails=async()=>{
+      try {
+
+        const response=await axiosInstance.get(`http://localhost:3000/checkout/get-order-details/${orderId}`);
+
+        setOrder(response.data.order);
+
+      } catch (error) {
+
+        console.log(error);
+        
+      }
+    }
+
+    fetchOrderDetails()
+  },[])
+
+  const handleRetryPayment = async () => {
+    try {
+      
+      //Razorpay payment retry option
+
+      const options = {
+        key: "rzp_test_PEILuGv0t2XI3a",
+        amount: order.totalAmount,
+        currency: 'INR',
+        name: "Codemy",
+        description: "Purchase Courses",
+        order_id: order.orderId,
+        handler: async function (paymentResponse) {
+          try {
+            await verifyRazorpayPayment(paymentResponse);
+          } catch (error) {
+            console.log(error);
+            navigate(`/user/payment-failure/${order.orderId}`);
+            toast.error(
+              "We couldn't verify your payment details 💳. Please check and retry"
+            );
+          }
+        },
+
+        modal: {
+          ondismiss: function () {
+            toast.error("Oops! The payment failed. Please retry.", {
+              icon: "💸",
+            });
+          },
+        },
+        theme: {
+          color: "#fa7516",
+        },
+        method: order.payment?.paymentMethod,
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.open();
+
+    } catch (error) {
+      console.error("Failed to retry payment:", error);
+      setError("Failed to retry payment. Please try again later.");
+    } finally {
+      
+    }
   };
 
-  const handleRetryPayment = () => {
-    console.log('Retrying payment for order:', orderId);
-   
+  const verifyRazorpayPayment = async (paymentResponse) => {
+    try {
+      const { razorpay_payment_id, razorpay_order_id, razorpay_signature } =
+        paymentResponse;
+
+      const response = await axios.post(
+        "http://localhost:3000/checkout/verify-payment",
+        { razorpay_order_id, razorpay_payment_id, razorpay_signature }
+      );
+
+      if (response.status === 200) {
+        console.log(response, "asdasd");
+        const orderId = response.data.orderId;
+        navigate(`/user/payment-success/${orderId}`);
+        dispatch(clearCart(cart));
+        toast.success("Course purchased successfully!");
+      }
+    } catch (error) {
+      console.log("Error in verifying payment", error);
+    }
   };
 
   return (
@@ -40,8 +125,8 @@ const PaymentFailed = () => {
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">Order Details</h2>
             <div className="bg-red-50 rounded-lg p-4 space-y-2">
               <p className="text-gray-700"><span className="font-medium">Order Number:</span> {order.orderId}</p>
-              <p className="text-gray-700"><span className="font-medium">Course:</span> {order.courseName}</p>
-              <p className="text-gray-700"><span className="font-medium">Total:</span> ₹{order.totalAmount}</p>
+              <p className="text-gray-700"><span className="font-medium">Payment ID:</span> {order.payment?.paymentId}</p>
+              <p className="text-gray-700"><span className="font-medium">Total Amount:</span> ₹{order.totalAmount/100}</p>
             </div>
           </div>
           <div className="flex flex-col sm:flex-row justify-between gap-4">

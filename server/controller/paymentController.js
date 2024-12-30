@@ -3,6 +3,7 @@ const { razorpayInstance } = require("../config/paymentConfig");
 const Order = require("../model/orderModel");
 const User = require("../model/userModel");
 const Cart = require("../model/cartModel");
+const Tutor = require("../model/tutorModel");
 const Lesson = require("../model/lessonModel");
 const Course = require("../model/courseModel");
 const CourseProgress = require("../model/courseProgressModel");
@@ -96,11 +97,15 @@ const verifyPayment = async (req, res) => {
 
     //Update coupon used count
 
-    const updatedCoupon = await Coupon.findOne({code:order.discount?.couponCode});
+    if(order.discount.couponCode){
+      const updatedCoupon = await Coupon.findOne({code:order.discount?.couponCode});
 
-    updatedCoupon.usedCount+=1;
+      updatedCoupon.usedCount+=1;
+  
+      await updatedCoupon.save()
+    }
 
-    await updatedCoupon.save()
+  
     
 
     // Update student's active courses
@@ -116,6 +121,19 @@ const verifyPayment = async (req, res) => {
       { _id: { $in: order.courses } },
       { $inc: { enrolleeCount: 1 } }
     );
+
+    // Increase revenue for tutor
+    const courses = await Course.find({_id:{$in:order.courses}});
+
+    for (const course of courses) {
+    
+      await Tutor.findOneAndUpdate(
+          { _id: course.tutorId }, 
+          { $inc: {totalRevenue: order.totalAmount/100 } }, 
+          { new: true } 
+      );
+  }
+    
 
     // Prepare and insert course progress for enrolled courses
     const lessons = await Lesson.find({ courseId: { $in: order.courses } });

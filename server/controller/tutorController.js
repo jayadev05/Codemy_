@@ -1,5 +1,9 @@
 const Tutor=require("../model/tutorModel");
-const bcrypt = require ("bcryptjs")
+const User=require("../model/userModel");
+const Ratings=require("../model/ratingsModel");
+const bcrypt = require ("bcryptjs");
+const Payouts = require("../model/payoutRequestModel");
+const payoutRequestModel = require("../model/payoutRequestModel");
 
 
 const changePassword = async (req, res) => {
@@ -79,4 +83,85 @@ const changePassword = async (req, res) => {
     res.status(200).json({ message: 'Logged out successfully' });
 };
 
-module.exports={logoutTutor,changePassword,updateTutor};
+const getReviewsByCourseId=async (req,res)=>{
+  try {
+
+    const {courseId} =req.params;
+    if(!courseId)return res.status(400).josn({message:"TutorID is missing / invalid"})
+
+    const reviews = await Ratings.find({courseId})
+    .populate('userId','fullName profileImg');
+
+    res.status(200).json({message:"Reviews fetched successfully",reviews});
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({message:"Failed to get reviews :Internal server error"});
+  }
+}
+
+const makePayoutRequest=async(req,res)=>{
+  try {
+    
+    const {amount,tutorId,paymentDetails}=req.body;
+
+    console.log(req.body)
+
+    if(!amount || !tutorId) return res.status(400).json({message:"Payload is missing / incorrect"});
+
+
+    const existingRequest = await Payouts.findOne({tutorId,status:'pending'});
+    if(existingRequest) return res.status(409).json({message:"Payout request already exists"});
+
+    const tutor = await Tutor.findById(tutorId);
+    if (!tutor) {
+      throw new Error("Tutor not found");
+    }
+
+    const payoutRequest = new Payouts({
+      amount,
+      tutorId,
+      requestedAt:new Date(),
+      status:'pending',
+      paymentDetails
+    });
+
+    //Increase the amount withdrawn
+
+    tutor.amountWithdrawn = tutor.amountWithdrawn + amount;
+
+    await payoutRequest.save();
+    await tutor.save();
+
+   
+
+    res.status(200).json({message:"Payout requested successfully",tutor});
+
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({message:"Failed to make payout request :Internal server error"});
+  }
+}
+
+const getPayoutsHistory = async (req, res) => {
+  try {
+    const { tutorId } = req.params;
+
+    if (!tutorId) {
+      return res.status(400).json({ message: "tutorID is missing" });
+    }
+    
+    const payouts = await Payouts.find({ tutorId }).sort({requestedAt:-1});
+
+    res.status(200).json({ message: "Fetched payouts history successfully", payouts });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to get payouts history: Internal server error" });
+  }
+};
+
+
+
+module.exports={logoutTutor,changePassword,updateTutor,getReviewsByCourseId,makePayoutRequest,getPayoutsHistory};

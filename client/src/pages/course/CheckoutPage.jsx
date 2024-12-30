@@ -99,7 +99,7 @@ export default function CheckoutPage() {
         userId: user._id,
         courses,
         paymentMethod,
-        couponCode:appliedCoupon.code
+        couponCode:appliedCoupon?.code
       })
 
       const { id: razorpayOrderId, amount, currency } = response.data.order
@@ -201,6 +201,7 @@ export default function CheckoutPage() {
         toast.success("Course purchased successfully!")
       }
     } catch (error) {
+      navigate(`/user/payment-failure/${orderId}`)
       console.log("Error in verifying payment", error)
     }
   }
