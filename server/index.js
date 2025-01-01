@@ -10,6 +10,8 @@ const courseRoute = require("./routes/course/courseRoutes");
 const paymentRoute = require("./routes/payment/paymentRoutes");
 const chatRoute = require("./routes/chat/chatRoutes");
 
+
+
 const app = express();
 // Create HTTP server
 const server = require("http").createServer(app);

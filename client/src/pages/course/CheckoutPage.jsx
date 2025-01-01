@@ -76,11 +76,10 @@ export default function CheckoutPage() {
     const fetchCoupons = async () => {
       setIsLoadingCoupons(true)
       try {
-        const response = await axiosInstance.get('/user/get-coupons')
+        const response = await axiosInstance.get(`/user/get-coupons/${user._id}`);
         setAvailableCoupons(response.data.coupons)
       } catch (error) {
-        console.log(error)
-        toast.error("Failed to load available coupons")
+        console.log(error);
       } finally {
         setIsLoadingCoupons(false)
       }
@@ -190,7 +189,8 @@ export default function CheckoutPage() {
       const response = await axios.post('http://localhost:3000/checkout/verify-payment', {
         razorpay_order_id,
         razorpay_payment_id,
-        razorpay_signature
+        razorpay_signature,
+        userId:user._id
       })
 
       if (response.status === 200) {
@@ -212,14 +212,15 @@ export default function CheckoutPage() {
       return
     }
 
-    const coupon = availableCoupons.find((coupon) => coupon.code === couponCode)
+    const coupon = availableCoupons.find((coupon) => coupon.code === couponCode);
+
     if (!coupon) {
       toast.error("Invalid coupon code")
       return
     }
 
     setAppliedCoupon(coupon)
-    toast.success(`Coupon ${couponCode} applied successfully!`)
+    toast.success(`Coupon ${couponCode} applied successfully!`,{icon:'🎉'})
   }
 
   const removeCoupon = () => {

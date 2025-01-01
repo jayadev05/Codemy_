@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const Chat = require('../model/chatModel');
 const Message=require('../model/messageModel')
 const { chatHandler } = require("./chatHandler");
+const { videoCallHandler } = require('./videoCallHandler');
 
 let onlineTutors = {};
 let onlineStudents = {};
@@ -154,6 +155,11 @@ const initializeSocket = (server) => {
   
       // Initialize chat handler
       chatHandler(io, socket, onlineTutors, onlineStudents);
+
+      // Initialize video call handler
+      videoCallHandler(io, socket, onlineTutors, onlineStudents);
+
+
   
       socket.on('join', ({ userId }) => {
         socket.join(userId);

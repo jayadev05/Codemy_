@@ -79,7 +79,7 @@ const Sidebar = ({ activeSection }) => {
     {
       title: "Billing",
       icon: CreditCard,
-      href: "#",
+      href: "/admin/billing",
       isActive: activeSection === "Billing",
     },
     {

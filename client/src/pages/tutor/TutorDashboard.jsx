@@ -38,14 +38,14 @@ const StatCard = ({ icon: Icon, label, value, iconColor, iconBg }) => (
 
 const Dashboard = () => {
 
-  const tutor =useSelector(selectTutor);
-
+  const tutorState=useSelector(selectTutor);
+  const [tutor,setTutor]=useState({});
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false)
   const[payoutsHistory,setPayoutsHistory]=useState([]) 
 
  useEffect(() => {
   const fetchPayoutHistory = async () => {
-    if (!tutor._id) {
+    if (!tutorState._id) {
       console.log('Tutor ID is missing');
       return;
     }
@@ -58,9 +58,19 @@ const Dashboard = () => {
     }
   };
 
+  const fetchTutorDetails=async()=>{
+    try {
+      const response = await axiosInstance.get(`/tutor/get-tutorInfo/${tutorState._id}`);
+     setTutor(response.data.tutor)
+    } catch (error) {
+      console.log('Error fetching payout history:', error);
+    }
+  }
+
+  fetchTutorDetails();
   fetchPayoutHistory();
 
-}, [tutor._id]);  
+}, [tutor._id,withdrawDialogOpen]);  
 
 const getDecimalValue = (decimalObj) => {
   if (!decimalObj) return 0;

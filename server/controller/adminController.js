@@ -4,6 +4,7 @@ const Admin = require("../model/adminModel");
 const Course = require("../model/courseModel");
 const Report = require("../model/reportModel");
 const Coupon = require("../model/couponModel");
+const Order = require("../model/orderModel");
 const InstructorApplication = require("../model/tutorApplication");
 const Category = require("../model/categoryModel");
 const mongoose = require("mongoose");
@@ -22,6 +23,7 @@ const {
 const generateDefaultPassword = require("../utils/generateDefaultPasswordd");
 const { getIO } = require("../socket/socketEvent");
 const Payouts = require("../model/payoutRequestModel");
+const { generateInvoice } = require("../utils/generateInvoice");
 require("dotenv").config();
 
 // Controllers
@@ -894,8 +896,6 @@ const openReport = async (req, res) => {
     const { title, description, type, targetType, targetId, reportedBy } =
       req.body;
 
-    console.log(req.body);
-
     if (!["Course", "Tutor"].includes(targetType)) {
       return res.status(400).json({ error: "Invalid target type" });
     }
@@ -932,14 +932,23 @@ const getReports = async (req, res) => {
   
 
 
-  const repopulatedReports = await Promise.all(
-    reports.map((report) =>
-      report.populate({
-        path: "targetId",
-        select: report.targetType === "Course" ? "title" : "fullName",
+    const repopulatedReports = await Promise.all(
+      reports.map((report) => {
+        // Check if targetId is null before attempting to populate
+        if (report.targetId) {
+          return report.populate({
+            path: "targetId",
+            select: report.targetType === "Course" ? "title" : "fullName",
+          });
+        } else {
+          // Return the report as is if targetId is null
+          return report;
+        }
       })
-    )
-  );
+    );
+    
+
+  
 
   console.log(repopulatedReports)
 
@@ -970,6 +979,28 @@ const handleReportStatus = async (req, res) => {
   } catch (error) {
     console.log("Error updating report status", error);
     res.status(500).json({ message: "Error updating report status" });
+  }
+};
+
+const getInvoice = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    console.log("order ID",orderId);
+
+    const invoicePath = await generateInvoice(orderId);
+
+    console.log("path to download invoice",invoicePath);
+
+    // Send the PDF file as a download response
+    res.download(invoicePath, `invoice_${orderId}.pdf`, (err) => {
+      if (err) {
+        console.error("Error sending invoice file:", err);
+        res.status(500).json({ message: "Error generating invoice" });
+      }
+    });
+    
+  } catch (error) {
+    res.status(500).json({ message: "Error generating invoice", error });
   }
 };
 
@@ -1165,7 +1196,31 @@ const deleteCoupon=async(req,res)=>{
         res.status(500).json({ message: "Internal server error" });
       }
     };
-    
+
+
+    const getOrders=async(req,res)=>{
+try {
+  
+  const orders=await Order.find()
+  .populate('userId','fullName profileImg email')
+  .populate({
+    path: "courses", 
+    select: "categoryId price", 
+    populate: {
+      path: "categoryId", 
+      select: "title", 
+    },
+  });
+
+
+
+res.status(200).json(orders);
+
+} catch (error) {
+  console.log(error);
+  return res.status(500).json({message:"Internal server error"})
+}
+    }
 
 
 module.exports = {
@@ -1186,6 +1241,7 @@ module.exports = {
   existsCheck,
   getCategories,
   addCategory,
+  getOrders,
   updateCategory,
   deleteCategory,
   listCourse,
@@ -1199,5 +1255,6 @@ module.exports = {
   deleteCoupon,
   toggleCouponStatus,
   getPayoutRequests,
-  handlePayoutRequest
+  handlePayoutRequest,
+  getInvoice
 };

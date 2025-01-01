@@ -20,6 +20,7 @@ import lessonsSlice from './slices/lessonsSlice';
 import wishlistSlice from './slices/wishlistSlice';
 import cartSlice from './slices/cartSlice';
 
+
 // Create persist configs for each reducer
 const userPersistConfig = {
   key: 'user',
@@ -75,7 +76,8 @@ const store = configureStore({
     course: persistedCourseReducer,
     lessons: persistedLessonsReducer,
     wishlist:persistedWishlistReducer,
-    cart:persistedCartReducer
+    cart:persistedCartReducer,
+
   },
   middleware: (getDefaultMiddleware) => 
     getDefaultMiddleware({

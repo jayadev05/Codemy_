@@ -193,6 +193,8 @@ fetchReports();
     }
   }
 
+  
+
   const openReportsCount= reports.filter((report)=>report.status==="Open").length;
 
   const paginatedReports=paginateData(filteredReports);
@@ -288,7 +290,7 @@ fetchReports();
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                    {report.title}
+                    {report.title.toUpperCase()}
                   </h3>
                   <p className="text-sm text-gray-500">
                     Reported By : {report.reportedBy.fullName}  {report.date}

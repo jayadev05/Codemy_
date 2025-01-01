@@ -1,6 +1,7 @@
 import { io } from 'socket.io-client';
 import { jwtDecode } from 'jwt-decode';
 
+
 class SocketService {
   constructor() {
     this.socket = null;
@@ -124,6 +125,7 @@ class SocketService {
         sender: data.sender,
         receiver: data.receiver,
         content: data.content,
+        contentType: data.contentType,
         timestamps: data.timestamps
       };
 
@@ -179,6 +181,36 @@ joinRoom(roomId) {
       console.log('[SocketService] Sending stop typing event');
     }
   }
+
+  initializeCall(data) {
+    if (this.isConnected()) {
+      this.socket.emit('initiate-call', {
+        recieverId: data.recieverId,
+        signalData: data.signalData,
+        from: data.from,
+        callerName: data.callerName,
+        callerAvatar: data.callerAvatar,
+        callerUserId: data.callerUserId
+      });
+      console.log('[SocketService] Sending initiate call event');
+    }
+  }
+
+  answerCall(data) {
+    if (this.isConnected()) {
+      this.socket.emit('answer-call', {
+        signalData: data.signalData,  
+        to: data.to
+      });
+      console.log('[SocketService] Sending answer call event to',data.to);
+    }
+  }
+
+  rejectCall(){
+
+  }
+
+
 }
 
 export const socketService = new SocketService();

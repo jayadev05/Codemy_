@@ -11,6 +11,7 @@ const genarateAccessToken = require("../utils/genarateAccesToken");
 const genarateRefreshToken = require("../utils/genarateRefreshToken");
 const { oauth2client } = require("../config/googleConfig");
 const axios = require("axios");
+const { ObjectId } = require("mongoose").Types;
 
 const sendOtp = async (req, res) => {
   try {
@@ -404,6 +405,10 @@ const getCoupons=async(req,res)=>{
   try {
   
 
+    const userId = new ObjectId(req.params.userId);
+ 
+    if(!userId)return res.status(400).json({message:"UserId is missing"})
+
     const currentDate = new Date(); // Get the current date and time
 
     const coupons = await Coupon.aggregate([
@@ -411,6 +416,7 @@ const getCoupons=async(req,res)=>{
         $match: {
           isActive: true,                   
           validTill: { $gt: currentDate },   
+          usedBy :{$nin:[userId]}
         },
       },
       {

@@ -59,8 +59,9 @@ const createOrder = async (req, res) => {
 };
 
 const verifyPayment = async (req, res) => {
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature , userId } =
     req.body;
+
 
   try {
     
@@ -95,12 +96,13 @@ const verifyPayment = async (req, res) => {
 
     if (!order) throw new Error("Order not found");
 
-    //Update coupon used count
+    //Update coupon used count and usedBy
 
     if(order.discount.couponCode){
       const updatedCoupon = await Coupon.findOne({code:order.discount?.couponCode});
 
       updatedCoupon.usedCount+=1;
+      updatedCoupon.usedBy.push(userId)
   
       await updatedCoupon.save()
     }

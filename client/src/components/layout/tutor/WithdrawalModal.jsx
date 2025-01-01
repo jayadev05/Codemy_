@@ -76,8 +76,8 @@ export function WithdrawDialog({ open, onOpenChange, availableBalance, tutorId }
       const amountNum = parseFloat(formData.amount)
       if (isNaN(amountNum)) {
         newErrors.amount = "Please enter a valid amount"
-      } else if (amountNum < 100) {
-        newErrors.amount = "Minimum withdrawal amount is ₹100"
+      } else if (amountNum < 500) {
+        newErrors.amount = "Minimum withdrawal amount is ₹500"
       } else if (amountNum > availableBalance) {
         newErrors.amount = "Amount cannot exceed available balance"
       } else if (amountNum % 1 !== 0) {
@@ -140,6 +140,7 @@ export function WithdrawDialog({ open, onOpenChange, availableBalance, tutorId }
     onOpenChange(open)
   }
 
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -167,7 +168,6 @@ export function WithdrawDialog({ open, onOpenChange, availableBalance, tutorId }
         paymentDetails
       });
 
-      dispatch(addTutor(response.data.tutor));
 
       toast.success("Withdrawal request submitted successfully")
       resetForm()

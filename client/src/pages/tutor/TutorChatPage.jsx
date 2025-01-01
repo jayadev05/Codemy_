@@ -14,6 +14,7 @@ import {
   Trash2Icon,
   ImageIcon,
   X,
+  Video,
 } from "lucide-react";
 import { socketService } from "@/services/socket";
 import { useSelector } from "react-redux";
@@ -28,6 +29,8 @@ import { handleChatDeletion } from "@/utils/ChatUtils";
 import { updateChatsList } from "@/utils/ChatUtils";
 import ComposeModalUser from "@/components/layout/tutor/chat/StudentList";
 import axios from "axios";
+import VideoCallInterface from "@/components/layout/videoCall/VideoCallIInterface";
+import SimplePeer from "simple-peer/simplepeer.min.js";
 
 export default function TutorChatPage() {
   const tutor = useSelector(selectTutor);
@@ -48,6 +51,115 @@ export default function TutorChatPage() {
 
   const messagesEndRef = useRef(null);
 
+   //video call
+   const myVideoRef = useRef();
+   const peerVideoRef = useRef();
+   const connectionRef = useRef();
+ 
+   const [stream, setStream] = useState(null);
+   const [userId, setUserId] = useState('');
+   const [isCallAccepted, setIsCallAccepted] = useState(false);
+   const [incomingCallInfo, setIncomingCallInfo] = useState({});
+   const [isCallActive, setIsCallActive] = useState(false);
+ const [isAudioEnabled, setIsAudioEnabled] = useState(true);
+ const [isVideoEnabled, setIsVideoEnabled] = useState(false);
+
+ console.log("is call accepted?",isCallAccepted);
+ 
+
+ 
+  // Handle media devices separately
+  useEffect(() => {
+    // Enumerate devices for debugging
+    navigator.mediaDevices.enumerateDevices().then((devices) => {
+      devices.forEach((device) =>
+        console.log(device.kind, device.label, device.deviceId)
+      );
+    });
+
+    // Check media device support
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      console.error('Media devices API not supported on this device');
+      setStream(null);
+      return;
+    }
+
+    // Request media stream for audio only
+    navigator.mediaDevices
+      .getUserMedia({ audio: true })
+      .then((mediaStream) => {
+        console.log('Audio stream acquired');
+        setStream(mediaStream);
+
+        // Set the stream to an audio element for playback
+        if (myAudioRef.current) {
+          myAudioRef.current.srcObject = mediaStream;
+        }
+      })
+      .catch((error) => {
+        console.error('Error accessing media devices:', error);
+
+        if (error.name === 'NotFoundError') {
+          console.error('No audio input device found. Audio may not work.');
+        }
+        setStream(null);
+      });
+
+    // Cleanup
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, []);
+  
+
+   //handling video call
+   useEffect(() => {
+    const handleIncomingCall = ({ from, signalData,callerData }) => {
+      console.log("Incoming call from:", from);
+      setIncomingCallInfo({ 
+        isSomeoneCalling: true, 
+        from, 
+        callerData,
+        signalData 
+      });
+    };
+
+    const handleCallAccepted = ({ signalData }) => {
+      setIsCallAccepted(true);
+      if (connectionRef.current) {
+        connectionRef.current.signal(signalData);
+      }
+    };
+
+    const handleCallRejected = () => {
+      toast.error('Call was rejected');
+      handleEndCall();
+    };
+
+    const handleUserDisconnected = () => {
+      if (isCallActive) {
+        toast.error('Call ended: User disconnected');
+        handleEndCall();
+      }
+    };
+
+    console.log('Setting up socket event listeners');
+    socketService.on('incoming-call', handleIncomingCall);
+    socketService.on('call-accepted', handleCallAccepted);
+    socketService.on('call-rejected', handleCallRejected);
+    socketService.on('user-disconnected', handleUserDisconnected);
+
+    return () => {
+      console.log('Cleaning up socket event listeners');
+      socketService.off('incoming-call', handleIncomingCall);
+      socketService.off('call-accepted', handleCallAccepted);
+      socketService.off('call-rejected', handleCallRejected);
+      socketService.off('user-disconnected', handleUserDisconnected);
+    };
+  }, [isCallActive]);
+
   const userType = getUserRoleFromToken();
 
   //get userType form token
@@ -63,6 +175,7 @@ export default function TutorChatPage() {
     }
     return null;
   }
+
 
   // Fetch all chats for the current user
   const fetchChats = async () => {
@@ -86,7 +199,8 @@ export default function TutorChatPage() {
         const chatStillExists = filteredChat.find(
           (chat) => chat._id === selectedChat._id
         );
-        console.log("caht existrs?", chatStillExists);
+        console.log("chat exists?", chatStillExists);
+
         if (!chatStillExists) {
           setSelectedChat(null);
           console.log("no chat");
@@ -95,8 +209,12 @@ export default function TutorChatPage() {
             (chat) => chat._id === selectedChat._id
           );
           setSelectedChat(updatedSelectedChat);
-          console.log(updatedSelectedChat);
+          console.log("selected chat is updated",updatedSelectedChat);
         }
+      }
+
+      else {
+        console.log("no selected chat");
       }
     } catch (error) {
       console.error("Error fetching chats:", error);
@@ -154,6 +272,7 @@ export default function TutorChatPage() {
     let currentTypingTimeout = null;
 
     const handleStatusUpdate = async () => {
+      console.log("Other user is online",isSubscribed);
       if (isSubscribed) {
         console.log("fetching chats");
         await fetchChats();
@@ -162,20 +281,27 @@ export default function TutorChatPage() {
 
     const handleRecieveMessage = (message) => {
       if (!isSubscribed) return;
-
+    
       console.log("Received message event triggered:", message);
-      updateChatLastMessage(message);
-
+      
+      // Skip validation of contentType and add default if missing
+      const validatedMessage = {
+        ...message,
+        contentType: message.contentType || 'text' // Default to text for backward compatibility
+      };
+    
+      updateChatLastMessage(validatedMessage);
+    
       setSelectedChat((currentSelectedChat) => {
-        // If message belongs to currently selected chat
         if (currentSelectedChat?._id === message.chatId) {
           setMessages((prevMessages) => {
+            // Check for duplicate messages
             if (prevMessages.some((m) => m._id === message._id)) {
               return prevMessages;
             }
-            return [...prevMessages, message];
+            return [...prevMessages, validatedMessage];
           });
-
+    
           socketService.markMessagesRead({
             chatId: currentSelectedChat._id,
             userType,
@@ -188,7 +314,7 @@ export default function TutorChatPage() {
               if (chat._id === message.chatId) {
                 const isFromOtherUser = message.sender.userId !== user._id;
                 const isNotCurrentChat = currentSelectedChat?._id !== chat._id;
-
+    
                 return {
                   ...chat,
                   unreadCount: {
@@ -208,8 +334,8 @@ export default function TutorChatPage() {
             })
           );
         }
-
-        return currentSelectedChat; // Keep current selected chat
+    
+        return currentSelectedChat;
       });
     };
 
@@ -303,7 +429,7 @@ export default function TutorChatPage() {
         clearTimeout(typingTimeout);
       }
     };
-  }, [tutor?._id]);
+  }, [tutor?._id,selectedChat?._id]);
 
   // Update chat's last message
   const updateChatLastMessage = (message) => {
@@ -384,8 +510,9 @@ export default function TutorChatPage() {
   // Handle sending messages
   const handleSendMessage = async (e) => {
     e.preventDefault();
+    
     if ((!inputMessage.trim() && !selectedFile) || !selectedChat) return;
-
+  
     try {
       const messageData = {
         chatId: selectedChat._id,
@@ -400,25 +527,35 @@ export default function TutorChatPage() {
               : selectedChat.userId._id,
           role: userType === "user" ? "tutor" : "user",
         },
-        content: selectedFile || inputMessage,
-        contentType: selectedFile ? "media" : "text",
+        content: selectedFile || inputMessage.trim(),
+        contentType: selectedFile ? "media" : "text", // Explicitly set content type
       };
-
+  
+      console.log("Sending message with data:", messageData);
+  
       const response = await axiosInstance.post(
         "/chat/create-message",
         messageData
       );
+  
+   
 
-      // Update UI
-      setMessages((prevMessages) => [...prevMessages, response.data]);
+      // Ensure contentType exists in the response data
+      const validatedResponse = {
+        ...response.data,
+        contentType: response.data.contentType || (selectedFile ? "media" : "text")
+      };
+
+      console.log("validated response",validatedResponse);
+  
+      setMessages((prevMessages) => [...prevMessages, validatedResponse]);
       setInputMessage("");
       clearSelectedFile();
-      updateChatLastMessage(response.data);
-
-      // Emit socket event
+      updateChatLastMessage(validatedResponse);
+  
       socketService.sendMessage({
-        ...response.data,
-        timestamps: response.data.createdAt,
+        ...validatedResponse,
+        timestamps: validatedResponse.createdAt,
       });
     } catch (error) {
       console.error("Error sending message:", error);
@@ -484,28 +621,40 @@ export default function TutorChatPage() {
   };
 
   const renderMessageContent = (message) => {
-    if (message.contentType === "text") {
-      return <p>{message.content}</p>;
-    } else if (message.contentType === "media") {
-      if (message.content.match(/\.(jpg|jpeg|png|gif)$/i)) {
-        return (
-          <img
-            src={message.content}
-            alt="Shared media"
-            className="max-w-[300px] rounded-lg cursor-pointer"
-            onClick={() => window.open(message.content, "_blank")}
-          />
-        );
-      } else if (message.content.match(/\.(mp4)$/i)) {
-        return (
-          <video controls className="max-w-[300px] rounded-lg">
-            <source src={message.content} type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-        );
-      }
+    // Always default to text if no contentType specified
+    const contentType = message.contentType || 'text';
+    
+    switch (contentType) {
+      case 'text':
+        return <p>{message.content}</p>;
+        
+      case 'media':
+        if (typeof message.content === 'string') {
+          if (message.content.match(/\.(jpg|jpeg|png|gif)$/i)) {
+            return (
+              <img
+                src={message.content}
+                alt="Shared media"
+                className="max-w-[300px] rounded-lg cursor-pointer"
+                onClick={() => window.open(message.content, "_blank")}
+              />
+            );
+          } 
+          
+          if (message.content.match(/\.(mp4)$/i)) {
+            return (
+              <video controls className="max-w-[300px] rounded-lg">
+                <source src={message.content} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            );
+          }
+        }
+        return <p>Unsupported media format</p>;
+        
+      default:
+        return <p>{message.content}</p>; // Fallback to showing content as text
     }
-    return <p>Unsupported content</p>;
   };
 
   const handleFileUploadToCloudinary = async (file, fileType = "image") => {
@@ -672,6 +821,121 @@ export default function TutorChatPage() {
     }
   };
 
+  const initiateCall = () => {
+    if (!tutor._id ) return;
+  
+    const peer = new SimplePeer({
+      initiator: true,
+      trickle: false,
+      stream,
+    });
+  
+    const receiverId = userType === "user" 
+      ? selectedChat.tutorId._id 
+      : selectedChat.userId._id;
+  
+    peer.on('signal', (signalData) => {
+      // Only send offer when peer creates it
+      if (signalData.type === 'offer') {
+        socketService.initializeCall({
+          recieverId: receiverId,
+          signalData,
+          from: socketService.socket.id,
+          callerName: tutor.fullName,
+          callerAvatar: tutor.profileImg,
+          callerUserId: tutor._id
+        });
+      }
+    });
+  
+    peer.on('stream', (remoteStream) => {
+      if (peerVideoRef.current) {
+        peerVideoRef.current.srcObject = remoteStream;
+      }
+    });
+  
+    peer.on('error', (err) => {
+      console.error('Peer error:', err);
+      handleEndCall();
+    });
+  
+    connectionRef.current = peer;
+  };
+  
+  const answerCall = () => {
+    if ( !incomingCallInfo?.signalData) return;
+  
+    setIsCallAccepted(true);
+    setIncomingCallInfo((prev)=> ({...prev,isSomeoneCalling:false}));
+
+    const peer = new SimplePeer({
+      initiator: false,
+      trickle: false,
+      stream
+    });
+  
+    peer.on('signal', (signalData) => {
+      // Only send answer when peer creates it
+      if (signalData.type === 'answer') {
+        socketService.answerCall({
+          signalData,
+          to: incomingCallInfo.from
+        });
+      }
+    });
+  
+    peer.on('stream', (remoteStream) => {
+      if (peerVideoRef.current) {
+        peerVideoRef.current.srcObject = remoteStream;
+      }
+    });
+  
+    peer.on('error', (err) => {
+      console.error('Peer error:', err);
+      handleEndCall();
+    });
+  
+    // Signal the offer to the answering peer
+    peer.signal(incomingCallInfo.signalData);
+    connectionRef.current = peer;
+  };
+  
+  const handleEndCall = () => {
+    if (connectionRef.current) {
+      connectionRef.current.destroy();
+      connectionRef.current = null;
+    }
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+    }
+    if (peerVideoRef.current) {
+      peerVideoRef.current.srcObject = null;
+    }
+    setStream(null);
+    setIsCallActive(false);
+    setIsCallAccepted(false);
+    setIncomingCallInfo(null);
+  };
+    
+    const handleRejectCall = () => {
+      socketService.rejectCall({ to: incomingCallInfo.from });
+      setIncomingCallInfo({});
+    };
+    
+    const toggleAudio = () => {
+      if (stream) {
+        stream.getAudioTracks()[0].enabled = !isAudioEnabled;
+        setIsAudioEnabled(!isAudioEnabled);
+      }
+    };
+    
+    const toggleVideo = () => {
+      if (stream) {
+        stream.getVideoTracks()[0].enabled = !isVideoEnabled;
+        setIsVideoEnabled(!isVideoEnabled);
+      }
+    };
+
   // Format timestamp
   const formatTime = (timestamp) => {
     return new Date(timestamp).toLocaleTimeString("en-US", {
@@ -682,6 +946,7 @@ export default function TutorChatPage() {
 
   return (
     <div className="flex">
+     
       <Sidebar activeSection="Messages" />
 
       <div className="flex-1">
@@ -909,30 +1174,34 @@ export default function TutorChatPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="relative">
-                    <Button
-                      onClick={() => handleOptionsModalOpen()}
-                      variant="ghost"
-                      size="icon"
-                    >
-                      <MoreHorizontal className="h-5 w-5" />
-                    </Button>
-                    {optionsModalOpen && (
-                      <div className="absolute right-4 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50 border border-gray-200">
-                        <button className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors">
-                          <AlertTriangle className="w-4 h-4 mr-2 text-orange-500" />
-                          Block Tutor
-                        </button>
-                        <button
-                          onClick={handleDeleteChat}
-                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors"
-                        >
-                          <Trash2Icon className="w-4 h-4 mr-2 text-orange-500" />
-                          Delete chat
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  <div className="flex items-center gap-3">
+                  <Video className='cursor-pointer' onClick={initiateCall}/>
+                <div className="relative">
+                  <Button
+                    onClick={() => handleOptionsModalOpen()}
+                    variant="ghost"
+                    size="icon"
+                  >
+                    <MoreHorizontal className="h-5 w-5" />
+                  </Button>
+                  {optionsModalOpen && (
+                    <div className="absolute right-4 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50 border border-gray-200">
+                      <button className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors">
+                        <AlertTriangle className="w-4 h-4 mr-2 text-orange-500" />
+                        Block Tutor
+                      </button>
+                      <button
+                        onClick={handleDeleteChat}
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors"
+                      >
+                        <Trash2Icon className="w-4 h-4 mr-2 text-orange-500" />
+                        Delete chat
+                      </button>
+                    </div>
+                  )}
+                </div>
+               
+                </div>
                 </div>
 
                 <ScrollArea className="flex-1 p-3">
@@ -1074,6 +1343,21 @@ export default function TutorChatPage() {
           recipients={students}
           tutor={tutor}
         />
+        <VideoCallInterface
+  stream={stream}
+  myVideoRef={myVideoRef}
+  peerVideoRef={peerVideoRef}
+  isCallAccepted={isCallAccepted}
+  incomingCallInfo={incomingCallInfo}
+  onAnswer={answerCall}
+  onReject={handleRejectCall}
+  onEndCall={handleEndCall}
+  isCallActive={isCallActive || isCallAccepted}
+  onToggleAudio={toggleAudio}
+  onToggleVideo={toggleVideo}
+  isAudioEnabled={isAudioEnabled}
+  isVideoEnabled={isVideoEnabled}
+/>
       </div>
     </div>
   );

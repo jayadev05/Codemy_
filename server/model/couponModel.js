@@ -21,10 +21,18 @@ const couponSchema = new mongoose.Schema({
     type: Number,
     default: null, // No limit if null
   },
+  
   usedCount: {
     type: Number,
     default: 0,
   },
+
+  usedBy: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User', 
+    },
+  ],
   
   validTill: {
     type: Date,

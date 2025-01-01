@@ -8,7 +8,7 @@ const chatHandler =(io, socket, onlineStudents, onlineTutors)=>{
 
   //send message event
   socket.on('send-message', async (data) => {
-    const { chatId, _id, sender, receiver, content, timestamps } = data;
+    const { chatId, _id, sender, receiver, content, contentType, timestamps } = data;
     
     try {
       const chat = await Chat.findOne({ _id: chatId });
@@ -35,6 +35,7 @@ const chatHandler =(io, socket, onlineStudents, onlineTutors)=>{
           receiver,
           chatId,
           content,
+          contentType,
           timestamps,
           chatData: chat,
           status: 'delivered'
@@ -53,6 +54,7 @@ const chatHandler =(io, socket, onlineStudents, onlineTutors)=>{
           receiver,
           chatId,
           content,
+          contentType,
           timestamps,
           chatData: chat
         });

@@ -4,7 +4,7 @@ const { googleLogin,signUp, login, logoutUser, updateUser, sendOtp, changePasswo
 const { verifyOtp}  = require('../../middleware/verifyOtp');
 const verifyUser = require("../../middleware/authMiddleware");
 
-userRoute.get('/get-coupons', getCoupons);
+userRoute.get('/get-coupons/:userId', getCoupons);
 
 
 userRoute.post('/sendotp', sendOtp);

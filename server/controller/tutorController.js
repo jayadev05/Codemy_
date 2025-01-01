@@ -6,6 +6,23 @@ const Payouts = require("../model/payoutRequestModel");
 const payoutRequestModel = require("../model/payoutRequestModel");
 
 
+
+const getTutorDetails=async(req,res)=>{
+  try {
+    const {tutorId}=req.params;
+
+    if(!tutorId) return res.status(400).json({message:"TutorId is missing "})
+
+      const tutor = await Tutor.findById(tutorId);
+
+      res.status(200).json({message:"Tutor details fetched successfully",tutor});
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({message:"Internal server error"})
+  }
+}
+
 const changePassword = async (req, res) => {
     const { currentPassword, newPassword, email } = req.body.passwordChange;
    
@@ -46,7 +63,7 @@ const changePassword = async (req, res) => {
     try {
        
         const { email, userName, phone, profileImg, bio, jobTitle, firstName, lastName } = req.body;
-        const fullName = `${firstName} ${lastName}`;  // Concatenate first and last name
+        const fullName = `${firstName} ${lastName}`;  
        
 
         const tutor = await Tutor.findOne({ email });
@@ -67,7 +84,6 @@ const changePassword = async (req, res) => {
         };
 
 
-        // Update the tutor document and return the updated object
         const updatedTutor = await Tutor.findByIdAndUpdate(tutor._id, updatedData, { new: true });
     
         res.status(200).json({ message: "Update successful", updatedTutor });
@@ -164,4 +180,4 @@ const getPayoutsHistory = async (req, res) => {
 
 
 
-module.exports={logoutTutor,changePassword,updateTutor,getReviewsByCourseId,makePayoutRequest,getPayoutsHistory};
+module.exports={logoutTutor,changePassword,updateTutor,getReviewsByCourseId,makePayoutRequest,getPayoutsHistory,getTutorDetails};
