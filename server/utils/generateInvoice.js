@@ -9,7 +9,7 @@ const generateInvoice = async (orderId) => {
       .populate("userId", "fullName email")       
       .populate("courses", "title price");
     
-    const invoiceDir = path.join(__dirname, '..', 'invoices');
+    const invoiceDir = path.join(__dirname,  '../public/invoices');
     if (!fs.existsSync(invoiceDir)) {
       fs.mkdirSync(invoiceDir, { recursive: true });
     }

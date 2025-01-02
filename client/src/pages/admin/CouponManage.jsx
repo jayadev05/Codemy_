@@ -39,9 +39,11 @@ import { Badge } from "@/components/ui/badge"
 import { Label } from "@/components/ui/label"
 import axiosInstance from '@/config/axiosConfig'
 import Sidebar from '@/components/layout/admin/sidebar'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { selectAdmin } from '@/store/slices/adminSlice'
 import toast from 'react-hot-toast'
+import { useNavigate } from 'react-router'
+import { logoutAdmin } from '@/store/slices/adminSlice'
 
 export default function CouponManagement() {
 
@@ -49,7 +51,11 @@ const admin= useSelector(selectAdmin);
   const [coupons, setCoupons] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const dispatch=useDispatch();
+  const navigate=useNavigate();
+
 
   // Form state
   const [formData, setFormData] = useState({
@@ -177,7 +183,7 @@ const admin= useSelector(selectAdmin);
                 src={admin?.profileImg || '/placeholder.svg'}
                 alt=""
               />
-              <div className="absolute right-0 w-48 bg-white rounded-md shadow-lg py-1 border hidden group-hover:block">
+              <div className="absolute z-20 right-0 w-48 bg-white rounded-md shadow-lg py-1 border hidden group-hover:block">
                 <div className="px-4 py-2 border-b">
                   <p className="text-sm font-medium text-gray-900">
                     {admin?.userName}

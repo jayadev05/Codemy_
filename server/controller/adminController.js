@@ -8,7 +8,7 @@ const Order = require("../model/orderModel");
 const InstructorApplication = require("../model/tutorApplication");
 const Category = require("../model/categoryModel");
 const mongoose = require("mongoose");
-const { ObjectId } = require('mongodb');
+const { ObjectId } = require("mongodb");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const path = require("path");
@@ -24,6 +24,7 @@ const generateDefaultPassword = require("../utils/generateDefaultPasswordd");
 const { getIO } = require("../socket/socketEvent");
 const Payouts = require("../model/payoutRequestModel");
 const { generateInvoice } = require("../utils/generateInvoice");
+const { generateSalesReport } = require("../utils/generateSalesReport");
 require("dotenv").config();
 
 // Controllers
@@ -172,7 +173,7 @@ const getUsers = async (req, res) => {
 };
 
 const logoutAdmin = async (req, res) => {
-  res.clearCookie("accessToken")
+  res.clearCookie("accessToken");
   res.clearCookie("refreshToken");
   res.status(200).json({ message: "Logged out successfully" });
 };
@@ -362,18 +363,15 @@ const getCertificates = async (req, res) => {
 };
 
 const reviewInstructorApplication = async (req, res) => {
-
-  if(!req.user)return res
-  .status(403)
-  .json({ message: "Token is invalid! Please refresh or login again." });
-
+  if (!req.user)
+    return res
+      .status(403)
+      .json({ message: "Token is invalid! Please refresh or login again." });
 
   if (req.user?.type !== "admin")
     return res
       .status(403)
       .json({ message: "You dont have authorization to perform this action!" });
-
-
 
   try {
     const { id } = req.params;
@@ -541,10 +539,14 @@ const existsCheck = async (req, res) => {
 };
 
 const approveTutor = async (req, res) => {
-  if(!req.user)return res
-  .status(403)
-  .json({ message: "Token is invalid! Please refresh or login again." });
-  if(req.user?.type!=='admin') return res.status(403).json({message:"You dont have authorization to perform this action!"})
+  if (!req.user)
+    return res
+      .status(403)
+      .json({ message: "Token is invalid! Please refresh or login again." });
+  if (req.user?.type !== "admin")
+    return res
+      .status(403)
+      .json({ message: "You dont have authorization to perform this action!" });
 
   try {
     const { applicationId } = req.params;
@@ -606,15 +608,14 @@ const approveTutor = async (req, res) => {
 
 const listUser = async (req, res) => {
   try {
-    if(!req.user)return res
-  .status(403)
-  .json({ message: "Token is invalid! Please refresh or login again." });
-    if (req.user?.type !== "admin")
+    if (!req.user)
       return res
         .status(403)
-        .json({
-          message: "You dont have authorization to perform this action!",
-        });
+        .json({ message: "Token is invalid! Please refresh or login again." });
+    if (req.user?.type !== "admin")
+      return res.status(403).json({
+        message: "You dont have authorization to perform this action!",
+      });
     const id = req.params.id;
 
     const user = await User.findByIdAndUpdate(
@@ -638,15 +639,14 @@ const listUser = async (req, res) => {
 const unlistUser = async (req, res) => {
   try {
     console.log("jwt decoded", req.user);
-    if(!req.user)return res
-  .status(403)
-  .json({ message: "Token is invalid! Please refresh or login again." });
-    if (req.user?.type !== "admin")
+    if (!req.user)
       return res
         .status(403)
-        .json({
-          message: "You dont have authorization to perform this action!",
-        });
+        .json({ message: "Token is invalid! Please refresh or login again." });
+    if (req.user?.type !== "admin")
+      return res.status(403).json({
+        message: "You dont have authorization to perform this action!",
+      });
 
     const id = req.params.id;
 
@@ -670,15 +670,14 @@ const unlistUser = async (req, res) => {
 
 const lisTtutor = async (req, res) => {
   try {
-    if(!req.user)return res
-  .status(403)
-  .json({ message: "Token is invalid! Please refresh or login again." });
-    if (req.user?.type !== "admin")
+    if (!req.user)
       return res
         .status(403)
-        .json({
-          message: "You dont have authorization to perform this action!",
-        });
+        .json({ message: "Token is invalid! Please refresh or login again." });
+    if (req.user?.type !== "admin")
+      return res.status(403).json({
+        message: "You dont have authorization to perform this action!",
+      });
     const id = req.params.id;
 
     const user = await Tutor.findByIdAndUpdate(
@@ -701,15 +700,14 @@ const lisTtutor = async (req, res) => {
 
 const unlisTtutor = async (req, res) => {
   try {
-    if(!req.user)return res
-  .status(403)
-  .json({ message: "Token is invalid! Please refresh or login again." });
-    if (req.user?.type !== "admin")
+    if (!req.user)
       return res
         .status(403)
-        .json({
-          message: "You dont have authorization to perform this action!",
-        });
+        .json({ message: "Token is invalid! Please refresh or login again." });
+    if (req.user?.type !== "admin")
+      return res.status(403).json({
+        message: "You dont have authorization to perform this action!",
+      });
     const id = req.params.id;
     const user = await Tutor.findByIdAndUpdate(
       { _id: id },
@@ -732,11 +730,12 @@ const unlisTtutor = async (req, res) => {
 const addCategory = async (req, res) => {
   const { title, description } = req.body;
 
-  console.log(req.user)
+  console.log(req.user);
 
-  if(!req.user)return res
-  .status(403)
-  .json({ message: "Token is invalid! Please refresh or login again." });
+  if (!req.user)
+    return res
+      .status(403)
+      .json({ message: "Token is invalid! Please refresh or login again." });
   if (req.user?.type !== "admin")
     return res
       .status(403)
@@ -772,9 +771,10 @@ const getCategories = async (req, res) => {
 };
 
 const updateCategory = async (req, res) => {
-  if(!req.user)return res
-  .status(403)
-  .json({ message: "Token is invalid! Please refresh or login again." });
+  if (!req.user)
+    return res
+      .status(403)
+      .json({ message: "Token is invalid! Please refresh or login again." });
   if (req.user?.type !== "admin")
     return res
       .status(403)
@@ -802,9 +802,10 @@ const updateCategory = async (req, res) => {
 };
 
 const deleteCategory = async (req, res) => {
-  if(!req.user)return res
-  .status(403)
-  .json({ message: "Token is invalid! Please refresh or login again." });
+  if (!req.user)
+    return res
+      .status(403)
+      .json({ message: "Token is invalid! Please refresh or login again." });
   if (req.user?.type !== "admin")
     return res
       .status(403)
@@ -824,9 +825,10 @@ const deleteCategory = async (req, res) => {
 };
 
 const listCourse = async (req, res) => {
-  if(!req.user)return res
-  .status(403)
-  .json({ message: "Token is invalid! Please refresh or login again." });
+  if (!req.user)
+    return res
+      .status(403)
+      .json({ message: "Token is invalid! Please refresh or login again." });
   if (req.user?.type !== "admin")
     return res
       .status(403)
@@ -858,9 +860,10 @@ const listCourse = async (req, res) => {
 };
 
 const unlistCourse = async (req, res) => {
-  if(!req.user)return res
-  .status(403)
-  .json({ message: "Token is invalid! Please refresh or login again." });
+  if (!req.user)
+    return res
+      .status(403)
+      .json({ message: "Token is invalid! Please refresh or login again." });
   if (req.user?.type !== "admin")
     return res
       .status(403)
@@ -927,10 +930,8 @@ const openReport = async (req, res) => {
 const getReports = async (req, res) => {
   try {
     const reports = await Report.find()
-    .populate({ path: "reportedBy", select: "fullName _id" })
-    .sort({ createdAt: -1 });
-  
-
+      .populate({ path: "reportedBy", select: "fullName _id" })
+      .sort({ createdAt: -1 });
 
     const repopulatedReports = await Promise.all(
       reports.map((report) => {
@@ -946,13 +947,12 @@ const getReports = async (req, res) => {
         }
       })
     );
-    
 
-  
+    console.log(repopulatedReports);
 
-  console.log(repopulatedReports)
-
-    res.status(200).json({ message: "Reports fetched successfully", repopulatedReports });
+    res
+      .status(200)
+      .json({ message: "Reports fetched successfully", repopulatedReports });
   } catch (error) {
     console.log("Error fetching reports", error);
     res
@@ -985,11 +985,11 @@ const handleReportStatus = async (req, res) => {
 const getInvoice = async (req, res) => {
   try {
     const { orderId } = req.params;
-    console.log("order ID",orderId);
+    console.log("order ID", orderId);
 
     const invoicePath = await generateInvoice(orderId);
 
-    console.log("path to download invoice",invoicePath);
+    console.log("path to download invoice", invoicePath);
 
     // Send the PDF file as a download response
     res.download(invoicePath, `invoice_${orderId}.pdf`, (err) => {
@@ -998,7 +998,6 @@ const getInvoice = async (req, res) => {
         res.status(500).json({ message: "Error generating invoice" });
       }
     });
-    
   } catch (error) {
     res.status(500).json({ message: "Error generating invoice", error });
   }
@@ -1023,21 +1022,20 @@ const sendNotification = async (req, res) => {
       title: "Report Review Update",
       content: actionTaken,
       isRead: false,
-      createdAt: new Date(), 
+      createdAt: new Date(),
     };
-    
 
     user.notifications.push(notification);
     await user.save();
 
-      // Get the io instance and emit
-      const io = getIO();
+    // Get the io instance and emit
+    const io = getIO();
 
-      console.log('Active socket rooms:', io.sockets.adapter.rooms);
+    console.log("Active socket rooms:", io.sockets.adapter.rooms);
 
-      io.to(userId).emit('newNotification', notification);
+    io.to(userId).emit("newNotification", notification);
 
-      console.log('emitted notification',userId,notification);
+    console.log("emitted notification", userId, notification);
 
     res
       .status(200)
@@ -1049,179 +1047,226 @@ const sendNotification = async (req, res) => {
   }
 };
 
-const getCoupons=async(req,res)=>{
-try {
+const getCoupons = async (req, res) => {
+  try {
+    const coupons = await Coupon.find();
 
-  const coupons= await Coupon.find();
-  
-  return res.status(200).json({message:"Coupons fetched successfully",coupons})
+    return res
+      .status(200)
+      .json({ message: "Coupons fetched successfully", coupons });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
-} catch (error) {
-  console.log(error);
-  res.status(500).json({message:"Internal server error"})
-}
-}
-
-const createCoupon = async(req,res)=>{
-try {
-
-  const { code,
-    discountType,
-    discountValue,
-    usageLimit,
-    validTill,
-    isActive}=req.body
+const createCoupon = async (req, res) => {
+  try {
+    const {
+      code,
+      discountType,
+      discountValue,
+      usageLimit,
+      validTill,
+      isActive,
+    } = req.body;
 
     console.log(req.body);
 
-    if(!code || !validTill || !discountType || !discountValue ) return res.status(400).json({message:"Some data recieved is missing or invalid"});
+    if (!code || !validTill || !discountType || !discountValue)
+      return res
+        .status(400)
+        .json({ message: "Some data recieved is missing or invalid" });
 
-    const coupon = await Coupon.findOne({code})
-    if(coupon) return res.status(409).json("Coupon with same coupon code already exists!")
+    const coupon = await Coupon.findOne({ code });
+    if (coupon)
+      return res
+        .status(409)
+        .json("Coupon with same coupon code already exists!");
 
-    const newCoupon = new Coupon ({
+    const newCoupon = new Coupon({
       code,
       discountType,
       discountValue,
       validTill,
       isActive,
-      usageLimit
-    })
+      usageLimit,
+    });
 
     await newCoupon.save();
 
-    return res.status(200).json({message:"Coupon created successfully"});
-  
-} catch (error) {
-  console.log(error);
-  res.status(500).json({message:"Internal server error"})
-}
-}
+    return res.status(200).json({ message: "Coupon created successfully" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
-const toggleCouponStatus=async(req,res)=>{
+const toggleCouponStatus = async (req, res) => {
   try {
-    
-    const {couponId}=req.params;
-    if(!couponId) return res.status(400).json({Mesage:"CouponId is missing"})
+    const { couponId } = req.params;
+    if (!couponId)
+      return res.status(400).json({ Mesage: "CouponId is missing" });
 
-    const coupon= await Coupon.findById(couponId);
-    if(!coupon) return res.status(404).jsn({message:"Coupon not found"});
+    const coupon = await Coupon.findById(couponId);
+    if (!coupon) return res.status(404).jsn({ message: "Coupon not found" });
 
     coupon.isActive = !coupon.isActive;
 
     await coupon.save();
 
-    return res.status(200).json({message:"Succesfully changed coupon status"});
-
+    return res
+      .status(200)
+      .json({ message: "Succesfully changed coupon status" });
   } catch (error) {
     console.log(error);
-    res.status(500).json({message:"Internal server error"})
+    res.status(500).json({ message: "Internal server error" });
   }
-}
+};
 
-const deleteCoupon=async(req,res)=>{
+const deleteCoupon = async (req, res) => {
   try {
-    const {couponId} = req.params;
-    if(!couponId)return res.status(400).json({message:"couponId not recieved"});
-  
-    const coupon= await Coupon.findByIdAndDelete(couponId);
+    const { couponId } = req.params;
+    if (!couponId)
+      return res.status(400).json({ message: "couponId not recieved" });
 
-    return res.status(200).json({message:"Coupons deleted successfully"})
-  
+    const coupon = await Coupon.findByIdAndDelete(couponId);
+
+    return res.status(200).json({ message: "Coupons deleted successfully" });
   } catch (error) {
     console.log(error);
-    res.status(500).json({message:"Internal server error"})
+    res.status(500).json({ message: "Internal server error" });
   }
+};
+
+const getPayoutRequests = async (req, res) => {
+  try {
+    const payoutRequests = await Payouts.find()
+      .populate("tutorId", "fullName profileImg email")
+      .sort({ requestedAt: -1 });
+
+    return res
+      .status(200)
+      .json({
+        message: "Payout requests fetched successfully",
+        payoutRequests,
+      });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
   }
+};
 
-  const getPayoutRequests=async(req,res)=>{
-    try {
-    
-      const payoutRequests= await Payouts.find().populate('tutorId','fullName profileImg email').sort({requestedAt:-1});
-      
-      return res.status(200).json({message:"Payout requests fetched successfully",payoutRequests})
-    
-    } catch (error) {
-      console.log(error);
-      res.status(500).json({message:"Internal server error"})
+const handlePayoutRequest = async (req, res) => {
+  try {
+    const {type}= req.user;
+    if(type!=='admin')return res.status(401).json({message:"You are unauthorized to perform this action"})
+
+    const { action, requestId } = req.body;
+
+    if (!action || !requestId) {
+      return res
+        .status(400)
+        .json({ message: "Payload data is missing/incorrect" });
     }
+
+    const payoutRequest = await Payouts.findById(requestId);
+    if (!payoutRequest) {
+      return res.status(404).json({ message: "Payout request not found" });
     }
 
-    const handlePayoutRequest = async (req, res) => {
-      try {
-        const { action, requestId } = req.body;
-        if (!action || !requestId) {
-          return res.status(400).json({ message: "Payload data is missing/incorrect" });
-        }
-    
-  
-        const payoutRequest = await Payouts.findById(requestId);
+    const tutor = await Tutor.findById(payoutRequest.tutorId);
+    if (!tutor) {
+      return res.status(404).json({ message: "Tutor not found" });
+    }
 
-        const tutor = await Tutor.findById(payoutRequest.tutorId);
-        if (!tutor) {
-          throw new Error("Tutor not found");
-        }
-    
-        if (!payoutRequest) {
-          return res.status(404).json({ message: "Payout request not found for the given tutor" });
-        }
-    
-        // Update the status based on the action
-        if (action === 'approve') {
-          payoutRequest.status = 'approved';
-        } 
-        
-        else if (action === 'reject') {
-          payoutRequest.status = 'rejected';
-          tutor.amountWithdrawn = tutor.amountWithdrawn - payoutRequest.amount;
-        } 
+    if (action === "approve") {
+      payoutRequest.status = "approved";
+    } else if (action === "reject") {
+      payoutRequest.status = "rejected";
 
-        else 
-        {
-          return res.status(400).json({ message: "Invalid action" });
-        }
-    
-        payoutRequest.processedAt=new Date();
-    
-        await payoutRequest.save();
-        await tutor.save();
-    
-        
-        res.status(200).json({
-          message: `Payout request ${action.toLowerCase()} successfully`,
-          payoutRequest,
-        });
-      } catch (error) {
-        console.log(error);
-        res.status(500).json({ message: "Internal server error" });
+      // Convert `amountWithdrawn` to a number, subtract, and validate
+      const currentAmount = parseFloat(tutor.amountWithdrawn.toString());
+      const newAmount = currentAmount - payoutRequest.amount;
+
+      if (newAmount < 0) {
+        return res
+          .status(400)
+          .json({ message: "Invalid operation: Amount cannot be negative" });
       }
-    };
 
-
-    const getOrders=async(req,res)=>{
-try {
-  
-  const orders=await Order.find()
-  .populate('userId','fullName profileImg email')
-  .populate({
-    path: "courses", 
-    select: "categoryId price", 
-    populate: {
-      path: "categoryId", 
-      select: "title", 
-    },
-  });
-
-
-
-res.status(200).json(orders);
-
-} catch (error) {
-  console.log(error);
-  return res.status(500).json({message:"Internal server error"})
-}
+      tutor.amountWithdrawn = newAmount;
+    } else {
+      return res.status(400).json({ message: "Invalid action" });
     }
 
+    payoutRequest.processedAt = new Date();
+    await payoutRequest.save();
+    await tutor.save();
+
+    res.status(200).json({
+      message: `Payout request ${action.toLowerCase()} successfully`,
+      payoutRequest,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const getOrders = async (req, res) => {
+  try {
+    const orders = await Order.find()
+      .populate("userId", "fullName profileImg email")
+      .populate({
+        path: "courses",
+        select: "categoryId price",
+        populate: {
+          path: "categoryId",
+          select: "title",
+        },
+      });
+
+    res.status(200).json(orders);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const getSalesReport = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    console.log("Request query:", req.query);
+
+    const reportPath = await generateSalesReport(startDate, endDate);
+
+    console.log("Report path:", reportPath);
+
+    // Verify file exists before sending
+    if (!fs.existsSync(reportPath)) {
+      console.error("File not found:", reportPath);
+      return res.status(404).json({ message: "Report file not found" });
+    }
+
+    // Send the PDF file as a download response
+    res.download(
+      reportPath,
+      `sales_report_${startDate}_to_${endDate}.pdf`,
+      (err) => {
+        if (err) {
+          console.error("Error sending report file:", err);
+          res.status(500).json({ message: "Error sending report file" });
+        } else {
+          console.log("Report file sent successfully:", reportPath);
+        }
+      }
+    );
+  } catch (error) {
+    console.error("Error in getSalesReport:", error);
+    res.status(500).json({ message: "Error generating sales report", error });
+  }
+};
 
 module.exports = {
   forgotPassword,
@@ -1256,5 +1301,6 @@ module.exports = {
   toggleCouponStatus,
   getPayoutRequests,
   handlePayoutRequest,
-  getInvoice
+  getInvoice,
+  getSalesReport,
 };

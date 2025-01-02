@@ -116,49 +116,46 @@ const getReviewsByCourseId=async (req,res)=>{
   }
 }
 
-const makePayoutRequest=async(req,res)=>{
+const makePayoutRequest = async (req, res) => {
   try {
-    
-    const {amount,tutorId,paymentDetails}=req.body;
+    const { amount, tutorId, paymentDetails } = req.body;
 
-    console.log(req.body)
+    if (!amount || !tutorId) {
+      return res.status(400).json({ message: "Payload is missing / incorrect" });
+    }
 
-    if(!amount || !tutorId) return res.status(400).json({message:"Payload is missing / incorrect"});
-
-
-    const existingRequest = await Payouts.findOne({tutorId,status:'pending'});
-    if(existingRequest) return res.status(409).json({message:"Payout request already exists"});
+    const existingRequest = await Payouts.findOne({ tutorId, status: "pending" });
+    if (existingRequest) {
+      return res.status(409).json({ message: "Payout request already exists" });
+    }
 
     const tutor = await Tutor.findById(tutorId);
     if (!tutor) {
-      throw new Error("Tutor not found");
+      return res.status(404).json({ message: "Tutor not found" });
     }
+
+    // Convert `amountWithdrawn` to a number and update it
+    const currentAmount = parseFloat(tutor.amountWithdrawn.toString());
+    tutor.amountWithdrawn = currentAmount + amount;
 
     const payoutRequest = new Payouts({
       amount,
       tutorId,
-      requestedAt:new Date(),
-      status:'pending',
-      paymentDetails
+      requestedAt: new Date(),
+      status: "pending",
+      paymentDetails,
     });
-
-    //Increase the amount withdrawn
-
-    tutor.amountWithdrawn = tutor.amountWithdrawn + amount;
 
     await payoutRequest.save();
     await tutor.save();
 
-   
-
-    res.status(200).json({message:"Payout requested successfully",tutor});
-
-
+    res.status(200).json({ message: "Payout requested successfully", tutor });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({message:"Failed to make payout request :Internal server error"});
+    console.error(error);
+    res.status(500).json({ message: "Failed to make payout request: Internal server error" });
   }
-}
+};
+
 
 const getPayoutsHistory = async (req, res) => {
   try {

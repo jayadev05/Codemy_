@@ -88,7 +88,7 @@ export function WithdrawalHistory({ withdrawals = [] }) {
                 const StatusIcon = status.icon
                 
                 return (
-                  <TableRow key={withdrawal.id}>
+                  <TableRow key={withdrawal._id}>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <CalendarIcon className="h-4 w-4 text-muted-foreground" />

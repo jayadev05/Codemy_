@@ -261,8 +261,16 @@ export default function Dashboard() {
 
           <Tabs defaultValue="courses" className="space-y-6">
             <TabsList>
-              <TabsTrigger value="courses">Courses</TabsTrigger>
-              <TabsTrigger value="payouts">Payout Requests</TabsTrigger>
+              <TabsTrigger  value="courses" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white">Courses</TabsTrigger>
+              <TabsTrigger value="payouts" className="data-[state=active]:bg-orange-500 data-[state=active]:text-white relative ">
+                Payout Requests
+                {payoutRequests.filter((p) => p.status === 'pending').length > 0 && (
+      <span className="absolute -top-1 -right-0 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+        {payoutRequests.filter((p) => p.status === 'pending').length}
+      </span>
+    )}
+                
+                </TabsTrigger>
             </TabsList>
 
             <TabsContent value="courses" className="space-y-4">
@@ -282,6 +290,7 @@ export default function Dashboard() {
               />
             </TabsContent>
           </Tabs>
+
         </div>
       </main>
     </div>

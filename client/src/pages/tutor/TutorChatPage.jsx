@@ -57,14 +57,18 @@ export default function TutorChatPage() {
    const connectionRef = useRef();
  
    const [stream, setStream] = useState(null);
-   const [userId, setUserId] = useState('');
    const [isCallAccepted, setIsCallAccepted] = useState(false);
    const [incomingCallInfo, setIncomingCallInfo] = useState({});
    const [isCallActive, setIsCallActive] = useState(false);
  const [isAudioEnabled, setIsAudioEnabled] = useState(true);
  const [isVideoEnabled, setIsVideoEnabled] = useState(false);
 
- console.log("is call accepted?",isCallAccepted);
+ 
+
+ console.log("Stream",stream)
+console.log("Peer Video",peerVideoRef)
+console.log("My Video",myVideoRef)
+
  
 
  
@@ -86,15 +90,18 @@ export default function TutorChatPage() {
 
     // Request media stream for audio only
     navigator.mediaDevices
-      .getUserMedia({ audio: true })
+      .getUserMedia({ video:true,audio: true })
       .then((mediaStream) => {
-        console.log('Audio stream acquired');
+
+        console.log('media stream acquired');
+
         setStream(mediaStream);
 
-        // Set the stream to an audio element for playback
-        if (myAudioRef.current) {
-          myAudioRef.current.srcObject = mediaStream;
+        //set local video
+        if (myVideoRef.current) {
+          myVideoRef.current.srcObject = mediaStream;
         }
+
       })
       .catch((error) => {
         console.error('Error accessing media devices:', error);
@@ -106,12 +113,14 @@ export default function TutorChatPage() {
       });
 
     // Cleanup
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, []);
+    // Cleanup function
+  return () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+    }
+  };
+
+  }, [isCallActive,incomingCallInfo?.isSomeoneCalling]);
   
 
    //handling video call
@@ -157,8 +166,10 @@ export default function TutorChatPage() {
       socketService.off('call-accepted', handleCallAccepted);
       socketService.off('call-rejected', handleCallRejected);
       socketService.off('user-disconnected', handleUserDisconnected);
+
+  
     };
-  }, [isCallActive]);
+  }, [stream,isCallActive]);
 
   const userType = getUserRoleFromToken();
 
@@ -284,13 +295,14 @@ export default function TutorChatPage() {
     
       console.log("Received message event triggered:", message);
       
-      // Skip validation of contentType and add default if missing
+      
       const validatedMessage = {
         ...message,
         contentType: message.contentType || 'text' // Default to text for backward compatibility
       };
     
       updateChatLastMessage(validatedMessage);
+      fetchChats();
     
       setSelectedChat((currentSelectedChat) => {
         if (currentSelectedChat?._id === message.chatId) {
@@ -312,7 +324,7 @@ export default function TutorChatPage() {
           setChats((prevChats) =>
             prevChats.map((chat) => {
               if (chat._id === message.chatId) {
-                const isFromOtherUser = message.sender.userId !== user._id;
+                const isFromOtherUser = message.sender.userId !== tutor._id;
                 const isNotCurrentChat = currentSelectedChat?._id !== chat._id;
     
                 return {
@@ -552,6 +564,7 @@ export default function TutorChatPage() {
       setInputMessage("");
       clearSelectedFile();
       updateChatLastMessage(validatedResponse);
+      fetchChats()
   
       socketService.sendMessage({
         ...validatedResponse,
@@ -821,118 +834,230 @@ export default function TutorChatPage() {
     }
   };
 
-  const initiateCall = () => {
-    if (!tutor._id ) return;
-  
-    const peer = new SimplePeer({
-      initiator: true,
-      trickle: false,
-      stream,
-    });
-  
-    const receiverId = userType === "user" 
-      ? selectedChat.tutorId._id 
-      : selectedChat.userId._id;
-  
-    peer.on('signal', (signalData) => {
-      // Only send offer when peer creates it
-      if (signalData.type === 'offer') {
-        socketService.initializeCall({
-          recieverId: receiverId,
-          signalData,
-          from: socketService.socket.id,
-          callerName: tutor.fullName,
-          callerAvatar: tutor.profileImg,
-          callerUserId: tutor._id
-        });
-      }
-    });
-  
-    peer.on('stream', (remoteStream) => {
-      if (peerVideoRef.current) {
-        peerVideoRef.current.srcObject = remoteStream;
-      }
-    });
-  
-    peer.on('error', (err) => {
-      console.error('Peer error:', err);
-      handleEndCall();
-    });
-  
-    connectionRef.current = peer;
-  };
-  
-  const answerCall = () => {
-    if ( !incomingCallInfo?.signalData) return;
-  
-    setIsCallAccepted(true);
-    setIncomingCallInfo((prev)=> ({...prev,isSomeoneCalling:false}));
+  const initiateCall = async () => {
+    if (!tutor._id) return;
+
+    try {
+        // Ensure we have a stream before proceeding
+        if (!stream || !stream.getTracks().length) {
+            // Request media stream if not available
+            const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                video: true, 
+                audio: true 
+            });
+            setStream(mediaStream);
+            
+            // Update video ref with new stream
+            if (myVideoRef.current) {
+                myVideoRef.current.srcObject = mediaStream;
+            }
+
+            // Create peer with the new stream
+            createInitiatorPeer(mediaStream);
+        } else {
+            // Create peer with existing stream
+            createInitiatorPeer(stream);
+        }
+    } catch (error) {
+        console.error('Error accessing media devices:', error);
+        // Handle error - maybe show a notification to user
+    }
+};
+
+// Separate function to create initiator peer
+const createInitiatorPeer = (mediaStream) => {
+    console.log("Creating initiator peer with stream:", mediaStream);
+    console.log("Stream tracks:", mediaStream?.getTracks());
 
     const peer = new SimplePeer({
-      initiator: false,
-      trickle: false,
-      stream
+        initiator: true,
+        trickle: false,
+        stream: mediaStream,
+        config: { iceServers: [ // Add STUN/TURN servers if needed
+            { urls: 'stun:stun.l.google.com:19302' }
+        ]}
     });
-  
+
+    const receiverId = userType === "user" 
+        ? selectedChat.tutorId._id 
+        : selectedChat.userId._id;
+
     peer.on('signal', (signalData) => {
-      // Only send answer when peer creates it
-      if (signalData.type === 'answer') {
-        socketService.answerCall({
-          signalData,
-          to: incomingCallInfo.from
-        });
-      }
+        if (signalData.type === 'offer') {
+            socketService.initializeCall({
+                recieverId: receiverId,
+                signalData,
+                from: socketService.socket.id,
+                callerName: tutor.fullName,
+                callerAvatar: tutor.profileImg,
+                callerUserId: tutor._id
+            });
+        }
     });
-  
+
     peer.on('stream', (remoteStream) => {
-      if (peerVideoRef.current) {
-        peerVideoRef.current.srcObject = remoteStream;
-      }
+        console.log('Received remote stream:', remoteStream);
+        if (peerVideoRef.current) {
+            peerVideoRef.current.srcObject = remoteStream;
+            peerVideoRef.current.play().catch(err => 
+                console.error('Error playing remote stream:', err)
+            );
+        }
     });
-  
+
+    peer.on('connect', () => {
+        console.log('Peer connection established');
+        setIsCallActive(true);
+    });
+
     peer.on('error', (err) => {
-      console.error('Peer error:', err);
-      handleEndCall();
+        console.error('Peer error:', err);
+        handleEndCall();
     });
-  
+
+    peer.on('close', () => {
+        console.log('Peer connection closed');
+        handleEndCall();
+    });
+
+    connectionRef.current = peer;
+};
+
+const answerCall = async () => {
+    if (!incomingCallInfo?.signalData) return;
+
+    try {
+        // Ensure we have a stream before proceeding
+        if (!stream || !stream.getTracks().length) {
+            // Request media stream if not available
+            const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                video: true, 
+                audio: true 
+            });
+            setStream(mediaStream);
+            
+            // Update video ref with new stream
+            if (myVideoRef.current) {
+                myVideoRef.current.srcObject = mediaStream;
+            }
+
+            // Create peer with the new stream
+            createAnswerPeer(mediaStream);
+        } else {
+            // Create peer with existing stream
+            createAnswerPeer(stream);
+        }
+    } catch (error) {
+        console.error('Error accessing media devices:', error);
+        // Handle error - maybe show a notification to user
+    }
+};
+
+// Separate function to create answering peer
+const createAnswerPeer = (mediaStream) => {
+    console.log("Creating answer peer with stream:", mediaStream);
+    console.log("Stream tracks:", mediaStream?.getTracks());
+
+    setIsCallAccepted(true);
+    setIncomingCallInfo((prev) => ({...prev, isSomeoneCalling: false}));
+
+    const peer = new SimplePeer({
+        initiator: false,
+        trickle: false,
+        stream: mediaStream,
+        config: { iceServers: [ // Add STUN/TURN servers if needed
+            { urls: 'stun:stun.l.google.com:19302' }
+        ]}
+    });
+
+    peer.on('signal', (signalData) => {
+        if (signalData.type === 'answer') {
+            socketService.answerCall({
+                signalData,
+                to: incomingCallInfo.from
+            });
+        }
+    });
+
+    peer.on('stream', (remoteStream) => {
+        console.log('Received remote stream:', remoteStream);
+        if (peerVideoRef.current) {
+            peerVideoRef.current.srcObject = remoteStream;
+            peerVideoRef.current.play().catch(err => 
+                console.error('Error playing remote stream:', err)
+            );
+        }
+    });
+
+    peer.on('connect', () => {
+        console.log('Peer connection established');
+        setIsCallActive(true);
+    });
+
+    peer.on('error', (err) => {
+        console.error('Peer error:', err);
+        handleEndCall();
+    });
+
+    peer.on('close', () => {
+        console.log('Peer connection closed');
+        handleEndCall();
+    });
+
     // Signal the offer to the answering peer
     peer.signal(incomingCallInfo.signalData);
     connectionRef.current = peer;
-  };
-  
-  const handleEndCall = () => {
-    if (connectionRef.current) {
+};
+const handleEndCall = () => {
+  // Clean up peer connection
+  if (connectionRef.current) {
       connectionRef.current.destroy();
       connectionRef.current = null;
-    }
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-    }
-    if (peerVideoRef.current) {
+  }
+
+  // Clean up video elements
+  if (myVideoRef.current) {
+      myVideoRef.current.srcObject = null;
+  }
+  if (peerVideoRef.current) {
       peerVideoRef.current.srcObject = null;
-    }
-    setStream(null);
-    setIsCallActive(false);
-    setIsCallAccepted(false);
-    setIncomingCallInfo(null);
-  };
+  }
+
+  // Stop all tracks in the stream
+  if (stream) {
+      stream.getTracks().forEach(track => {
+          track.stop();
+          stream.removeTrack(track);
+      });
+  }
+  setStream(null);
+  setIsCallActive(false);
+  setIsCallAccepted(false);
+  setIncomingCallInfo(null);
+};
     
     const handleRejectCall = () => {
       socketService.rejectCall({ to: incomingCallInfo.from });
       setIncomingCallInfo({});
     };
     
-    const toggleAudio = () => {
+    const onToggleVideo = () => {
       if (stream) {
-        stream.getAudioTracks()[0].enabled = !isAudioEnabled;
-        setIsAudioEnabled(!isAudioEnabled);
+        const videoTrack = stream.getVideoTracks()[0];
+        if (videoTrack) {
+          videoTrack.enabled = !isVideoEnabled;
+          setIsVideoEnabled(!isVideoEnabled);
+        }
       }
     };
     
-    const toggleVideo = () => {
+    const onToggleAudio = () => {
       if (stream) {
-        stream.getVideoTracks()[0].enabled = !isVideoEnabled;
-        setIsVideoEnabled(!isVideoEnabled);
+        const audioTrack = stream.getAudioTracks()[0];
+        if (audioTrack) {
+          audioTrack.enabled = !isAudioEnabled;
+          setIsAudioEnabled(!isAudioEnabled);
+        }
       }
     };
 
@@ -1353,8 +1478,8 @@ export default function TutorChatPage() {
   onReject={handleRejectCall}
   onEndCall={handleEndCall}
   isCallActive={isCallActive || isCallAccepted}
-  onToggleAudio={toggleAudio}
-  onToggleVideo={toggleVideo}
+  onToggleAudio={onToggleAudio}
+  onToggleVideo={onToggleVideo}
   isAudioEnabled={isAudioEnabled}
   isVideoEnabled={isVideoEnabled}
 />

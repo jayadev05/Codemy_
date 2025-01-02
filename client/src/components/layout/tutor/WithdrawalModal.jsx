@@ -291,7 +291,7 @@ export function WithdrawDialog({ open, onOpenChange, availableBalance, tutorId }
           )}
 
           <div>
-            <Label htmlFor="amount">Amount</Label>
+            <Label htmlFor="amount">Amount in Rs :</Label>
             <Input
               id="amount"
               name="amount"

@@ -1,6 +1,6 @@
 const express = require("express")
 const adminRoute = express.Router()
-const { logoutAdmin,getCertificates,getOrders,forgotPassword,existsCheck,approveTutor,submitInstructorApplication,getInstructorApplications,getTutors,reviewInstructorApplication,resetPassword,getUsers,listUser,unlistUser,unlisTtutor,lisTtutor, getCategories, addCategory, updateCategory, deleteCategory, listCourse, unlistCourse, getReports, openReport, sendNotification, handleReportStatus, getCoupons, createCoupon, deleteCoupon, toggleCouponStatus, getPayoutRequests, handlePayoutRequest, getInvoice} = require("../../controller/adminController")
+const { logoutAdmin,getCertificates,getOrders,forgotPassword,existsCheck,approveTutor,submitInstructorApplication,getInstructorApplications,getTutors,reviewInstructorApplication,resetPassword,getUsers,listUser,unlistUser,unlisTtutor,lisTtutor, getCategories, addCategory, updateCategory, deleteCategory, listCourse, unlistCourse, getReports, openReport, sendNotification, handleReportStatus, getCoupons, createCoupon, deleteCoupon, toggleCouponStatus, getPayoutRequests, handlePayoutRequest, getInvoice, getSalesReport} = require("../../controller/adminController")
 const handleTutorUpload = require('../../middleware/multer');
 const verifyUser = require("../../middleware/authMiddleware");
 
@@ -15,6 +15,7 @@ adminRoute.get('/certificates/:certificateId', getCertificates);
 adminRoute.get('/payout-requests', getPayoutRequests);
 adminRoute.get('/get-orders', getOrders);
 adminRoute.get('/download-invoice/:orderId', getInvoice);
+adminRoute.get('/download-sales-report', getSalesReport);
 
 adminRoute.post('/forgot-password', forgotPassword);
 adminRoute.post('/reset/:token', resetPassword);
