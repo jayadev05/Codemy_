@@ -33,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import axiosInstance from "@/config/axiosConfig";
 
 export default function CoursePlayer() {
   const user = useSelector(selectUser);
@@ -97,7 +98,7 @@ export default function CoursePlayer() {
   useEffect(() => {
     const fetchCourse = async () => {
       try {
-        const response = await axios.get(
+        const response = await axiosInstance.get(
           "http://localhost:3000/course/play-course",
           { params: { userId: user._id, courseId } }
         );
@@ -129,7 +130,7 @@ export default function CoursePlayer() {
 
     const fetchRating = async () => {
       try {
-        const response = await axios.get(
+        const response = await axiosInstance.get(
           "http://localhost:3000/course/get-ratings",
           {
             params: { userId: user._id, courseId },
@@ -193,7 +194,7 @@ export default function CoursePlayer() {
   const handleCertificate = async () => {
     try {
       setCertificateLoading(true);
-      const response = await axios.post(
+      const response = await axiosInstance.post(
         "http://localhost:3000/course/generate-certificate",
         {
           userId: user._id,
@@ -216,7 +217,7 @@ export default function CoursePlayer() {
 
   const sendProgressToBackend = async (lessonId) => {
     try {
-      await axios.put("http://localhost:3000/course/update-course-progress", {
+      await axiosInstance.put("http://localhost:3000/course/update-course-progress", {
         userId: user._id,
         courseId,
         lessonId,
@@ -303,7 +304,7 @@ export default function CoursePlayer() {
 
   const submitCourseReview = async () => {
     try {
-      const response = await axios.post(
+      const response = await axiosInstance.post(
         "http://localhost:3000/course/add-rating",
         {
           courseId: courseId,

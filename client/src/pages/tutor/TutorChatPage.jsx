@@ -65,62 +65,62 @@ export default function TutorChatPage() {
 
  
 
- console.log("Stream",stream)
+
 console.log("Peer Video",peerVideoRef)
 console.log("My Video",myVideoRef)
 
  
 
  
-  // Handle media devices separately
-  useEffect(() => {
-    // Enumerate devices for debugging
-    navigator.mediaDevices.enumerateDevices().then((devices) => {
-      devices.forEach((device) =>
-        console.log(device.kind, device.label, device.deviceId)
-      );
-    });
+  // // Handle media devices separately
+  // useEffect(() => {
+  //   // Enumerate devices for debugging
+  //   navigator.mediaDevices.enumerateDevices().then((devices) => {
+  //     devices.forEach((device) =>
+  //       console.log(device.kind, device.label, device.deviceId)
+  //     );
+  //   });
 
-    // Check media device support
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      console.error('Media devices API not supported on this device');
-      setStream(null);
-      return;
-    }
+  //   // Check media device support
+  //   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+  //     console.error('Media devices API not supported on this device');
+  //     setStream(null);
+  //     return;
+  //   }
 
-    // Request media stream for audio only
-    navigator.mediaDevices
-      .getUserMedia({ video:true,audio: true })
-      .then((mediaStream) => {
+  //   // Request media stream for audio only
+  //   navigator.mediaDevices
+  //     .getUserMedia({ video:true,audio: true })
+  //     .then((mediaStream) => {
 
-        console.log('media stream acquired');
+  //       console.log('media stream acquired');
 
-        setStream(mediaStream);
+  //       setStream(mediaStream);
 
-        //set local video
-        if (myVideoRef.current) {
-          myVideoRef.current.srcObject = mediaStream;
-        }
+  //       //set local video
+  //       if (myVideoRef.current) {
+  //         myVideoRef.current.srcObject = mediaStream;
+  //       }
 
-      })
-      .catch((error) => {
-        console.error('Error accessing media devices:', error);
+  //     })
+  //     .catch((error) => {
+  //       console.error('Error accessing media devices:', error);
 
-        if (error.name === 'NotFoundError') {
-          console.error('No audio input device found. Audio may not work.');
-        }
-        setStream(null);
-      });
+  //       if (error.name === 'NotFoundError') {
+  //         console.error('No audio input device found. Audio may not work.');
+  //       }
+  //       setStream(null);
+  //     });
 
-    // Cleanup
-    // Cleanup function
-  return () => {
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-    }
-  };
+  //   // Cleanup
+  //   // Cleanup function
+  // return () => {
+  //   if (stream) {
+  //     stream.getTracks().forEach(track => track.stop());
+  //   }
+  // };
 
-  }, [isCallActive,incomingCallInfo?.isSomeoneCalling]);
+  // }, [isCallActive,incomingCallInfo?.isSomeoneCalling]);
   
 
    //handling video call
@@ -169,7 +169,7 @@ console.log("My Video",myVideoRef)
 
   
     };
-  }, [stream,isCallActive]);
+  }, [stream,incomingCallInfo?.isSomeoneCalling]);
 
   const userType = getUserRoleFromToken();
 
@@ -836,31 +836,29 @@ console.log("My Video",myVideoRef)
 
   const initiateCall = async () => {
     if (!tutor._id) return;
-
+    
     try {
-        // Ensure we have a stream before proceeding
-        if (!stream || !stream.getTracks().length) {
-            // Request media stream if not available
-            const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-                video: true, 
-                audio: true 
-            });
-            setStream(mediaStream);
-            
-            // Update video ref with new stream
-            if (myVideoRef.current) {
-                myVideoRef.current.srcObject = mediaStream;
-            }
-
-            // Create peer with the new stream
-            createInitiatorPeer(mediaStream);
-        } else {
-            // Create peer with existing stream
-            createInitiatorPeer(stream);
+        const mediaStream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true
+        });
+        
+        setStream(mediaStream);
+        
+        // Store the stream in a ref so we can access it later
+        const streamRef = mediaStream;
+        
+        // Create peer with the new stream immediately
+        createInitiatorPeer(streamRef);
+        
+        // Attempt to set the stream on the video element if it exists
+        if (myVideoRef.current) {
+            myVideoRef.current.srcObject = streamRef;
         }
+        
     } catch (error) {
         console.error('Error accessing media devices:', error);
-        // Handle error - maybe show a notification to user
+        
     }
 };
 
@@ -873,9 +871,7 @@ const createInitiatorPeer = (mediaStream) => {
         initiator: true,
         trickle: false,
         stream: mediaStream,
-        config: { iceServers: [ // Add STUN/TURN servers if needed
-            { urls: 'stun:stun.l.google.com:19302' }
-        ]}
+        
     });
 
     const receiverId = userType === "user" 
@@ -899,9 +895,7 @@ const createInitiatorPeer = (mediaStream) => {
         console.log('Received remote stream:', remoteStream);
         if (peerVideoRef.current) {
             peerVideoRef.current.srcObject = remoteStream;
-            peerVideoRef.current.play().catch(err => 
-                console.error('Error playing remote stream:', err)
-            );
+           
         }
     });
 
@@ -927,9 +921,7 @@ const answerCall = async () => {
     if (!incomingCallInfo?.signalData) return;
 
     try {
-        // Ensure we have a stream before proceeding
-        if (!stream || !stream.getTracks().length) {
-            // Request media stream if not available
+     
             const mediaStream = await navigator.mediaDevices.getUserMedia({ 
                 video: true, 
                 audio: true 
@@ -943,10 +935,7 @@ const answerCall = async () => {
 
             // Create peer with the new stream
             createAnswerPeer(mediaStream);
-        } else {
-            // Create peer with existing stream
-            createAnswerPeer(stream);
-        }
+        
     } catch (error) {
         console.error('Error accessing media devices:', error);
         // Handle error - maybe show a notification to user
@@ -965,9 +954,7 @@ const createAnswerPeer = (mediaStream) => {
         initiator: false,
         trickle: false,
         stream: mediaStream,
-        config: { iceServers: [ // Add STUN/TURN servers if needed
-            { urls: 'stun:stun.l.google.com:19302' }
-        ]}
+       
     });
 
     peer.on('signal', (signalData) => {
@@ -980,12 +967,10 @@ const createAnswerPeer = (mediaStream) => {
     });
 
     peer.on('stream', (remoteStream) => {
-        console.log('Received remote stream:', remoteStream);
+        console.log('Received caller stream:', remoteStream);
         if (peerVideoRef.current) {
             peerVideoRef.current.srcObject = remoteStream;
-            peerVideoRef.current.play().catch(err => 
-                console.error('Error playing remote stream:', err)
-            );
+           
         }
     });
 
@@ -1078,7 +1063,7 @@ const handleEndCall = () => {
         {/* Header */}
         <header className="flex items-center justify-between border-b bg-white p-4">
           <div>
-            <h1 className="text-lg lg:text-xl font-semibold">Messages</h1>
+            <h1 className="text-lg lg:text-xl ml-12 lg:ml-0 font-semibold">Messages</h1>
             <p className="text-sm text-gray-500 hidden sm:block">
               Good Morning
             </p>

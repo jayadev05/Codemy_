@@ -390,6 +390,7 @@ const reviewInstructorApplication = async (req, res) => {
     if (status === "approved") {
       // Check if user already exists
       let existingUser = await User.findOne({ email: application.email });
+      const userId=existingUser._id;
 
       if (existingUser) {
         // Generate a secure random password
@@ -409,6 +410,15 @@ const reviewInstructorApplication = async (req, res) => {
           })),
         });
         await newTutor.save();
+
+        //blacklist userId for invalidating currenlty logged in user
+        await UserBlacklist.findOneAndUpdate(
+          { userId },
+          { invalidatedAt: new Date() },
+          { upsert: true } 
+        );
+        
+        console.log('User blacklisted  successfully');
 
         // Delete data from user collection
         await User.findByIdAndDelete(existingUser._id);
@@ -539,14 +549,8 @@ const existsCheck = async (req, res) => {
 };
 
 const approveTutor = async (req, res) => {
-  if (!req.user)
-    return res
-      .status(403)
-      .json({ message: "Token is invalid! Please refresh or login again." });
-  if (req.user?.type !== "admin")
-    return res
-      .status(403)
-      .json({ message: "You dont have authorization to perform this action!" });
+  
+  
 
   try {
     const { applicationId } = req.params;
@@ -559,7 +563,7 @@ const approveTutor = async (req, res) => {
         status: status,
         updatedAt: new Date(),
       },
-      { new: true } // Returns the updated document
+      { new: true } 
     );
 
     // Check if application exists
@@ -574,7 +578,7 @@ const approveTutor = async (req, res) => {
     try {
       const result = await axios.put(
         `http://localhost:3000/admin/instructor-applications/${applicationId}/review`,
-        { status } // Send status in request body
+        { status } 
       );
 
       // If review is successful, return the newly created tutor (if any)

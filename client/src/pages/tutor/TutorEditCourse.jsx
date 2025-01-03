@@ -16,12 +16,13 @@ import toast from "react-hot-toast";
 import { useNavigate } from "react-router";
 import LessonEditModal from "../../components/layout/tutor/LessonEditModal";
 import LessonAddModal from "../../components/layout/tutor/LessonAddModal";
+import axiosInstance from "@/config/axiosConfig";
 
 function TutorEditCourse() {
   const tutor = useSelector(selectTutor);
   const courseFromRedux = useSelector(selectCourse);
 
-  console.log(courseFromRedux,"asdasd")
+  console.log(courseFromRedux, "asdasd");
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -53,8 +54,8 @@ function TutorEditCourse() {
 
   console.log("lesson in page", lessons);
 
-  // Sync Redux course state with local state 
-  
+  // Sync Redux course state with local state
+
   useEffect(() => {
     if (courseFromRedux) {
       setCourse(courseFromRedux);
@@ -67,7 +68,7 @@ function TutorEditCourse() {
 
   const fetchLessons = async () => {
     try {
-      const response = await axios.get(
+      const response = await axiosInstance.get(
         `http://localhost:3000/course/get-lessons/${courseFromRedux._id}`
       );
 
@@ -260,7 +261,7 @@ function TutorEditCourse() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.put(
+      const response = await axiosInstance.put(
         `http://localhost:3000/course/edit-course/${courseFromRedux._id}`,
         { course }
       );
@@ -297,7 +298,7 @@ function TutorEditCourse() {
   const confirmLessonDelete = async () => {
     try {
       if (lessonToDelete) {
-        const response = await axios.delete(
+        const response = await axiosInstance.delete(
           `http://localhost:3000/course/delete-lesson?lessonId=${lessonToDelete}&courseId=${courseFromRedux._id}`
         );
 
@@ -331,17 +332,14 @@ function TutorEditCourse() {
     setAddModalOpen(true);
   };
 
-  const fetchNewLesson=async(newLesson)=>{
-
+  const fetchNewLesson = async (newLesson) => {
     setCourse((prevCourse) => ({
       ...prevCourse,
-      lessons: [...(prevCourse.lessons || []), newLesson._id]
+      lessons: [...(prevCourse.lessons || []), newLesson._id],
     }));
 
-      fetchLessons();
-
-
-  }
+    fetchLessons();
+  };
 
   return (
     <>
@@ -356,7 +354,9 @@ function TutorEditCourse() {
           {/* Header */}
           <header className="flex items-center justify-between border-b bg-white px-6 py-4 ">
             <div>
-              <h1 className="text-xl font-semibold">Edit Course</h1>
+              <h1 className="text-xl ml-12 lg:ml-0 font-semibold">
+                Edit Course
+              </h1>
             </div>
             <div className="flex items-center gap-4">
               <div className="relative">
@@ -671,7 +671,6 @@ function TutorEditCourse() {
               </div>
             </div>
           </div>
-
         </main>
 
         {deleteModalOpen && (
@@ -715,7 +714,6 @@ function TutorEditCourse() {
           courseId={courseFromRedux._id}
           onLessonAdd={fetchNewLesson}
         />
-
       </div>
     </>
   );

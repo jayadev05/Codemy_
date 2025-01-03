@@ -8,15 +8,18 @@ import { logoutUser, selectUser } from "../../store/slices/userSlice";
 import Header from "../../components/layout/Header";
 import SecondaryFooter from "../../components/layout/user/SecondaryFooter";
 import logo from "../../assets/logo_cap.png";
-import { addToWishlist, setWishlistItems } from "../../store/slices/wishlistSlice";
+import {
+  addToWishlist,
+  setWishlistItems,
+} from "../../store/slices/wishlistSlice";
 import MainHeader from "../../components/layout/user/MainHeader";
 import { addToCart, selectCart } from "../../store/slices/cartSlice";
 import { setCurrentCourse } from "@/store/slices/courseSlice";
+import axiosInstance from "@/config/axiosConfig";
 
 export default function CourseListing() {
   const user = useSelector(selectUser);
-  const cart=useSelector(selectCart)
-
+  const cart = useSelector(selectCart);
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -35,50 +38,50 @@ export default function CourseListing() {
 
   const [categories, setCategories] = useState([]);
 
-  console.log(filters)
+  console.log(filters);
 
-
-  const [page,setPage]=useState(1);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     fetchCourses();
-  }, [searchQuery, sortBy, filters,page]);
+  }, [searchQuery, sortBy, filters, page]);
 
   useEffect(() => {
     fetchCategories();
   }, []);
 
-  useEffect(()=>{
-    window.addEventListener('scroll',handleScroll);
+  useEffect(() => {
+    window.addEventListener("scroll", handleScroll);
 
-    return ()=>window.removeEventListener('scroll',handleScroll);
-  },[])
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
-
-  const handleCourseView= (courseId)=>{
+  const handleCourseView = (courseId) => {
     try {
       dispatch(setCurrentCourse(courseId));
       navigate(`/course/details`);
-
     } catch (error) {
       console.log(error);
-      toast.error( error.message || 'Failed to view course')
+      toast.error(error.message || "Failed to view course");
     }
-  }
+  };
 
-  const handleScroll =()=>{
-    console.log('height',document.documentElement.scrollHeight)
-    console.log('top',document.documentElement.scrollTop)
-    console.log('window',window.innerHeight)
+  const handleScroll = () => {
+    console.log("height", document.documentElement.scrollHeight);
+    console.log("top", document.documentElement.scrollTop);
+    console.log("window", window.innerHeight);
 
-    if(window.innerHeight + document.documentElement.scrollTop+200 +1>=document.documentElement.scrollHeight){
-      setPage(prev=>prev+1)
+    if (
+      window.innerHeight + document.documentElement.scrollTop + 200 + 1 >=
+      document.documentElement.scrollHeight
+    ) {
+      setPage((prev) => prev + 1);
     }
-  }
+  };
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get(
+      const response = await axiosInstance.get(
         "http://localhost:3000/admin/get-categories"
       );
       setCategories(response.data);
@@ -94,13 +97,12 @@ export default function CourseListing() {
 
   const fetchWishlist = async () => {
     try {
-      const response = await axios.get(
+      const response = await axiosInstance.get(
         "http://localhost:3000/course/get-wishlist",
         { params: { userId: user._id } }
       );
       setWishlist(response.data.wishlist);
       dispatch(setWishlistItems(response.data.wishlist));
-
     } catch (error) {
       console.log(error);
     }
@@ -108,31 +110,29 @@ export default function CourseListing() {
 
   const fetchCourses = async () => {
     try {
-      const response = await axios.get(
+      const response = await axiosInstance.get(
         "http://localhost:3000/course/get-course-info",
         {
           params: {
             search: searchQuery,
             sortBy,
             page,
-            limit: 8, 
+            limit: 8,
             ...filters,
           },
         }
       );
-      
+
       if (page === 1) {
         setCourses(response.data.courses);
       } else {
-        setCourses(prev => [...prev, ...response.data.courses]);
+        setCourses((prev) => [...prev, ...response.data.courses]);
       }
-      
-  
+
       const hasMore = response.data.hasMore;
       if (!hasMore) {
-        window.removeEventListener('scroll', handleScroll);
+        window.removeEventListener("scroll", handleScroll);
       }
-      
     } catch (error) {
       console.log(error);
     }
@@ -302,7 +302,7 @@ export default function CourseListing() {
 
   const handleWishlist = async (id) => {
     try {
-      const response = await axios.post(
+      const response = await axiosInstance.post(
         "http://localhost:3000/course/addToWishlist",
         {
           userId: user._id,
@@ -316,55 +316,58 @@ export default function CourseListing() {
         dispatch(addToWishlist(response.data.wishlist));
 
         fetchWishlist();
-
       } else {
         toast.error(response.data.message);
       }
     } catch (error) {
       console.error(error);
-      toast.error(error.response?.data?.message || "An error occurred",{icon:"🕴️",style:{borderRadius: '10px',
-        background: '#eb5a0c',
-        color: '#fff',}});
+      toast.error(error.response?.data?.message || "An error occurred", {
+        icon: "🕴️",
+        style: { borderRadius: "10px", background: "#eb5a0c", color: "#fff" },
+      });
     }
   };
 
+  const handleAddToCart = async (courseId, price) => {
+    try {
+      const response = await axiosInstance.post(
+        "http://localhost:3000/course/addToCart",
+        {
+          courseId,
+          userId: user._id,
+        }
+      );
 
-const handleAddToCart = async (courseId, price) => {
-  try {
-  
-    const response = await axios.post('http://localhost:3000/course/addToCart', { 
-      courseId, 
-      userId: user._id 
-    });
+      dispatch(addToCart({ courseId, price }));
 
-   dispatch(addToCart({ courseId, price }));
-
-   toast.success("Item added to cart successfully",{icon: "🛒",style: {
-    borderRadius: '10px',
-    background: '#111826',
-    color: '#fff',
-  }})
-
-  } catch (error) {
-  
-    console.error('Failed to add to cart', error);
-    if(error.response)
-    toast.error(error.response.data.message || "Failed to add to cart",{icon:"🕴️",style:{borderRadius: '10px',
-      background: '#eb5a0c',
-      color: '#fff',}})
-  }
-};
+      toast.success("Item added to cart successfully", {
+        icon: "🛒",
+        style: {
+          borderRadius: "10px",
+          background: "#111826",
+          color: "#fff",
+        },
+      });
+    } catch (error) {
+      console.error("Failed to add to cart", error);
+      if (error.response)
+        toast.error(error.response.data.message || "Failed to add to cart", {
+          icon: "🕴️",
+          style: { borderRadius: "10px", background: "#eb5a0c", color: "#fff" },
+        });
+    }
+  };
 
   useEffect(() => {
     fetchWishlist();
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col mx-auto">
       <Header />
 
       <main className="flex-1 bg-gray-50 min-h-[90vh]">
-       <MainHeader  />
+        <MainHeader />
 
         {/* Filter Section */}
         <FilterSection />
@@ -418,35 +421,34 @@ const handleAddToCart = async (courseId, price) => {
           <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-12">
             {courses.map((course) => (
               <div
-              
                 key={course._id}
                 className="flex flex-col overflow-hidden rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out"
               >
                 <div className="relative aspect-[3/2] w-full">
                   <img
-                  onClick={()=>handleCourseView(course._id)}
+                    onClick={() => handleCourseView(course._id)}
                     src={course.thumbnail}
                     alt={`${course.title} thumbnail`}
                     className="h-full w-full object-cover cursor-pointer"
                   />
-                  {user &&   <button
-                    onClick={() => handleWishlist(course._id)}
-                    className="absolute top-2 right-2 p-2 bg-white bg-opacity-70 rounded-full hover:bg-opacity-100 transition-all duration-300"
-                    aria-label="Add to wishlist"
-                  >
-                    <Heart className="w-5 h-5 text-gray-600 hover:text-red-500 transition-colors duration-300" />
-                  </button> }
-                
+                  {user && (
+                    <button
+                      onClick={() => handleWishlist(course._id)}
+                      className="absolute top-2 right-2 p-2 bg-white bg-opacity-70 rounded-full hover:bg-opacity-100 transition-all duration-300"
+                      aria-label="Add to wishlist"
+                    >
+                      <Heart className="w-5 h-5 text-gray-600 hover:text-red-500 transition-colors duration-300" />
+                    </button>
+                  )}
                 </div>
-                <div
-               
-                 className="flex flex-col flex-grow p-4">
+                <div className="flex flex-col flex-grow p-4">
                   <span className="inline-block self-start rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-800">
                     {course.categoryId.title}
                   </span>
-                  <h3 
-                   onClick={()=>handleCourseView(course._id)}
-                  className="mt-2 text-lg font-semibold line-clamp-2 text-gray-900 flex-grow cursor-pointer">
+                  <h3
+                    onClick={() => handleCourseView(course._id)}
+                    className="mt-2 text-lg font-semibold line-clamp-2 text-gray-900 flex-grow cursor-pointer"
+                  >
                     {course.title}
                   </h3>
                   <div className="mt-3 flex items-center gap-2">
@@ -473,10 +475,11 @@ const handleAddToCart = async (courseId, price) => {
                     <span className="text-xl font-bold text-gray-900">
                       ₹{formatCurrency(course.price.$numberDecimal)}
                     </span>
-                    <button 
-                    className="z-10"
-                    onClick={()=>handleAddToCart(course._id,course.price)}
-                    title="add to cart">
+                    <button
+                      className="z-10"
+                      onClick={() => handleAddToCart(course._id, course.price)}
+                      title="add to cart"
+                    >
                       <ShoppingBag />
                     </button>
                   </div>

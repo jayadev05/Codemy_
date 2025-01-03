@@ -9,6 +9,7 @@ import axios from "axios";
 import { useNavigate } from "react-router";
 import { addCourse } from "../../store/slices/courseSlice";
 import Pagination from "../../components/utils/Pagination";
+import axiosInstance from "@/config/axiosConfig";
 
 export default function TutorCourses() {
   const tutor = useSelector(selectTutor);
@@ -19,12 +20,11 @@ export default function TutorCourses() {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [deleteModal, setDeleteModal] = useState(false);
   const [courseToDelete, setCourseToDelete] = useState(null);
-  const [sortBy, setSortBy] = useState('latest');
+  const [sortBy, setSortBy] = useState("latest");
   const tutorId = tutor._id;
 
-
-  const [currentPage,setCurrentPage]=useState(1);
-  const coursesPerPage=4;
+  const [currentPage, setCurrentPage] = useState(1);
+  const coursesPerPage = 4;
 
   const formatCurrency = (num) => {
     const cleanedNum = num.toString().replace(/[^\d]/g, "");
@@ -33,8 +33,9 @@ export default function TutorCourses() {
 
   const fetchmyCourses = async () => {
     try {
-      const response = await axios.get(
-        `http://localhost:3000/course/tutor-courses/${tutor._id}`,{params:{sortBy}}
+      const response = await axiosInstance.get(
+        `http://localhost:3000/course/tutor-courses/${tutor._id}`,
+        { params: { sortBy } }
       );
       setCourses(response.data.courses);
     } catch (error) {
@@ -53,7 +54,7 @@ export default function TutorCourses() {
 
   const handleViewCourse = async (id) => {
     try {
-      const response = await axios.get(
+      const response = await axiosInstance.get(
         `http://localhost:3000/course/view-course/${id}`
       );
 
@@ -70,14 +71,13 @@ export default function TutorCourses() {
 
   const handleEditCourse = async (id) => {
     try {
-      const response = await axios.get(
+      const response = await axiosInstance.get(
         `http://localhost:3000/course/view-course/${id}`
       );
 
       dispatch(addCourse(response.data.data));
 
       navigate(`/tutor/edit-course/${id}`);
-      
     } catch (error) {
       console.log(error);
       if (error.response) {
@@ -95,7 +95,7 @@ export default function TutorCourses() {
     try {
       console.log(courseToDelete);
       if (courseToDelete) {
-        await axios.delete(
+        await axiosInstance.delete(
           `http://localhost:3000/course/delete-course?courseId=${courseToDelete}&tutorId=${tutorId}`
         );
 
@@ -112,9 +112,9 @@ export default function TutorCourses() {
     }
   };
 
-  const handleSortBy=(e)=>{
+  const handleSortBy = (e) => {
     setSortBy(e.target.value);
-  } 
+  };
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -126,23 +126,24 @@ export default function TutorCourses() {
     return data.slice(startIndex, endIndex);
   };
 
-  const filteredItems=paginateData(courses)
+  const filteredItems = paginateData(courses);
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
+      <div className="sticky top-0 h-screen">
+        <Sidebar activeSection={"My Courses"} />
+      </div>
 
-<div className="sticky top-0 h-screen">
-<Sidebar activeSection={"My Courses"} />
-</div>
-    
       <main className="w-full">
         <header className="flex items-center justify-between border-b bg-white px-6 py-4 ">
           <div>
-            <h1 className="text-xl font-semibold">My Courses</h1>
-            <p className="text-sm text-gray-500">Good Morning</p>
+            <h1 className="text-xl ml-12 lg:ml-0 font-semibold">My Courses</h1>
+            <p className="text-sm hidden lg:block text-gray-500">
+              Good Morning
+            </p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="relative">
+            <div className="relative hidden lg:block">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
                 className="w-64 pl-9 pr-3 py-2 rounded-md border border-gray-300"
@@ -163,12 +164,15 @@ export default function TutorCourses() {
         </header>
 
         <div className="my-6 ml-24 flex gap-4">
-          <select name="sortBy" value={sortBy} onChange={handleSortBy} className="rounded-lg border border-gray-200 px-4 py-2 text-sm">
-            <option value="latest" >Latest</option>
-            <option value="popular" >Popular</option>
+          <select
+            name="sortBy"
+            value={sortBy}
+            onChange={handleSortBy}
+            className="rounded-lg border border-gray-200 px-4 py-2 text-sm"
+          >
+            <option value="latest">Latest</option>
+            <option value="popular">Popular</option>
             <option value="trending">Trending</option>
-
-          
           </select>
           <select className="rounded-lg border border-gray-200 px-4 py-2 text-sm">
             <option>All Category</option>
@@ -270,19 +274,15 @@ export default function TutorCourses() {
                             <Trash className="mr-3 h-5 w-5" /> Delete Course
                           </button>
                         </div>
-                   
-            
                       </div>
                     )}
-
-
                   </div>
                 </div>
               </div>
             </div>
           ))}
         </div>
-          <div className="flex justify-center">
+        <div className="flex justify-center">
           <Pagination
             className="flex items-center "
             totalData={courses.length}
@@ -290,10 +290,7 @@ export default function TutorCourses() {
             currentPage={currentPage}
             setCurrentPage={handlePageChange}
           />
-          </div>
-        
-        
-
+        </div>
       </main>
 
       {deleteModal && (

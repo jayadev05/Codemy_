@@ -12,11 +12,11 @@ import Tabs from "../../components/layout/user/Tabs";
 import SecondaryFooter from "../../components/layout/user/SecondaryFooter";
 import { selectWishlist } from "../../store/slices/wishlistSlice";
 import { selectCart } from "../../store/slices/cartSlice";
+import axiosInstance from "@/config/axiosConfig";
 
 const SettingsForm = () => {
   const user = useSelector(selectUser);
-  const cart=useSelector(selectCart);
-  
+  const cart = useSelector(selectCart);
 
   const dispatch = useDispatch();
 
@@ -252,7 +252,7 @@ const SettingsForm = () => {
         profileImg: profileImg,
       };
 
-      const existCheck = await axios.post(
+      const existCheck = await axiosInstance.post(
         "http://localhost:3000/admin/check-mail",
         {
           phone: payload.phone,
@@ -270,7 +270,8 @@ const SettingsForm = () => {
       if (!formData.firstName.trim()) {
         validationErrors.firstName = "First name is required";
       } else if (!NAME_REGEX.test(formData.firstName.trim())) {
-        validationErrors.firstname = "First name must be at least 3 letters, no symbols";
+        validationErrors.firstname =
+          "First name must be at least 3 letters, no symbols";
       }
 
       // Phone Validation
@@ -350,7 +351,7 @@ const SettingsForm = () => {
         newPassword: formData.newPassword,
       };
       axios.defaults.withCredentials = true;
-      const response = await axios.put(
+      const response = await axiosInstance.put(
         "http://localhost:3000/user/change-password",
         payload
       );
@@ -645,13 +646,12 @@ const SettingsForm = () => {
 };
 
 export default function SettingsPage() {
-  const wishlist=useSelector(selectWishlist)
+  const wishlist = useSelector(selectWishlist);
   return (
     <div className="bg-gray-100 min-h-screen flex flex-col">
       <Header />
       <MainHeader />
       <main className="flex-grow">
-      
         <Tabs />
         <SettingsForm />
       </main>

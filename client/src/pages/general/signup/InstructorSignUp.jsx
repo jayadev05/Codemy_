@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { selectUser } from '../../../store/slices/userSlice';
+import axiosInstance from '@/config/axiosConfig';
 
 export function InstructorModal({ onClose }) {
 
@@ -90,7 +91,7 @@ export function InstructorModal({ onClose }) {
       });
   
       // Submit application
-      await axios.post(
+      await axiosInstance.post(
         'http://localhost:3000/admin/instructor-applications', 
         formSubmission,
         {

@@ -1,68 +1,72 @@
-"use client"
+"use client";
 
-import { useDispatch, useSelector } from "react-redux"
-import { useNavigate } from "react-router"
-import { Heart, Tag, ShoppingBag, ChevronRight, X } from 'lucide-react'
-import { toast } from "react-hot-toast"
-import axios from "axios"
-import { useEffect, useState } from "react"
-import { selectUser } from "../../store/slices/userSlice"
-import { addToCart, removeFromCart, selectCart, setCart } from "../../store/slices/cartSlice"
-import Header from "../../components/layout/Header"
-import MainHeader from "../../components/layout/user/MainHeader"
-import SecondaryFooter from "../../components/layout/user/SecondaryFooter"
-
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router";
+import { Heart, Tag, ShoppingBag, ChevronRight, X } from "lucide-react";
+import { toast } from "react-hot-toast";
+import axios from "axios";
+import { useEffect, useState } from "react";
+import { selectUser } from "../../store/slices/userSlice";
+import {
+  addToCart,
+  removeFromCart,
+  selectCart,
+  setCart,
+} from "../../store/slices/cartSlice";
+import Header from "../../components/layout/Header";
+import MainHeader from "../../components/layout/user/MainHeader";
+import SecondaryFooter from "../../components/layout/user/SecondaryFooter";
+import axiosInstance from "@/config/axiosConfig";
 
 export default function ShoppingCart() {
-  const user = useSelector(selectUser)
-  const cart = useSelector(selectCart)
-  const navigate = useNavigate()
-  const dispatch = useDispatch()
- 
-
-
- 
+  const user = useSelector(selectUser);
+  const cart = useSelector(selectCart);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const fetchCart = async () => {
       try {
-        const response = await axios.get("http://localhost:3000/course/get-cart", {
-          params: { userId: user._id }
-        })
-        dispatch(setCart(response.data.cart))
+        const response = await axiosInstance.get(
+          "http://localhost:3000/course/get-cart",
+          {
+            params: { userId: user._id },
+          }
+        );
+        dispatch(setCart(response.data.cart));
       } catch (error) {
-        console.log("Failed to fetch cart", error)
-        toast.error("Failed to load cart")
+        console.log("Failed to fetch cart", error);
+        toast.error("Failed to load cart");
       }
-    }
+    };
 
-    fetchCart()
-  
-  }, [dispatch, user._id])
+    fetchCart();
+  }, [dispatch, user._id]);
 
   const handleRemoveFromCart = async (courseId) => {
     try {
-      await axios.delete("http://localhost:3000/course/removeFromCart", {
-        params: { userId: user._id, courseId }
-      })
+      await axiosInstance.delete(
+        "http://localhost:3000/course/removeFromCart",
+        {
+          params: { userId: user._id, courseId },
+        }
+      );
 
-      dispatch(removeFromCart(courseId))
+      dispatch(removeFromCart(courseId));
 
       toast.success("Item removed from cart", {
         icon: "🛒",
         style: {
           borderRadius: "10px",
           background: "#111826",
-          color: "#fff"
-        }
-      })
+          color: "#fff",
+        },
+      });
     } catch (error) {
-      console.log(error)
-      toast.error("Failed to remove course from cart")
+      console.log(error);
+      toast.error("Failed to remove course from cart");
     }
-  }
-
-  
+  };
 
   if (!cart.items.length) {
     return (
@@ -72,8 +76,12 @@ export default function ShoppingCart() {
         <div className="flex flex-col min-h-[80vh] items-center justify-center py-12 bg-gray-50">
           <div className="bg-white p-8 rounded-2xl shadow-lg text-center max-w-md w-full mx-4">
             <ShoppingBag size={64} className="text-gray-300 mx-auto mb-6" />
-            <h3 className="text-2xl font-bold text-gray-800 mb-3">Your shopping cart is empty</h3>
-            <p className="text-gray-600 mb-6">Start adding courses to your cart and begin your learning journey</p>
+            <h3 className="text-2xl font-bold text-gray-800 mb-3">
+              Your shopping cart is empty
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Start adding courses to your cart and begin your learning journey
+            </p>
             <button
               onClick={() => navigate("/")}
               className="w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all duration-300 font-medium"
@@ -84,7 +92,7 @@ export default function ShoppingCart() {
         </div>
         <SecondaryFooter />
       </>
-    )
+    );
   }
 
   return (
@@ -96,7 +104,10 @@ export default function ShoppingCart() {
           <div className="flex flex-col gap-6">
             {/* Breadcrumb */}
             <nav className="flex items-center gap-2 text-sm">
-              <button onClick={() => navigate("/")} className="text-gray-600 hover:text-gray-900">
+              <button
+                onClick={() => navigate("/")}
+                className="text-gray-600 hover:text-gray-900"
+              >
                 Home
               </button>
               <ChevronRight className="w-4 h-4 text-gray-400" />
@@ -124,18 +135,30 @@ export default function ShoppingCart() {
                           <div className="flex-1 min-w-0">
                             <div className="flex justify-between gap-4">
                               <div>
-                                <h3 className="font-semibold text-lg line-clamp-1">{item.courseId.title}</h3>
-                                <p className="text-gray-600 mt-1">by {item.courseId.tutorId?.fullName}</p>
+                                <h3 className="font-semibold text-lg line-clamp-1">
+                                  {item.courseId.title}
+                                </h3>
+                                <p className="text-gray-600 mt-1">
+                                  by {item.courseId.tutorId?.fullName}
+                                </p>
                                 <div className="flex items-center gap-1 mt-2">
                                   <span className="text-yellow-400">⭐</span>
-                                  <span className="font-medium">{item.courseId.averageRating}</span>
-                                  <span className="text-gray-500">({item.courseId.ratings?.length} reviews)</span>
+                                  <span className="font-medium">
+                                    {item.courseId.averageRating}
+                                  </span>
+                                  <span className="text-gray-500">
+                                    ({item.courseId.ratings?.length} reviews)
+                                  </span>
                                 </div>
                               </div>
                               <div className="text-right">
-                                <p className="text-2xl font-bold">₹{item.price}</p>
+                                <p className="text-2xl font-bold">
+                                  ₹{item.price}
+                                </p>
                                 <button
-                                  onClick={() => handleRemoveFromCart(item.courseId._id)}
+                                  onClick={() =>
+                                    handleRemoveFromCart(item.courseId._id)
+                                  }
                                   className="mt-2 text-red-500 hover:text-red-600 transition-colors inline-flex items-center gap-1"
                                 >
                                   <X className="w-4 h-4" /> Remove
@@ -177,8 +200,6 @@ export default function ShoppingCart() {
                   >
                     Proceed to Checkout <ChevronRight className="w-4 h-4" />
                   </button>
-
-                 
                 </div>
               </div>
             </div>
@@ -187,6 +208,5 @@ export default function ShoppingCart() {
       </div>
       <SecondaryFooter />
     </>
-  )
+  );
 }
-

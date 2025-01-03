@@ -1,29 +1,27 @@
 const jwt = require("jsonwebtoken");
-
+const Blacklist = require('../model/blacklistModel.js')
 
 const verifyUser = async (req, res, next) => {
-   
-
-    const accessToken = req.cookies.accessToken || req.headers.authorization && req.headers.authorization.startsWith("Bearer ") 
-        ? req.headers.authorization?.split(" ")[1]  
-        : null;
-
-    const refreshToken = req.headers['x-refresh-token'] || req.cookies.refreshToken;  
-
-    console.log("Received Tokens:", {
-        accessToken: accessToken,
-        refreshToken: refreshToken
-    });
+    const accessToken = req.cookies.accessToken || req.headers.authorization?.split(" ")[1];
+    const refreshToken = req.headers['x-refresh-token'] || req.cookies.refreshToken;
 
     if (accessToken) {
-        jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET, async (err, decoded) => {
             if (err) {
                 if (err.name === "TokenExpiredError") {
                     return handleRefreshToken(refreshToken, req, res, next);
                 }
-                return res.status(401).json({ message: "User not authorized, invalid access token" });
+                return res.status(401).json({ message: "Unauthorized: Invalid access token"});
             }
-            req.user = decoded; 
+
+            // Check if user is blacklisted
+            const isBlacklisted = await Blacklist.findOne({ userId: decoded.id });
+            if (isBlacklisted) {
+                return res.status(403).json({ message: "Session invalidated. Please log in again." });
+            }
+
+            req.user = decoded;
+
             next();
         });
     } else {

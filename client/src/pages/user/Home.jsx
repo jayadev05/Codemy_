@@ -27,6 +27,7 @@ import {
 } from "../../store/slices/wishlistSlice";
 import MainHeader from "../../components/layout/user/MainHeader";
 import { addToCart, clearCart, selectCart } from "../../store/slices/cartSlice";
+import axiosInstance from "@/config/axiosConfig";
 
 const categories = [
   { name: "Label", courses: "21,245", bgColor: "bg-blue-100", img: cat1 },
@@ -73,29 +74,32 @@ export default function Home() {
 
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  
 
   const user = useSelector(selectUser);
 
   useEffect(() => {
     fetchCourses();
- 
   }, []);
 
   const fetchCourses = async () => {
     try {
-      const response = await axios.get(
+      const response = await axiosInstance.get(
         "http://localhost:3000/course/get-course-info"
       );
       setCourses(response.data.courses);
     } catch (error) {
       console.log(error);
+      if(error.response?.status===403){
+        toast.error("User has been invalidated . Please try to login again or check mail if you had requested to be a tutor");
+        navigate('/login')
+      }
+     
     }
   };
 
   const handleAddToCart = async (courseId, price) => {
     try {
-      const response = await axios.post(
+      const response = await axiosInstance.post(
         "http://localhost:3000/course/addToCart",
         {
           courseId,
@@ -125,7 +129,7 @@ export default function Home() {
 
   const fetchWishlist = async () => {
     try {
-      const response = await axios.get(
+      const response = await axiosInstance.get(
         "http://localhost:3000/course/get-wishlist",
         { params: { userId: user._id } }
       );
@@ -147,7 +151,7 @@ export default function Home() {
 
   const handleWishlist = async (id) => {
     try {
-      const response = await axios.post(
+      const response = await axiosInstance.post(
         "http://localhost:3000/course/addToWishlist",
         {
           userId: user._id,
@@ -256,7 +260,7 @@ export default function Home() {
                     key={course._id}
                     className="flex flex-col overflow-hidden rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out"
                   >
-                    <div className="relative aspect-[3/2] w-full">
+                    <div className="relative aspect-[3/2] max-h-[200px] w-full">
                       <img
                         onClick={() => handleCourseView(course._id)}
                         src={course.thumbnail}

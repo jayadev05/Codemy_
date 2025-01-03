@@ -1,83 +1,79 @@
-import React, { useState } from 'react';
-import { X, AlertTriangle } from 'lucide-react';
-import toast from 'react-hot-toast';
-import axios from 'axios';
+import React, { useState } from "react";
+import { X, AlertTriangle } from "lucide-react";
+import toast from "react-hot-toast";
+import axiosInstance from "@/config/axiosConfig";
 
-export default function ReportModal({ 
-  isOpen, 
-  onClose, 
-  targetType, 
-  targetId ,
-  reportedBy
+export default function ReportModal({
+  isOpen,
+  onClose,
+  targetType,
+  targetId,
+  reportedBy,
 }) {
+  console.log(targetType, targetId);
 
-  console.log(targetType,targetId)
-
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [issueType, setIssueType] = useState('');
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [issueType, setIssueType] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Issue type options based on target type
   const issueTypeOptions = {
     Course: [
-      { value: 'Course Issue', label: 'Course Content Problem' },
-      { value: 'Bug', label: 'Technical Issue' },
-      { value: 'Feedback', label: 'Improvement Feedback' }
+      { value: "Course Issue", label: "Course Content Problem" },
+      { value: "Bug", label: "Technical Issue" },
+      { value: "Feedback", label: "Improvement Feedback" },
     ],
     Tutor: [
-      { value: 'Behavior', label: 'Inappropriate Behavior' },
-      { value: 'Feedback', label: 'Performance Concern' }
-    ]
+      { value: "Behavior", label: "Inappropriate Behavior" },
+      { value: "Feedback", label: "Performance Concern" },
+    ],
   };
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validate form
     if (!title.trim() || !description.trim() || !issueType) {
-      alert('Please fill in all required fields');
+      alert("Please fill in all required fields");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
+      const response = await axiosInstance.post(
+        "http://localhost:3000/admin/open-report",
+        {
+          title,
+          description,
+          type: issueType,
+          targetType,
+          targetId,
+          reportedBy,
+        }
+      );
 
-   
-      const response = await axios.post('http://localhost:3000/admin/open-report',{
-        title,
-        description,
-        type: issueType,
-        targetType,
-        targetId,
-        reportedBy
-      })
-        
-
-      
-
-      if (response.status===200) {
-       
-        setTitle('');
-        setDescription('');
-        setIssueType('');
+      if (response.status === 200) {
+        setTitle("");
+        setDescription("");
+        setIssueType("");
         onClose();
 
-        toast.success("We have received your report! We will review it and get back to you soon.",{icon:'📩'});
-
-      } 
-     
+        toast.success(
+          "We have received your report! We will review it and get back to you soon.",
+          { icon: "📩" }
+        );
+      }
     } catch (error) {
-      if(error.response.status===409){
-        toast.error("You already have a report in review! Please be patient.",{icon:'⏳'});
+      if (error.response.status === 409) {
+        toast.error("You already have a report in review! Please be patient.", {
+          icon: "⏳",
+        });
+      } else {
+        console.error("Report submission error:", error);
+        toast.error("Failed to submit report. Please try again.");
       }
-      else{
-        console.error('Report submission error:', error);
-      toast.error('Failed to submit report. Please try again.');
-      }
-      
     } finally {
       setIsSubmitting(false);
     }
@@ -94,17 +90,20 @@ export default function ReportModal({
             <AlertTriangle className="w-6 h-6 mr-2 text-[#ff6738]" />
             Report {targetType}
           </h2>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="text-gray-600 hover:text-gray-900 transition-colors"
           >
             <X className="w-6 h-6" />
           </button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>
-            <label htmlFor="issue-type" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="issue-type"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Issue Type
             </label>
             <select
@@ -124,7 +123,10 @@ export default function ReportModal({
           </div>
 
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="title"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Title
             </label>
             <input
@@ -139,7 +141,10 @@ export default function ReportModal({
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+            <label
+              htmlFor="description"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
               Description
             </label>
             <textarea
@@ -165,7 +170,7 @@ export default function ReportModal({
               disabled={isSubmitting}
               className="px-4 py-2 bg-[#ff6738] text-white rounded-md hover:bg-orange-600 transition-colors disabled:opacity-50"
             >
-              {isSubmitting ? 'Submitting...' : 'Submit Report'}
+              {isSubmitting ? "Submitting..." : "Submit Report"}
             </button>
           </div>
         </form>

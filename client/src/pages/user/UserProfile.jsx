@@ -11,19 +11,20 @@ import { selectCart } from "../../store/slices/cartSlice";
 import { selectUser } from "../../store/slices/userSlice";
 import axios from "axios";
 import { setCurrentCourse } from "@/store/slices/courseSlice";
+import axiosInstance from "@/config/axiosConfig";
 
 const Courses = () => {
   const user = useSelector(selectUser);
   const [courses, setCourses] = useState([]);
   const [loadingCertificates, setLoadingCertificates] = useState({});
-  
+
   const navigate = useNavigate();
-  const dispatch=useDispatch()
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const fetchCourseByUserId = async () => {
       try {
-        const response = await axios.get(
+        const response = await axiosInstance.get(
           `http://localhost:3000/course/student-courses/${user._id}`
         );
 
@@ -38,27 +39,27 @@ const Courses = () => {
 
   const handleDownloadCertificate = async (courseId, courseName) => {
     // Create a loading state for this specific course
-    setLoadingCertificates(prev => ({...prev, [courseId]: true}));
-    
+    setLoadingCertificates((prev) => ({ ...prev, [courseId]: true }));
+
     try {
-      const response = await axios.post(
-        `http://localhost:3000/course/generate-certificate`, 
+      const response = await axiosInstance.post(
+        `http://localhost:3000/course/generate-certificate`,
         {
           userId: user._id,
           courseId,
-          courseName
+          courseName,
         }
       );
-  
+
       if (response.data.success) {
-        window.open(response.data.certificateUrl, '_blank');
+        window.open(response.data.certificateUrl, "_blank");
       }
     } catch (error) {
       console.error("Certificate error:", error);
       alert("Failed to process certificate");
     } finally {
       // Remove loading state for this course
-      setLoadingCertificates(prev => ({...prev, [courseId]: false}));
+      setLoadingCertificates((prev) => ({ ...prev, [courseId]: false }));
     }
   };
 
@@ -66,7 +67,6 @@ const Courses = () => {
     dispatch(setCurrentCourse(courseId));
     navigate(`/user/play-course`);
   };
-  
 
   return (
     <div className="container px-12 py-8 min-h-[500px]">
@@ -88,6 +88,7 @@ const Courses = () => {
           ))}
         </div>
       </div>
+
       <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {courses.map((course) => (
           <div
@@ -135,7 +136,7 @@ const Courses = () => {
               {/* Course Action Buttons */}
               <div className="mt-4">
                 {course?.progress?.progressPercentage === 0 ? (
-                  <button 
+                  <button
                     onClick={() => handlePlayCourse(course._id)}
                     className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition-colors flex items-center justify-center"
                   >
@@ -150,19 +151,27 @@ const Courses = () => {
                       <Play className="mr-2 w-5 h-5" /> Watch Again
                     </button>
                     <button
-                      onClick={() => handleDownloadCertificate(course._id, course.title)}
+                      onClick={() =>
+                        handleDownloadCertificate(course._id, course.title)
+                      }
                       disabled={loadingCertificates[course._id]}
                       className="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition-colors flex items-center justify-center disabled:opacity-50"
                     >
                       {loadingCertificates[course._id] ? (
-                        <><Loader2 className="mr-2 w-5 h-5 animate-spin" /> Processing...</>
+                        <>
+                          <Loader2 className="mr-2 w-5 h-5 animate-spin" />{" "}
+                          Processing...
+                        </>
                       ) : (
-                        <><Download className="mr-2 w-5 h-5" /> Download Certificate</>
+                        <>
+                          <Download className="mr-2 w-5 h-5" /> Download
+                          Certificate
+                        </>
                       )}
                     </button>
                   </div>
                 ) : (
-                  <button 
+                  <button
                     onClick={() => handlePlayCourse(course._id)}
                     className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition-colors flex items-center justify-center"
                   >

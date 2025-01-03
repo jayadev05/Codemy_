@@ -45,6 +45,7 @@ export default function ChatInterface() {
   const [loading, setLoading] = useState(true);
   const [composeOpen, setComposeOpen] = useState(false);
   const [tutors, setTutors] = useState([]);
+  const [isMobileChatOpen, setIsMobileChatOpen] = useState(false)
   const [typingTimeout, setTypingTimeout] = useState(null);
   const [optionsModalOpen, setOptionsModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState("");
@@ -62,67 +63,55 @@ export default function ChatInterface() {
   const [incomingCallInfo, setIncomingCallInfo] = useState({});
   const [isCallActive, setIsCallActive] = useState(false);
 const [isAudioEnabled, setIsAudioEnabled] = useState(true);
-const [isVideoEnabled, setIsVideoEnabled] = useState(false);
-
-
-console.log("Stream",stream)
-console.log("Peer Video",peerVideoRef)
-console.log("My Video",myVideoRef)
+const [isVideoEnabled, setIsVideoEnabled] = useState(true);
 
 
 
-//handle media device
-useEffect(() => {
 
-  // Enumerate devices for debugging
-  navigator.mediaDevices.enumerateDevices().then((devices) => {
-    devices.forEach((device) =>
-      console.log(device.kind, device.label, device.deviceId)
-    );
-  });
+// useEffect(() => {
 
-  // Check media device support
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    console.error('Media devices API not supported on this device');
-    setStream(null);
-    return;
-  }
+  
+//   // Check media device support
+//   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+//     console.error('Media devices API not supported on this device');
+//     setStream(null);
+//     return;
+//   }
 
-  // Request media stream for audio only
-  navigator.mediaDevices
-    .getUserMedia({ video:true, audio: true })
-    .then((mediaStream) => {
+//   // Request media stream 
+//   navigator.mediaDevices
+//     .getUserMedia({ video:true, audio: true })
+//     .then((mediaStream) => {
 
-      console.log('media stream acquired');
+//       console.log('media stream acquired');
 
-      setStream(mediaStream);
+//       setStream(mediaStream);
 
-    //set local video
-    if (myVideoRef.current) {
-      myVideoRef.current.srcObject = mediaStream;
-    }
+//     //set local video
+//     if (myVideoRef.current) {
+//       myVideoRef.current.srcObject = mediaStream;
+//     }
       
-    })
-    .catch((error) => {
-      console.error('Error accessing media devices:', error);
+//     })
+//     .catch((error) => {
+//       console.error('Error accessing media devices:', error);
 
-      if (error.name === 'NotFoundError') {
-        console.error('No audio input device found. Audio may not work.');
-      }
-      setStream(null);
-    });
+//       setStream(null);
+//     });
 
-  // Cleanup
-  return () => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-    }
-  };
-}, [isCallActive,incomingCallInfo?.isSomeoneCalling]);
+//   // Cleanup
+//   return () => {
+//     if (stream) {
+//       stream.getTracks().forEach((track) => track.stop());
+//     }
+//   };
+
+// }, [incomingCallInfo?.isSomeoneCalling]);
 
 
   //handling video call
   useEffect(() => {
+
     const handleIncomingCall = ({ from, signalData,callerData }) => {
       console.log("Incoming call from:", from);
       setIncomingCallInfo({ 
@@ -152,14 +141,16 @@ useEffect(() => {
       }
     };
 
-    console.log('Setting up socket event listeners');
+
     socketService.on('incoming-call', handleIncomingCall);
     socketService.on('call-accepted', handleCallAccepted);
     socketService.on('call-rejected', handleCallRejected);
     socketService.on('user-disconnected', handleUserDisconnected);
 
     return () => {
+
       console.log('Cleaning up socket event listeners');
+
       socketService.off('incoming-call', handleIncomingCall);
       socketService.off('call-accepted', handleCallAccepted);
       socketService.off('call-rejected', handleCallRejected);
@@ -167,7 +158,7 @@ useEffect(() => {
 
      
     };
-  }, [stream,isCallActive]);
+  }, [stream,incomingCallInfo?.isSomeoneCalling]);
 
   const messagesEndRef = useRef(null);
 
@@ -256,6 +247,12 @@ useEffect(() => {
       setLoading(false);
     }
   };
+
+   // Handle mobile chat selection
+   const handleMobileChatSelect = (chat) => {
+    handleChatSelect(chat)
+    setIsMobileChatOpen(true)
+  }
 
   useEffect(() => {
     fetchTutors();
@@ -828,53 +825,49 @@ useEffect(() => {
 
   const initiateCall = async () => {
     if (!user._id) return;
-
+    
     try {
-        // Ensure we have a stream before proceeding
-        if (!stream || !stream.getTracks().length) {
-            // Request media stream if not available
-            const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-                video: true, 
-                audio: true 
-            });
-            setStream(mediaStream);
-            
-            // Update video ref with new stream
-            if (myVideoRef.current) {
-                myVideoRef.current.srcObject = mediaStream;
-            }
-
-            // Create peer with the new stream
-            createInitiatorPeer(mediaStream);
-        } else {
-            // Create peer with existing stream
-            createInitiatorPeer(stream);
+        const mediaStream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true
+        });
+        
+        setStream(mediaStream);
+        
+        // Store the stream in a ref so we can access it later
+        const streamRef = mediaStream;
+        
+        // Create peer with the new stream immediately
+        createInitiatorPeer(streamRef);
+        
+        // Attempt to set the stream on the video element if it exists
+        if (myVideoRef.current) {
+            myVideoRef.current.srcObject = streamRef;
         }
+        
     } catch (error) {
         console.error('Error accessing media devices:', error);
-        // Handle error - maybe show a notification to user
+        
     }
 };
 
 // Separate function to create initiator peer
 const createInitiatorPeer = (mediaStream) => {
-    console.log("Creating initiator peer with stream:", mediaStream);
-    console.log("Stream tracks:", mediaStream?.getTracks());
+
+    
 
     const peer = new SimplePeer({
         initiator: true,
         trickle: false,
         stream: mediaStream,
-        config: { iceServers: [ // Add STUN/TURN servers if needed
-            { urls: 'stun:stun.l.google.com:19302' }
-        ]}
+       
     });
 
     const receiverId = userType === "user" 
         ? selectedChat.tutorId._id 
         : selectedChat.userId._id;
 
-    peer.on('signal', (signalData) => {
+    peer.on('signal', signalData => {
         if (signalData.type === 'offer') {
             socketService.initializeCall({
                 recieverId: receiverId,
@@ -887,13 +880,10 @@ const createInitiatorPeer = (mediaStream) => {
         }
     });
 
-    peer.on('stream', (remoteStream) => {
-        console.log('Received remote stream:', remoteStream);
+    peer.on('stream', remoteStream => {
+        console.log('Received reciever stream:', remoteStream);
         if (peerVideoRef.current) {
-            peerVideoRef.current.srcObject = remoteStream;
-            peerVideoRef.current.play().catch(err => 
-                console.error('Error playing remote stream:', err)
-            );
+            peerVideoRef.current.srcObject = remoteStream; 
         }
     });
 
@@ -919,26 +909,23 @@ const answerCall = async () => {
     if (!incomingCallInfo?.signalData) return;
 
     try {
-        // Ensure we have a stream before proceeding
-        if (!stream || !stream.getTracks().length) {
-            // Request media stream if not available
+      
             const mediaStream = await navigator.mediaDevices.getUserMedia({ 
                 video: true, 
                 audio: true 
             });
+
             setStream(mediaStream);
             
             // Update video ref with new stream
             if (myVideoRef.current) {
                 myVideoRef.current.srcObject = mediaStream;
+                console.log("my video ref on reciever side",myVideoRef.current?.srcObject)
             }
 
             // Create peer with the new stream
             createAnswerPeer(mediaStream);
-        } else {
-            // Create peer with existing stream
-            createAnswerPeer(stream);
-        }
+        
     } catch (error) {
         console.error('Error accessing media devices:', error);
         // Handle error - maybe show a notification to user
@@ -957,27 +944,23 @@ const createAnswerPeer = (mediaStream) => {
         initiator: false,
         trickle: false,
         stream: mediaStream,
-        config: { iceServers: [ // Add STUN/TURN servers if needed
-            { urls: 'stun:stun.l.google.com:19302' }
-        ]}
+        
     });
 
     peer.on('signal', (signalData) => {
-        if (signalData.type === 'answer') {
+       
             socketService.answerCall({
                 signalData,
                 to: incomingCallInfo.from
             });
-        }
+        
     });
 
-    peer.on('stream', (remoteStream) => {
-        console.log('Received remote stream:', remoteStream);
+    peer.on('stream', (stream) => {
+        console.log('Received caller stream:', stream);
         if (peerVideoRef.current) {
-            peerVideoRef.current.srcObject = remoteStream;
-            peerVideoRef.current.play().catch(err => 
-                console.error('Error playing remote stream:', err)
-            );
+            peerVideoRef.current.srcObject = stream;
+            
         }
     });
 
@@ -998,6 +981,7 @@ const createAnswerPeer = (mediaStream) => {
 
     // Signal the offer to the answering peer
     peer.signal(incomingCallInfo.signalData);
+
     connectionRef.current = peer;
 };
   

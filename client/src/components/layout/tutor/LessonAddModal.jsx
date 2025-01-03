@@ -1,25 +1,26 @@
-import React, { useState, useRef } from 'react';
-import axios from 'axios';
-import toast from 'react-hot-toast';
-import { X, Upload, BookOpen, Video } from 'lucide-react';
+import React, { useState, useRef } from "react";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { X, Upload, BookOpen, Video } from "lucide-react";
+import axiosInstance from "@/config/axiosConfig";
 
-const LessonAddModal = ({ 
-  isOpen, 
-  onClose, 
+const LessonAddModal = ({
+  isOpen,
+  onClose,
   tutorId,
   courseId,
-  onLessonAdd 
+  onLessonAdd,
 }) => {
   const [lessonData, setLessonData] = useState({
-    lessonTitle: '',
-    description: '',
-    video: '',
+    lessonTitle: "",
+    description: "",
+    video: "",
     lessonNotes: null,
     lessonThumbnail: null,
     duration: 0,
-    durationUnit: 'minute',
+    durationUnit: "minute",
     tutorId: tutorId,
-    courseId:courseId
+    courseId: courseId,
   });
 
   const [thumbnailPreview, setThumbnailPreview] = useState(null);
@@ -32,9 +33,9 @@ const LessonAddModal = ({
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setLessonData(prev => ({
+    setLessonData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -106,7 +107,7 @@ const LessonAddModal = ({
         maxSize: 100 * 1024 * 1024, // 100MB
         allowedTypes: ["video/mp4", "video/mpeg", "video/quicktime"],
         maxSizeLabel: "100 MB",
-      }
+      },
     };
 
     const options = validationOptions[fileType];
@@ -121,97 +122,102 @@ const LessonAddModal = ({
 
     // File type check
     if (!allowedTypes.includes(file.type)) {
-      toast.error(`Invalid file type. Allowed types: ${allowedTypes.join(", ")}`);
+      toast.error(
+        `Invalid file type. Allowed types: ${allowedTypes.join(", ")}`
+      );
       input.value = null; // Reset file input
       return null;
     }
 
     // Upload file
     const fileUrl = await handleFileUploadToCloudinary(file, fileType);
-    
+
     input.value = null;
 
     return fileUrl;
   };
 
   const handleThumbnailUpload = async () => {
-    const thumbnailUrl = await validateAndUploadFile(thumbnailInputRef, 'image');
+    const thumbnailUrl = await validateAndUploadFile(
+      thumbnailInputRef,
+      "image"
+    );
     if (thumbnailUrl) {
-      setLessonData(prev => ({
+      setLessonData((prev) => ({
         ...prev,
-        lessonThumbnail: thumbnailUrl
+        lessonThumbnail: thumbnailUrl,
       }));
       setThumbnailPreview(thumbnailUrl);
     }
   };
 
   const handleNotesUpload = async () => {
-    const notesUrl = await validateAndUploadFile(notesInputRef, 'file');
+    const notesUrl = await validateAndUploadFile(notesInputRef, "file");
     if (notesUrl) {
-      setLessonData(prev => ({
+      setLessonData((prev) => ({
         ...prev,
-        lessonNotes: notesUrl
+        lessonNotes: notesUrl,
       }));
       setNotesPreview(notesUrl);
     }
   };
 
   const handleVideoUpload = async () => {
-    const videoUrl = await validateAndUploadFile(videoInputRef, 'video');
+    const videoUrl = await validateAndUploadFile(videoInputRef, "video");
     if (videoUrl) {
-      setLessonData(prev => ({
+      setLessonData((prev) => ({
         ...prev,
-        video: videoUrl
+        video: videoUrl,
       }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validation checks
     if (!lessonData.lessonThumbnail) {
-      toast.error('Lesson Thumbnail is required');
+      toast.error("Lesson Thumbnail is required");
       return;
     }
     if (!lessonData.video) {
-      toast.error('Lesson Video is required');
+      toast.error("Lesson Video is required");
       return;
     }
     if (!lessonData.description) {
-      toast.error('Lesson Description is required');
+      toast.error("Lesson Description is required");
       return;
     }
 
     try {
       const payload = { ...lessonData };
-      console.log("payload",payload)
+      console.log("payload", payload);
 
-      const response = await axios.post(
-        'http://localhost:3000/course/add-lesson', 
+      const response = await axiosInstance.post(
+        "http://localhost:3000/course/add-lesson",
         payload
       );
 
-      toast.success('Lesson added successfully');
+      toast.success("Lesson added successfully");
       onLessonAdd(response.data.lesson);
       onClose();
-      
+
       // Reset form
       setLessonData({
-        lessonTitle: '',
-        description: '',
-        video: '',
+        lessonTitle: "",
+        description: "",
+        video: "",
         lessonNotes: null,
         lessonThumbnail: null,
         duration: 0,
-        durationUnit: 'minute',
-        tutorId: tutorId
+        durationUnit: "minute",
+        tutorId: tutorId,
       });
       setThumbnailPreview(null);
       setNotesPreview(null);
     } catch (error) {
-      console.error('Lesson creation error:', error);
-      toast.error(error.response?.data?.message || 'Failed to create lesson');
+      console.error("Lesson creation error:", error);
+      toast.error(error.response?.data?.message || "Failed to create lesson");
     }
   };
 
@@ -220,8 +226,8 @@ const LessonAddModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 relative">
-        <button 
-          onClick={onClose} 
+        <button
+          onClick={onClose}
           className="absolute top-4 right-4 text-gray-600 hover:text-gray-900"
         >
           <X className="h-6 w-6" />
@@ -231,8 +237,8 @@ const LessonAddModal = ({
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label 
-              htmlFor="lessonTitle" 
+            <label
+              htmlFor="lessonTitle"
               className="block text-sm font-medium text-gray-700"
             >
               Lesson Title
@@ -249,8 +255,8 @@ const LessonAddModal = ({
           </div>
 
           <div>
-            <label 
-              htmlFor="description" 
+            <label
+              htmlFor="description"
               className="block text-sm font-medium text-gray-700"
             >
               Lesson Description
@@ -268,8 +274,8 @@ const LessonAddModal = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label 
-                htmlFor="duration" 
+              <label
+                htmlFor="duration"
                 className="block text-sm font-medium text-gray-700"
               >
                 Lesson Duration
@@ -299,8 +305,8 @@ const LessonAddModal = ({
           </div>
 
           <div>
-            <label 
-              htmlFor="lessonNotes" 
+            <label
+              htmlFor="lessonNotes"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
               Lesson Notes (PDF)
@@ -308,10 +314,10 @@ const LessonAddModal = ({
             <div className="flex items-center space-x-4">
               {notesPreview ? (
                 <div className="w-64 aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
-                  <a 
-                    href={notesPreview} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                  <a
+                    href={notesPreview}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-blue-600 hover:underline"
                   >
                     View Notes
@@ -323,64 +329,61 @@ const LessonAddModal = ({
                 </div>
               )}
               <div>
-                <input 
-                  type="file" 
+                <input
+                  type="file"
                   ref={notesInputRef}
-                  id="notesUpload" 
-                  accept="application/pdf" 
-                  className="hidden" 
+                  id="notesUpload"
+                  accept="application/pdf"
+                  className="hidden"
                   onChange={handleNotesUpload}
                 />
-                <label 
-                  htmlFor="notesUpload" 
+                <label
+                  htmlFor="notesUpload"
                   className="flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer"
                 >
                   <BookOpen className="h-4 w-4 mr-2" />
-                  {notesPreview ? 'Change' : 'Upload'} Notes
+                  {notesPreview ? "Change" : "Upload"} Notes
                 </label>
               </div>
             </div>
           </div>
 
           <div>
-            <label 
-              htmlFor="video" 
+            <label
+              htmlFor="video"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
               Lesson Video
             </label>
             <div className="flex items-center space-x-4">
               <div>
-                <input 
-                  type="file" 
+                <input
+                  type="file"
                   ref={videoInputRef}
-                  id="videoUpload" 
-                  accept="video/mp4,video/mpeg,video/quicktime" 
-                  className="hidden" 
+                  id="videoUpload"
+                  accept="video/mp4,video/mpeg,video/quicktime"
+                  className="hidden"
                   onChange={handleVideoUpload}
                 />
-                <label 
-                  htmlFor="videoUpload" 
+                <label
+                  htmlFor="videoUpload"
                   className="flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer"
                 >
                   <Video className="h-4 w-4 mr-2" />
-                  {lessonData.video ? 'Change' : 'Upload'} Video
+                  {lessonData.video ? "Change" : "Upload"} Video
                 </label>
-                
               </div>
               {progress > 0 && progress < 100 && (
                 <>
-                <p>Uploading {progress}%</p>
-                <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
-                <div
-                  className="bg-orange-600 h-2.5 rounded-full transition-all duration-300 ease-in-out"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
+                  <p>Uploading {progress}%</p>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4">
+                    <div
+                      className="bg-orange-600 h-2.5 rounded-full transition-all duration-300 ease-in-out"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
                 </>
-              
-              
-            )}
+              )}
               {lessonData.video && (
                 <div className="text-sm text-green-600">
                   Video uploaded successfully
@@ -390,8 +393,8 @@ const LessonAddModal = ({
           </div>
 
           <div>
-            <label 
-              htmlFor="lessonThumbnail" 
+            <label
+              htmlFor="lessonThumbnail"
               className="block text-sm font-medium text-gray-700 mb-2"
             >
               Lesson Thumbnail
@@ -399,9 +402,9 @@ const LessonAddModal = ({
             <div className="flex items-center space-x-4">
               {thumbnailPreview ? (
                 <div className="w-64 aspect-video bg-gray-100 rounded-lg overflow-hidden">
-                  <img 
-                    src={thumbnailPreview} 
-                    alt="Lesson Thumbnail" 
+                  <img
+                    src={thumbnailPreview}
+                    alt="Lesson Thumbnail"
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -411,20 +414,20 @@ const LessonAddModal = ({
                 </div>
               )}
               <div>
-                <input 
-                  type="file" 
+                <input
+                  type="file"
                   ref={thumbnailInputRef}
-                  id="thumbnailUpload" 
-                  accept="image/jpeg,image/png,image/gif" 
-                  className="hidden" 
+                  id="thumbnailUpload"
+                  accept="image/jpeg,image/png,image/gif"
+                  className="hidden"
                   onChange={handleThumbnailUpload}
                 />
-                <label 
-                  htmlFor="thumbnailUpload" 
+                <label
+                  htmlFor="thumbnailUpload"
                   className="flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer"
                 >
                   <Upload className="h-4 w-4 mr-2" />
-                  {thumbnailPreview ? 'Change' : 'Upload'} Thumbnail
+                  {thumbnailPreview ? "Change" : "Upload"} Thumbnail
                 </label>
               </div>
             </div>

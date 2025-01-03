@@ -93,7 +93,7 @@ export default function CheckoutPage() {
 
   const handleLocalPayment = async () => {
     try {
-      const response = await axios.post('http://localhost:3000/checkout/order-create', {
+      const response = await axiosInstance.post('http://localhost:3000/checkout/order-create', {
         amount: total,
         userId: user._id,
         courses,
@@ -140,7 +140,7 @@ export default function CheckoutPage() {
 
   const handleGlobalPayment = async () => {
     try {
-      const response = await axios.post('http://localhost:3000/checkout/order-create', {
+      const response = await axiosInstance.post('http://localhost:3000/checkout/order-create', {
         amount: total,
         userId: user._id,
         courses,
@@ -168,7 +168,7 @@ export default function CheckoutPage() {
       }
 
       if (paymentIntent.status === "succeeded") {
-        await axios.post('http://localhost:3000/checkout/payment-verify', {
+        await axiosInstance.post('http://localhost:3000/checkout/payment-verify', {
           paymentIntentId: paymentIntent.id,
           orderId
         })
@@ -186,7 +186,7 @@ export default function CheckoutPage() {
     try {
       const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = paymentResponse
 
-      const response = await axios.post('http://localhost:3000/checkout/verify-payment', {
+      const response = await axiosInstance.post('http://localhost:3000/checkout/verify-payment', {
         razorpay_order_id,
         razorpay_payment_id,
         razorpay_signature,

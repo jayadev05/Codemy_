@@ -73,7 +73,7 @@ function TutorViewCourse() {
       <main className="flex-1">
        <header className="flex items-center justify-between border-b bg-white px-6 py-4 ">
               <div>
-                <h1 className="text-xl font-semibold">My Courses</h1>
+                <h1 className="text-xl ml-12 lg:ml-0 font-semibold">My Courses</h1>
                 <p className="text-sm text-gray-500">Good Morning</p>
               </div>
               <div className="flex items-center gap-4">

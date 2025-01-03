@@ -96,11 +96,11 @@ const availableBalance = totalRevenue - amountWithdrawn;
         {/* Header */}
         <header className="flex items-center justify-between border-b bg-white px-6 py-4 ">
           <div>
-            <h1 className="text-xl font-semibold">Dashboard</h1>
-            <p className="text-sm text-gray-500">Good Morning</p>
+            <h1 className="text-xl ml-12 lg:ml-0 font-semibold">Dashboard</h1>
+            <p className="text-sm hidden lg:block text-gray-500">Good Morning</p>
           </div>
           <div className="flex items-center gap-4">
-            <div className="relative">
+            <div className="relative hidden lg:block">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input className="w-64 pl-9 pr-3 py-2 rounded-md border border-gray-300" placeholder="Search" />
             </div>

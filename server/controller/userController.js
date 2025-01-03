@@ -209,7 +209,7 @@ const googleLogin = async (req, res, next) => {
         updatedAt: new Date(),
       });
     } else {
-      if (profileImg) {
+      if (!profileImg) {
         currentUser.profileImg = profileImg;
       }
 

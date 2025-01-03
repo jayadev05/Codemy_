@@ -16,6 +16,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { useSelector } from 'react-redux'
+import { selectUser } from '@/store/slices/userSlice'
+import { selectTutor } from '@/store/slices/tutorSlice'
 
 const VideoCallInterface = ({
   stream,
@@ -33,131 +36,19 @@ const VideoCallInterface = ({
   isVideoEnabled,
   peer
 }) => {
-  const [peerVideoEnabled, setPeerVideoEnabled] = useState(true);
-  const [localVideoEnabled, setLocalVideoEnabled] = useState(true);
-  const [isInitiator, setIsInitiator] = useState(false);
+  const user=useSelector(selectUser);
+  const tutor=useSelector(selectTutor);
 
-  useEffect(() => {
-    console.log("Current stream in interface:", stream);
-    console.log("myVideoRef current:", myVideoRef.current);
-    console.log("peerVideoRef current:", peerVideoRef.current);
-    if(stream) {
-      console.log("Video tracks:", stream.getVideoTracks());
-      console.log("Audio tracks:", stream.getAudioTracks());
-    }
-  }, [stream]);
+  const currentUser = user || tutor;
   
-  // Determine if this peer is the initiator when the component mounts
   useEffect(() => {
-    if (peer) {
-      setIsInitiator(peer.initiator);
-    }
-  }, [peer]);
-
-  // Handle local video stream setup
-  useEffect(() => {
-    if (stream && myVideoRef.current) {
-      const videoTrack = stream.getVideoTracks()[0];
-      if (videoTrack) {
-        // Set initial video enabled state based on track
-        setLocalVideoEnabled(videoTrack.enabled);
-      }
-      
-      // Set local stream to video element
+    if (myVideoRef.current && stream) {
       myVideoRef.current.srcObject = stream;
-      myVideoRef.current.play().catch(console.error);
     }
-  }, [stream]);
+  }, [stream, myVideoRef]);
 
-  // Handle peer video stream
-  useEffect(() => {
-    if (!peer) return;
-
-    const handlePeerStream = (remoteStream) => {
-      console.log('Received peer stream');
-      if (peerVideoRef.current) {
-        peerVideoRef.current.srcObject = remoteStream;
-        
-        // Ensure video plays when metadata is loaded
-        peerVideoRef.current.onloadedmetadata = () => {
-          peerVideoRef.current.play().catch(error => 
-            console.error('Error playing peer video:', error)
-          );
-        };
-      }
-    };
-
-    const handlePeerData = (data) => {
-      try {
-        const parsedData = JSON.parse(data.toString());
-        console.log('Received peer data:', parsedData);
-        if (parsedData.type === 'videoState') {
-          console.log('Setting peer video state to:', parsedData.enabled);
-          setPeerVideoEnabled(parsedData.enabled);
-        }
-      } catch (error) {
-        console.error('Error parsing peer data:', error);
-      }
-    };
-
-    peer.on('stream', handlePeerStream);
-    peer.on('data', handlePeerData);
-
-    // Send initial video state
-    if (peer.connected) {
-      sendVideoPeerState(localVideoEnabled);
-    }
-
-    return () => {
-      peer.off('stream', handlePeerStream);
-      peer.off('data', handlePeerData);
-    };
-  }, [peer]);
-
-  // Send video state to peer
-  const sendVideoPeerState = (enabled) => {
-    if (peer && peer.connected) {
-      console.log('Sending video state:', enabled);
-      try {
-        const data = JSON.stringify({
-          type: 'videoState',
-          enabled: enabled
-        });
-        peer.send(data);
-      } catch (error) {
-        console.error('Error sending video state:', error);
-      }
-    }
-  };
-
-  // Handle local video toggle
-  const handleVideoToggle = () => {
-    if (stream) {
-      const videoTrack = stream.getVideoTracks()[0];
-      if (videoTrack) {
-        const newState = !localVideoEnabled;
-        videoTrack.enabled = newState;
-        setLocalVideoEnabled(newState);
-        sendVideoPeerState(newState);
-      }
-    }
-  };
-
-  // Monitor peer connection state
-  useEffect(() => {
-    if (!peer) return;
-
-    const handleConnect = () => {
-      console.log('Peer connected');
-      sendVideoPeerState(localVideoEnabled);
-    };
-
-    peer.on('connect', handleConnect);
-
-    return () => {
-      peer.off('connect', handleConnect);
-    };
-  }, [peer, localVideoEnabled]);
+  console.log("My video",myVideoRef.current?.srcObject)
+  console.log("Peer video",peerVideoRef)
 
   return (
     <>
@@ -207,10 +98,10 @@ const VideoCallInterface = ({
 
       {/* Active Call Interface */}
       {isCallActive && (
-        <div className="fixed inset-0 bg-gradient-to-br from-gray-900 to-black z-50 flex items-center justify-center backdrop-blur-sm">
-          <Card className="w-full max-w-5xl bg-gray-900/50 backdrop-blur-md border-gray-800">
+        <div className="fixed inset-0 p-5 bg-gradient-to-br from-gray-900 to-black z-50 flex items-center justify-center backdrop-blur-sm">
+          <Card className="w-full h-full max-w-7xl bg-gray-900/50 backdrop-blur-md border-gray-800">
             <CardContent className="p-8">
-              <div className="relative h-[70vh] rounded-xl overflow-hidden">
+              <div className="relative h-[86vh] rounded-xl overflow-hidden">
                 {/* Main Video (Peer) */}
                 <div className="relative w-full h-full">
                   <video
@@ -219,30 +110,51 @@ const VideoCallInterface = ({
                     autoPlay
                     playsInline
                   />
-                  {!peerVideoEnabled && (
-                    <div className="absolute inset-0 bg-gray-900/90 flex items-center justify-center">
-                      <VideoOff className="w-16 h-16 text-white/60" />
-                    </div>
-                  )}
                 </div>
 
-                {/* Picture-in-Picture (Self) */}
-                <div className="absolute top-4 right-4 w-64 h-48 transition-transform hover:scale-105">
-                  <div className="relative w-full h-full">
-                    <video
-                      ref={myVideoRef}
-                      className="w-full h-full object-cover rounded-lg shadow-lg border border-white/10"
-                      autoPlay
-                      playsInline
-                      muted
-                    />
-                    {!localVideoEnabled && (
-                      <div className="absolute inset-0 bg-gray-900/90 rounded-lg flex items-center justify-center">
-                        <VideoOff className="w-8 h-8 text-white/60" />
-                      </div>
-                    )}
-                  </div>
-                </div>
+{/* Picture-in-Picture (Self) */}
+
+<div className="absolute top-4 right-4 w-64 h-48 transition-all duration-300 hover:scale-105 group">
+  <div className="relative w-full h-full rounded-lg overflow-hidden ring-2 ring-white/20 shadow-xl bg-gray-900">
+    {/* We keep the video element mounted but hide it when disabled */}
+    <video
+      ref={myVideoRef}
+      className={`w-full h-full object-cover ${!isVideoEnabled && 'hidden'}`}
+      autoPlay
+      playsInline
+      muted
+    />
+    
+    {/* Show profile image when video is disabled */}
+    {!isVideoEnabled && (
+      <div className="absolute inset-0 flex items-center justify-center bg-gray-900/80">
+        <img 
+        crossOrigin='anonymous'
+        referrerPolicy='no-referrer'
+          src={currentUser.profileImg} 
+          alt="Profile"
+          className="w-24 h-24 rounded-full object-cover ring-4 ring-white/10"
+        />
+      </div>
+    )}
+    
+    {/* Gradient overlay */}
+    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+    
+    {/* Camera off indicator */}
+    {!isVideoEnabled && (
+      <div className="absolute top-2 right-2 bg-black/40 px-2 py-1 rounded-full text-xs text-white/80 flex items-center gap-1">
+        <VideoOff className="w-3 h-3" />
+        <span>Camera Off</span>
+      </div>
+    )}
+    
+    {/* User label */}
+    <div className="absolute bottom-2 left-2 text-white text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+      You
+    </div>
+  </div>
+</div>
 
                 {/* Call Controls */}
                 <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex items-center space-x-6">
@@ -293,13 +205,13 @@ const VideoCallInterface = ({
                           variant="ghost"
                           size="icon"
                           className={`w-14 h-14 rounded-full transition-all duration-200 ${
-                            localVideoEnabled
+                            isVideoEnabled
                               ? 'bg-white/10 hover:bg-white/20'
                               : 'bg-red-500/20 hover:bg-red-500/30 text-red-500'
                           }`}
-                          onClick={handleVideoToggle}
+                          onClick={onToggleVideo}
                         >
-                          {localVideoEnabled ? (
+                          {isVideoEnabled ? (
                             <Video className="h-6 w-6" />
                           ) : (
                             <VideoOff className="h-6 w-6" />
@@ -307,7 +219,7 @@ const VideoCallInterface = ({
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>{localVideoEnabled ? 'Stop video' : 'Start video'}</p>
+                        <p>{isVideoEnabled ? 'Stop video' : 'Start video'}</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>

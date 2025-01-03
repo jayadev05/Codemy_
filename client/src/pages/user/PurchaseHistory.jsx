@@ -1,13 +1,20 @@
-"use client"
+"use client";
 
 import React, { useEffect, useState } from "react";
-import { ArrowUp, ArrowDown, CreditCard, IndianRupeeIcon, RefreshCw, X } from 'lucide-react';
+import {
+  ArrowUp,
+  ArrowDown,
+  CreditCard,
+  IndianRupeeIcon,
+  RefreshCw,
+  X,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components/ui/dialog";
 import Header from "../../components/layout/Header";
 import MainHeader from "../../components/layout/user/MainHeader";
 import SecondaryFooter from "../../components/layout/user/SecondaryFooter";
@@ -18,6 +25,7 @@ import Pagination from "../../components/utils/Pagination";
 import Tabs from "../../components/layout/user/Tabs";
 import { clearCart } from "../../store/slices/cartSlice";
 import { useNavigate } from "react-router";
+import axiosInstance from "@/config/axiosConfig";
 
 const PurchaseHistory = () => {
   const user = useSelector(selectUser);
@@ -36,7 +44,7 @@ const PurchaseHistory = () => {
     const fetchOrders = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get(
+        const response = await axiosInstance.get(
           `http://localhost:3000/checkout/get-order-history/${user._id}`
         );
         setOrders(response.data.data);
@@ -61,7 +69,7 @@ const PurchaseHistory = () => {
       const options = {
         key: "rzp_test_PEILuGv0t2XI3a",
         amount: order.totalAmount,
-        currency: 'INR',
+        currency: "INR",
         name: "Codemy",
         description: "Purchase Courses",
         order_id: order.orderId,
@@ -92,7 +100,6 @@ const PurchaseHistory = () => {
 
       const razorpay = new window.Razorpay(options);
       razorpay.open();
-
     } catch (error) {
       console.error("Failed to retry payment:", error);
       setError("Failed to retry payment. Please try again later.");
@@ -228,7 +235,11 @@ const PurchaseHistory = () => {
                         <div className="flex items-start justify-between gap-4">
                           <div className="space-y-1">
                             <h3 className="font-semibold text-gray-900">
-                              {order.course.length>1? `${course.title.slice(0,25)} ...+${order.course?.length-1}`:course.title}
+                              {order.course.length > 1
+                                ? `${course.title.slice(0, 25)} ...+${
+                                    order.course?.length - 1
+                                  }`
+                                : course.title}
                             </h3>
                             <div className="flex items-center gap-3">
                               <span
@@ -261,7 +272,7 @@ const PurchaseHistory = () => {
 
                           <div className="text-right">
                             <p className="text-lg font-semibold text-gray-900">
-                              ₹{(order.totalAmount/100).toFixed(2)}
+                              ₹{(order.totalAmount / 100).toFixed(2)}
                             </p>
                             <p className="mt-1 text-sm text-gray-500">
                               {formatDate(order.purchaseDate)}
@@ -288,84 +299,94 @@ const PurchaseHistory = () => {
                         <ArrowDown className="h-5 w-5 text-red-500 flex-shrink-0" />
                       )}
                     </div>
-
                   </div>
                 );
               })}
             </div>
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-            <DialogContent className="sm:max-w-[600px]">
-              <DialogHeader>
-                <DialogTitle>Order Details</DialogTitle>
-              </DialogHeader>
-              {selectedOrder && (
-                <div className="mt-4">
-                  <div className="space-y-4">
-                    <div className="flex justify-between border-b pb-4">
-                      <span className="font-medium">Order ID</span>
-                      <span className="text-gray-600">{selectedOrder.orderId}</span>
-                    </div>
-                    <div className="flex justify-between border-b pb-4">
-                      <span className="font-medium">Date</span>
-                      <span className="text-gray-600">
-                        {formatDate(selectedOrder.purchaseDate)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between border-b pb-4">
-                      <span className="font-medium">Status</span>
-                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        selectedOrder.orderStatus === "Completed"
-                          ? "bg-green-50 text-green-700"
-                          : selectedOrder.orderStatus === "Pending"
-                          ? "bg-yellow-50 text-yellow-700"
-                          : "bg-red-50 text-red-700"
-                      }`}>
-                        <span className={`h-1.5 w-1.5 rounded-full ${
-                          selectedOrder.orderStatus === "Completed"
-                            ? "bg-green-600"
-                            : selectedOrder.orderStatus === "Pending"
-                            ? "bg-yellow-600"
-                            : "bg-red-600"
-                        }`} />
-                        {selectedOrder.orderStatus}
-                      </span>
-                    </div>
+              <DialogContent className="sm:max-w-[600px]">
+                <DialogHeader>
+                  <DialogTitle>Order Details</DialogTitle>
+                </DialogHeader>
+                {selectedOrder && (
+                  <div className="mt-4">
                     <div className="space-y-4">
-                      <h3 className="font-medium">Purchased Courses</h3>
-                      {selectedOrder.course.map((course, index) => (
-                        <div key={index} className="flex items-center gap-4 border-b pb-4">
-                          <img
-                            src={course.thumbnail || "/placeholder-course.png"}
-                            alt={course.title}
-                            className="h-16 w-24 rounded object-cover"
+                      <div className="flex justify-between border-b pb-4">
+                        <span className="font-medium">Order ID</span>
+                        <span className="text-gray-600">
+                          {selectedOrder.orderId}
+                        </span>
+                      </div>
+                      <div className="flex justify-between border-b pb-4">
+                        <span className="font-medium">Date</span>
+                        <span className="text-gray-600">
+                          {formatDate(selectedOrder.purchaseDate)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between border-b pb-4">
+                        <span className="font-medium">Status</span>
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                            selectedOrder.orderStatus === "Completed"
+                              ? "bg-green-50 text-green-700"
+                              : selectedOrder.orderStatus === "Pending"
+                              ? "bg-yellow-50 text-yellow-700"
+                              : "bg-red-50 text-red-700"
+                          }`}
+                        >
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full ${
+                              selectedOrder.orderStatus === "Completed"
+                                ? "bg-green-600"
+                                : selectedOrder.orderStatus === "Pending"
+                                ? "bg-yellow-600"
+                                : "bg-red-600"
+                            }`}
                           />
-                          <div>
-                            <h4 className="font-medium">{course.title}</h4>
-                            <p className="text-sm text-gray-600">
-                              Instructor: {course.tutor}
-                            </p>
+                          {selectedOrder.orderStatus}
+                        </span>
+                      </div>
+                      <div className="space-y-4">
+                        <h3 className="font-medium">Purchased Courses</h3>
+                        {selectedOrder.course.map((course, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center gap-4 border-b pb-4"
+                          >
+                            <img
+                              src={
+                                course.thumbnail || "/placeholder-course.png"
+                              }
+                              alt={course.title}
+                              className="h-16 w-24 rounded object-cover"
+                            />
+                            <div>
+                              <h4 className="font-medium">{course.title}</h4>
+                              <p className="text-sm text-gray-600">
+                                Instructor: {course.tutor}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex justify-between border-b pb-4">
-                      <span className="font-medium">Payment Method</span>
-                      <span className="inline-flex items-center gap-1.5 text-gray-600">
-                        {renderPaymentMethodIcon(selectedOrder.paymentMethod)}
-                        {selectedOrder.paymentMethod}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="font-medium">Total Amount</span>
-                      <span className="text-lg font-semibold">
-                        ₹{(selectedOrder.totalAmount/100).toFixed(2)}
-                      </span>
+                        ))}
+                      </div>
+                      <div className="flex justify-between border-b pb-4">
+                        <span className="font-medium">Payment Method</span>
+                        <span className="inline-flex items-center gap-1.5 text-gray-600">
+                          {renderPaymentMethodIcon(selectedOrder.paymentMethod)}
+                          {selectedOrder.paymentMethod}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Total Amount</span>
+                        <span className="text-lg font-semibold">
+                          ₹{(selectedOrder.totalAmount / 100).toFixed(2)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </DialogContent>
-          </Dialog>
+                )}
+              </DialogContent>
+            </Dialog>
             <Pagination
               className="flex justify-center mt-6"
               dataPerPage={orderPerPage}

@@ -43,6 +43,8 @@ import { selectAdmin } from "./store/slices/adminSlice";
 import { useSelector } from "react-redux";
 import CouponManagement from "./pages/admin/CouponManage";
 import BillingPage from "./pages/admin/BillingPage";
+import AboutPage from "./pages/user/About";
+import ContactPage from "./pages/user/Contact";
 
 function AppContent() {
   const user = useSelector(selectUser);
@@ -95,6 +97,8 @@ function AppContent() {
         <Route path="/signup" element={<SignUp/>} />
         <Route path="/login" element={<ProtectedRoute isLoginPage><Login /></ProtectedRoute>} />
         <Route path="/" element={<Home/>} />
+        <Route path="/about" element={<AboutPage/>} />
+        <Route path="/contact-us" element={<ContactPage/>} />
         <Route path="/reset-password/:token" element={<ResetPassword/>} />
         <Route path="/forgot-password" element={<ForgotPassword/>} />
 

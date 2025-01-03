@@ -14,21 +14,21 @@ import {
 } from "../../store/slices/wishlistSlice";
 import { addToCart, selectCart } from "../../store/slices/cartSlice";
 import { selectCourse } from "@/store/slices/courseSlice";
+import axiosInstance from "@/config/axiosConfig";
 
 export default function CourseDetails() {
-  
   const user = useSelector(selectUser);
-  const cart=useSelector(selectCart);
+  const cart = useSelector(selectCart);
 
   const dispatch = useDispatch();
-  const navigate=useNavigate();
+  const navigate = useNavigate();
 
-  const courseId=useSelector(selectCourse);
+  const courseId = useSelector(selectCourse);
 
   const [course, setCourse] = useState([]);
   const [wishlist, setWishlist] = useState([]);
 
-  console.log(wishlist)
+  console.log(wishlist);
 
   const features = [
     "Comprehensive course materials and resources",
@@ -51,7 +51,7 @@ export default function CourseDetails() {
 
   const handleAddToCart = async (courseId, price) => {
     try {
-      const response = await axios.post(
+      const response = await axiosInstance.post(
         "http://localhost:3000/course/addToCart",
         {
           courseId,
@@ -80,7 +80,7 @@ export default function CourseDetails() {
   };
   const handleBuy = async (courseId, price) => {
     try {
-      const response = await axios.post(
+      const response = await axiosInstance.post(
         "http://localhost:3000/course/addToCart",
         {
           courseId,
@@ -89,10 +89,7 @@ export default function CourseDetails() {
       );
 
       dispatch(addToCart({ courseId, price }));
-      navigate('/user/cart')
-
-      
-      
+      navigate("/user/cart");
     } catch (error) {
       console.error("Failed to add to cart", error);
       if (error.response)
@@ -102,13 +99,10 @@ export default function CourseDetails() {
         });
     }
   };
-  
-
-  
 
   const fetchCourse = async () => {
     try {
-      const response = await axios.get(
+      const response = await axiosInstance.get(
         `http://localhost:3000/course/get-course-info`,
         {
           params: { courseId },
@@ -146,7 +140,7 @@ export default function CourseDetails() {
 
   const handleWishlist = async (id) => {
     try {
-      const response = await axios.post(
+      const response = await axiosInstance.post(
         "http://localhost:3000/course/addToWishlist",
         {
           userId: user._id,
@@ -158,7 +152,6 @@ export default function CourseDetails() {
         toast.success("Course added to wishlist!");
 
         dispatch(addToWishlist(response.data.wishlist));
-       
 
         fetchWishlist();
       } else {
@@ -172,7 +165,7 @@ export default function CourseDetails() {
 
   const fetchWishlist = async () => {
     try {
-      const response = await axios.get(
+      const response = await axiosInstance.get(
         "http://localhost:3000/course/get-wishlist",
         { params: { userId: user._id } }
       );
@@ -183,17 +176,18 @@ export default function CourseDetails() {
     }
   };
 
-  const inWishlist=(courseId)=>{
-    const filtered  = wishlist.filter((course)=> course.courseId._id===courseId);
-    if(filtered.length>0)return true
-    return false
-    
-  }
+  const inWishlist = (courseId) => {
+    const filtered = wishlist.filter(
+      (course) => course.courseId._id === courseId
+    );
+    if (filtered.length > 0) return true;
+    return false;
+  };
 
   return (
     <div className="bg-gray-50 min-h-screen">
       <Header />
-      <MainHeader  />
+      <MainHeader />
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-orange-600 to-orange-400 text-white">
         <div className="max-w-7xl mx-auto px-4 py-16 sm:py-24 lg:py-32">
@@ -283,15 +277,14 @@ export default function CourseDetails() {
                 Course Contents
               </h2>
               <p className="text-gray-600">
-  {course?.courseContent?.split("\n").map((line, index) => (
-    <span key={index}>
-      {index+1}. {line}
-      <br />
-      <br/>
-    </span>
-  ))}
-</p>
-
+                {course?.courseContent?.split("\n").map((line, index) => (
+                  <span key={index}>
+                    {index + 1}. {line}
+                    <br />
+                    <br />
+                  </span>
+                ))}
+              </p>
             </section>
 
             <section>
@@ -331,7 +324,7 @@ export default function CourseDetails() {
                   <span className="text-2xl font-bold text-gray-800">
                     ₹{course?.price?.$numberDecimal}
                   </span>
-                  
+
                   {user && (
                     <button
                       onClick={() => handleWishlist(course._id)}
@@ -341,9 +334,11 @@ export default function CourseDetails() {
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-6 w-6"
-                        fill={`${inWishlist(course._id)? 'red' : 'none'}`}
+                        fill={`${inWishlist(course._id) ? "red" : "none"}`}
                         viewBox="0 0 24 24"
-                        stroke={`${inWishlist(course._id)? 'red' : 'currentColor'}`}
+                        stroke={`${
+                          inWishlist(course._id) ? "red" : "currentColor"
+                        }`}
                       >
                         <path
                           strokeLinecap="round"
@@ -374,20 +369,18 @@ export default function CourseDetails() {
                   <span>{course.language}</span>
                 </div>
               </div>
-              <div
-               
-                className="mt-6"
-              >
-                <button 
-                 onClick={() => handleAddToCart(course._id, course.price)}
-                className="w-full bg-[#ff6738] text-white py-3 rounded-lg font-medium mb-4 hover:bg-orange-600 transition-colors">
+              <div className="mt-6">
+                <button
+                  onClick={() => handleAddToCart(course._id, course.price)}
+                  className="w-full bg-[#ff6738] text-white py-3 rounded-lg font-medium mb-4 hover:bg-orange-600 transition-colors"
+                >
                   Add to Cart
                 </button>
 
-                <button 
-                onClick={()=> handleBuy(course._id,course.price)
-                  }
-                className="w-full border border-orange-500 text-[#ff6738] py-3 rounded-lg font-medium hover:bg-orange-50 transition-colors">
+                <button
+                  onClick={() => handleBuy(course._id, course.price)}
+                  className="w-full border border-orange-500 text-[#ff6738] py-3 rounded-lg font-medium hover:bg-orange-50 transition-colors"
+                >
                   Buy Now
                 </button>
               </div>
