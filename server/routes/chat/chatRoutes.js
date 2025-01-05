@@ -7,20 +7,20 @@ const verifyUser = require('../../middleware/authMiddleware')
 
 
 
-chatRoute.post('/create-chat',verifyUser,createChat);
-chatRoute.post('/create-message',verifyUser,createMessage);
+chatRoute.post('/create-chat',createChat);
+chatRoute.post('/create-message',createMessage);
 
 chatRoute.put('/messages-read',markMessageAsRead);
 
 
-chatRoute.get("/get-all-chats/:userId",verifyUser ,getChatsByUserId);
+chatRoute.get("/get-all-chats/:userId" ,verifyUser,getChatsByUserId);
 chatRoute.get("/get-tutors",getTutorsByUserId);
-chatRoute.get("/get-students/:tutorId",verifyUser,getStudentsByUserId);
-chatRoute.get("/get-messages/:chatId",verifyUser,getMessagesByChatId);
+chatRoute.get("/get-students/:tutorId",getStudentsByUserId);
+chatRoute.get("/get-messages/:chatId",getMessagesByChatId);
 
 
 
-chatRoute.patch("/delete-chat",verifyUser,deleteChat);
+chatRoute.patch("/delete-chat",deleteChat);
 
 
 

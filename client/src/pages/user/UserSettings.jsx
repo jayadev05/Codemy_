@@ -311,7 +311,7 @@ const SettingsForm = () => {
         return;
       }
 
-      const response = await axios.put(
+      const response = await axiosInstance.put(
         "http://localhost:3000/user/update-profile",
         payload
       );

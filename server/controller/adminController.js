@@ -4,6 +4,7 @@ const Admin = require("../model/adminModel");
 const Course = require("../model/courseModel");
 const Report = require("../model/reportModel");
 const Coupon = require("../model/couponModel");
+const Blacklist = require('../model/blacklistModel')
 const Order = require("../model/orderModel");
 const InstructorApplication = require("../model/tutorApplication");
 const Category = require("../model/categoryModel");
@@ -296,7 +297,6 @@ const getCertificates = async (req, res) => {
     });
 
     if (!application) {
-      console.error("No application found for certificateId:", certificateId);
       return res.status(404).json({
         success: false,
         message: "Certificate not found",
@@ -309,7 +309,6 @@ const getCertificates = async (req, res) => {
     );
 
     if (!certificate) {
-      console.error("No certificate found in application:", certificateId);
       return res.status(404).json({
         success: false,
         message: "Specific certificate not found",
@@ -319,41 +318,57 @@ const getCertificates = async (req, res) => {
     // Construct full file path
     const filePath = path.resolve(certificate.certificate);
 
-    // Use fs.promises.access for file existence check
+    // Check if file exists
     try {
       await fsp.access(filePath);
     } catch (accessError) {
-      console.error("File access error:", accessError);
       return res.status(404).json({
         success: false,
         message: "Certificate file not accessible",
-        error: accessError.message,
       });
     }
 
-    // Get file stats
+    // Get file stats and extension
     const stats = await fsp.stat(filePath);
-    const fileExtension = path.extname(filePath).toLowerCase().slice(1);
+    const fileExtension = path.extname(filePath).toLowerCase();
 
+    // Map file extensions to MIME types
+    const mimeTypes = {
+      '.pdf': 'application/pdf',
+      '.doc': 'application/msword',
+      '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.png': 'image/png',
+      '.gif': 'image/gif'
+    };
+
+    const contentType = mimeTypes[fileExtension] || 'application/octet-stream';
+
+    // Set appropriate headers
     res.set({
-      "Content-Type": `image/${fileExtension}`,
-      "Content-Length": stats.size,
-      "Cache-Control": "public, max-age=86400",
+      'Content-Type': contentType,
+      'Content-Length': stats.size,
+      'Content-Disposition': 'inline',
     });
 
-    // Stream the file for efficiency
+    // Stream the file
     const fileStream = fs.createReadStream(filePath);
     fileStream.pipe(res);
 
-    fileStream.on("error", (streamError) => {
-      console.error("Error while streaming the file:", streamError);
-      res.status(500).json({
-        success: false,
-        message: "Error streaming the file",
-      });
+    fileStream.on('error', (streamError) => {
+      console.error('Stream error:', streamError);
+      // Only send error if headers haven't been sent
+      if (!res.headersSent) {
+        res.status(500).json({
+          success: false,
+          message: "Error streaming the file",
+        });
+      }
     });
+
   } catch (error) {
-    console.error("Certificate Fetch Error:", error);
+    console.error('Certificate Fetch Error:', error);
     res.status(500).json({
       success: false,
       message: "Error retrieving certificate",
@@ -412,7 +427,7 @@ const reviewInstructorApplication = async (req, res) => {
         await newTutor.save();
 
         //blacklist userId for invalidating currenlty logged in user
-        await UserBlacklist.findOneAndUpdate(
+        await Blacklist.findOneAndUpdate(
           { userId },
           { invalidatedAt: new Date() },
           { upsert: true } 
@@ -550,8 +565,6 @@ const existsCheck = async (req, res) => {
 
 const approveTutor = async (req, res) => {
   
-  
-
   try {
     const { applicationId } = req.params;
     const { status } = req.body;
@@ -574,32 +587,14 @@ const approveTutor = async (req, res) => {
       });
     }
 
-    // Call the review endpoint
-    try {
-      const result = await axios.put(
-        `http://localhost:3000/admin/instructor-applications/${applicationId}/review`,
-        { status } 
-      );
-
-      // If review is successful, return the newly created tutor (if any)
-      if (result.data.tutor) {
-        return res.status(200).json({
-          success: true,
-          message: "Tutor application approved successfully",
-          tutor: result.data.tutor,
-        });
-      }
-    } catch (err) {
-      console.log(
-        "Error in application review",
-        err.response?.data || err.message
-      );
-    }
+   
 
     res.status(200).json({
       success: true,
       message: "Tutor application processed",
+      status:status
     });
+
   } catch (error) {
     console.error("Error approving tutor application:", error);
     res.status(500).json({

@@ -363,10 +363,11 @@ export default function CourseListing() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col mx-auto">
+    <div className="min-h-screen flex flex-col mx-auto ">
       <Header />
 
-      <main className="flex-1 bg-gray-50 min-h-[90vh]">
+      <main className="flex-1 bg-gray-50 min-h-[90vh] dark:bg-[#1d2026]
+      ">
         <MainHeader />
 
         {/* Filter Section */}
@@ -386,10 +387,10 @@ export default function CourseListing() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setIsFilterOpen(true)}
-                className="px-4 py-2 text-sm bg-white rounded-md border shadow-sm flex items-center gap-1"
+                className="px-4 py-2 text-sm bg-white dark:bg-[#1d2026] rounded-md border shadow-sm flex items-center gap-1"
               >
                 Filter
-                <Filter className="w-4 pt-[2px]" />
+                <Filter className="w-4 pt-[2px] " />
               </button>
               <div className="relative">
                 <input
@@ -402,7 +403,7 @@ export default function CourseListing() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600">Sort by:</span>
+              <span className="text-sm text-gray-600 dark:text-white">Sort by:</span>
               <select
                 name="sortBy"
                 value={sortBy}
@@ -422,7 +423,7 @@ export default function CourseListing() {
             {courses.map((course) => (
               <div
                 key={course._id}
-                className="flex flex-col overflow-hidden rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out"
+                className="flex flex-col overflow-hidden rounded-lg bg-white dark:bg-slate-900 dark:border border-gray-600 shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out"
               >
                 <div className="relative aspect-[3/2] w-full">
                   <img
@@ -447,7 +448,7 @@ export default function CourseListing() {
                   </span>
                   <h3
                     onClick={() => handleCourseView(course._id)}
-                    className="mt-2 text-lg font-semibold line-clamp-2 text-gray-900 flex-grow cursor-pointer"
+                    className="mt-2 text-lg font-semibold line-clamp-2 text-gray-900 dark:text-white flex-grow cursor-pointer"
                   >
                     {course.title}
                   </h3>
@@ -464,7 +465,7 @@ export default function CourseListing() {
                         />
                       ))}
                     </div>
-                    <span className="text-sm font-medium text-gray-900">
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">
                       {course.averageRating.toFixed(1)}
                     </span>
                     <span className="text-sm text-gray-500">
@@ -472,7 +473,7 @@ export default function CourseListing() {
                     </span>
                   </div>
                   <div className="mt-3 flex items-center justify-between">
-                    <span className="text-xl font-bold text-gray-900">
+                    <span className="text-xl font-bold text-gray-900 dark:text-white">
                       ₹{formatCurrency(course.price.$numberDecimal)}
                     </span>
                     <button

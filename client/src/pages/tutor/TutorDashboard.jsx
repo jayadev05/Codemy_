@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { WithdrawDialog } from '@/components/layout/tutor/WithdrawalModal';
 import { WithdrawalHistory } from '@/components/layout/tutor/WithdrawalHistory';
 import axiosInstance from '@/config/axiosConfig';
+import TutorHeader from '@/components/layout/tutor/TutorHeader';
 
 const chartData = [
   { name: "Mon", value1: 70, value2: 120, value3: 90 },
@@ -43,6 +44,12 @@ const Dashboard = () => {
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false)
   const[payoutsHistory,setPayoutsHistory]=useState([]) 
 
+  const [totalReviews,setTotalReviews]=useState(null);
+  const [myCourses,setMyCourses]=useState(null);
+  const [totalStudents,setTotalStudents]=useState(null);
+  const [averageRating,setAverageRating]=useState(null);
+
+
  useEffect(() => {
   const fetchPayoutHistory = async () => {
     if (!tutorState._id) {
@@ -51,7 +58,7 @@ const Dashboard = () => {
     }
 
     try {
-      const response = await axiosInstance.get(`/tutor/payouts-history/${tutor._id}`);
+      const response = await axiosInstance.get(`/tutor/payouts-history/${tutorState._id}`);
       setPayoutsHistory(response.data.payouts);
     } catch (error) {
       console.log('Error fetching payout history:', error);
@@ -61,7 +68,12 @@ const Dashboard = () => {
   const fetchTutorDetails=async()=>{
     try {
       const response = await axiosInstance.get(`/tutor/get-tutorInfo/${tutorState._id}`);
-     setTutor(response.data.tutor)
+     setTutor(response.data.tutor);
+     setTotalReviews(response.data.totalReviews);
+     setMyCourses(response.data.myCourses);
+     setTotalStudents(response.data.totalStudents);
+     setAverageRating(response.data.averageRating);
+
     } catch (error) {
       console.log('Error fetching payout history:', error);
     }
@@ -94,35 +106,16 @@ const availableBalance = totalRevenue - amountWithdrawn;
       {/* Main Content */}
       <main className="w-full">
         {/* Header */}
-        <header className="flex items-center justify-between border-b bg-white px-6 py-4 ">
-          <div>
-            <h1 className="text-xl ml-12 lg:ml-0 font-semibold">Dashboard</h1>
-            <p className="text-sm hidden lg:block text-gray-500">Good Morning</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative hidden lg:block">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input className="w-64 pl-9 pr-3 py-2 rounded-md border border-gray-300" placeholder="Search" />
-            </div>
-            <button className="p-2 rounded-full hover:bg-gray-100">
-              <Bell className="h-5 w-5" />
-            </button>
-            <img  referrerPolicy="no-referrer" crossOrigin="anonymous" src={tutor.profileImg || defProfile} className="w-12 h-12 rounded-full" alt="" />
-
-           
-           
-           
-          </div>
-        </header>
+       <TutorHeader heading="Dashboard" subheading='Good Morning'/>
 
         {/* Dashboard Content */}
         <div className="px-8 mt-5">
           {/* Stats Grid */}
-          <div className="mb-6 grid grid-cols-4 gap-6">
+          <div className="mb-6 grid grid-cols-3 gap-6">
             <StatCard
               icon={BookOpen}
               label="My Courses"
-              value="17"
+              value={myCourses}
               iconColor="text-orange-500"
               iconBg="bg-orange-50"
             />
@@ -130,20 +123,14 @@ const availableBalance = totalRevenue - amountWithdrawn;
             <StatCard
               icon={Users}
               label="Students Enrolled"
-              value="241"
+              value={totalStudents}
               iconColor="text-yellow-500"
               iconBg="bg-yellow-50"
             />
-            <StatCard
-              icon={BookOpen}
-              label="Completed Courses"
-              value="12"
-              iconColor="text-green-500"
-              iconBg="bg-green-50"
-            />
+           
              <StatCard
               label="total Reviews"
-              value="125"
+              value={totalReviews}
               iconColor="text-red-500"
               iconBg="bg-red-50"
             />
@@ -189,7 +176,7 @@ const availableBalance = totalRevenue - amountWithdrawn;
                 </select>
               </div>
               <div className="mb-6 flex items-end gap-4">
-                <div className="text-4xl font-bold">4.6</div>
+                <div className="text-4xl font-bold">{averageRating}</div>
                 <div className="flex text-yellow-400">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="h-5 w-5 fill-current" />

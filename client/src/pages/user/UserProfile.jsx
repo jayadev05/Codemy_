@@ -4,7 +4,7 @@ import Header from "../../components/layout/Header";
 import MainHeader from "../../components/layout/user/MainHeader";
 import Tabs from "../../components/layout/user/Tabs";
 import SecondaryFooter from "../../components/layout/user/SecondaryFooter";
-import { Heart, Play, Download, Loader2 } from "lucide-react";
+import { Heart, Play, Download, Loader2, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { selectWishlist } from "../../store/slices/wishlistSlice";
 import { selectCart } from "../../store/slices/cartSlice";
@@ -12,6 +12,8 @@ import { selectUser } from "../../store/slices/userSlice";
 import axios from "axios";
 import { setCurrentCourse } from "@/store/slices/courseSlice";
 import axiosInstance from "@/config/axiosConfig";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const Courses = () => {
   const user = useSelector(selectUser);
@@ -69,25 +71,41 @@ const Courses = () => {
   };
 
   return (
-    <div className="container px-12 py-8 min-h-[500px]">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-xl font-semibold">Courses ({courses.length})</h3>
-        <div className="flex space-x-4">
-          <input
-            type="text"
-            placeholder="Search in your courses..."
-            className="px-4 py-2 border rounded-lg text-sm"
-          />
-          {["Latest", "All Courses", "All Teachers"].map((option) => (
-            <select
-              key={option}
-              className="px-4 py-2 border rounded-lg text-sm"
-            >
-              <option>{option}</option>
-            </select>
-          ))}
-        </div>
-      </div>
+    <div className="container px-6 py-4 lg:px-12 lg:py-8 min-h-[500px]">
+
+      {/* search and filter */}
+    
+<div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-center sm:justify-between">
+  <h3 className="text-xl font-semibold shrink-0">
+    Courses ({courses.length})
+  </h3>
+  
+  <div className="flex flex-col gap-3 w-full sm:flex-row sm:items-center sm:w-auto">
+    <div className="relative w-full sm:w-[240px]">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Input
+        type="text"
+        placeholder="Search courses..."
+        className="pl-9 w-full"
+        aria-label="Search courses"
+      />
+    </div>
+    
+    <div className="flex gap-2 overflow-x-auto pb-1 -mx-2 px-2 sm:overflow-visible sm:pb-0 sm:px-0">
+      {["Latest", "All Courses", "All Teachers"].map((option) => (
+        <Select key={option}>
+          <SelectTrigger className="w-[130px] shrink-0">
+            <SelectValue placeholder={option} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={option.toLowerCase()}>{option}</SelectItem>
+          </SelectContent>
+        </Select>
+      ))}
+    </div>
+  </div>
+</div>
+
 
       <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {courses.map((course) => (

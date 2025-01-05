@@ -1,5 +1,6 @@
 const Tutor=require("../model/tutorModel");
 const User=require("../model/userModel");
+const Course=require("../model/courseModel");
 const Ratings=require("../model/ratingsModel");
 const bcrypt = require ("bcryptjs");
 const Payouts = require("../model/payoutRequestModel");
@@ -14,8 +15,14 @@ const getTutorDetails=async(req,res)=>{
     if(!tutorId) return res.status(400).json({message:"TutorId is missing "})
 
       const tutor = await Tutor.findById(tutorId);
+      const courses = await Course.find({tutorId}).select('enrolleeCount ratings averageRating');
+     const myCourses= courses.length;
+     const totalStudents = courses.reduce((acc,course)=> acc+course.enrolleeCount,0);
+     const totalReviews = courses.reduce((acc,course)=> acc+course.ratings?.length,0);
+     const overallRating = courses.reduce((acc,course)=> acc+course.averageRating,0);
+     const averageRating= overallRating /courses.length;
 
-      res.status(200).json({message:"Tutor details fetched successfully",tutor});
+      res.status(200).json({message:"Tutor details fetched successfully",tutor,myCourses,totalReviews,totalStudents,averageRating});
 
   } catch (error) {
     console.log(error);
@@ -160,18 +167,23 @@ const makePayoutRequest = async (req, res) => {
 const getPayoutsHistory = async (req, res) => {
   try {
     const { tutorId } = req.params;
-
-    if (!tutorId) {
-      return res.status(400).json({ message: "tutorID is missing" });
-    }
     
-    const payouts = await Payouts.find({ tutorId }).sort({requestedAt:-1});
+    if (!tutorId || tutorId === 'undefined') {
+      return res.status(400).json({ message: "Invalid tutorId" });
+    }
 
-    res.status(200).json({ message: "Fetched payouts history successfully", payouts });
+    const payouts = await Payouts.find({ tutorId: String(tutorId) })
+      .sort({ requestedAt: -1 })
+      .lean();
+
+    return res.status(200).json({ 
+      message: "Fetched payouts history successfully", 
+      payouts: payouts || [] 
+    });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Failed to get payouts history: Internal server error" });
+    console.error("Payouts history error:", error);
+    return res.status(500).json({ message: "Failed to fetch payouts history" });
   }
 };
 

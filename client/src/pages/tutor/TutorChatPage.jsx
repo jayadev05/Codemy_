@@ -31,6 +31,7 @@ import ComposeModalUser from "@/components/layout/tutor/chat/StudentList";
 import axios from "axios";
 import VideoCallInterface from "@/components/layout/videoCall/VideoCallIInterface";
 import SimplePeer from "simple-peer/simplepeer.min.js";
+import TutorHeader from "@/components/layout/tutor/TutorHeader";
 
 export default function TutorChatPage() {
   const tutor = useSelector(selectTutor);
@@ -51,215 +52,85 @@ export default function TutorChatPage() {
 
   const messagesEndRef = useRef(null);
 
-   //video call
-   const myVideoRef = useRef();
-   const peerVideoRef = useRef();
-   const connectionRef = useRef();
- 
-   const [stream, setStream] = useState(null);
-   const [isCallAccepted, setIsCallAccepted] = useState(false);
-   const [incomingCallInfo, setIncomingCallInfo] = useState({});
-   const [isCallActive, setIsCallActive] = useState(false);
- const [isAudioEnabled, setIsAudioEnabled] = useState(true);
- const [isVideoEnabled, setIsVideoEnabled] = useState(false);
+  //video call
+  const myVideoRef = useRef();
+  const peerVideoRef = useRef();
+  const connectionRef = useRef();
 
- 
+  const [stream, setStream] = useState(null);
+  const [isCalling, setIsCalling] = useState(false);
+  const [isCallAccepted, setIsCallAccepted] = useState(false);
+  const [incomingCallInfo, setIncomingCallInfo] = useState({});
+  const [isCallActive, setIsCallActive] = useState(false);
+  const [isAudioEnabled, setIsAudioEnabled] = useState(true);
+  const [isVideoEnabled, setIsVideoEnabled] = useState(true);
 
+  console.log("My socket id :", socketService.socket?.id);
 
-console.log("Peer Video",peerVideoRef)
-console.log("My Video",myVideoRef)
+  //get current user role
+  const userType = getUserRoleFromToken();
 
- 
+  const receiverId =
+    userType === "user"
+      ? selectedChat?.tutorId?._id
+      : selectedChat?.userId?._id;
 
- 
-  // // Handle media devices separately
-  // useEffect(() => {
-  //   // Enumerate devices for debugging
-  //   navigator.mediaDevices.enumerateDevices().then((devices) => {
-  //     devices.forEach((device) =>
-  //       console.log(device.kind, device.label, device.deviceId)
-  //     );
-  //   });
-
-  //   // Check media device support
-  //   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-  //     console.error('Media devices API not supported on this device');
-  //     setStream(null);
-  //     return;
-  //   }
-
-  //   // Request media stream for audio only
-  //   navigator.mediaDevices
-  //     .getUserMedia({ video:true,audio: true })
-  //     .then((mediaStream) => {
-
-  //       console.log('media stream acquired');
-
-  //       setStream(mediaStream);
-
-  //       //set local video
-  //       if (myVideoRef.current) {
-  //         myVideoRef.current.srcObject = mediaStream;
-  //       }
-
-  //     })
-  //     .catch((error) => {
-  //       console.error('Error accessing media devices:', error);
-
-  //       if (error.name === 'NotFoundError') {
-  //         console.error('No audio input device found. Audio may not work.');
-  //       }
-  //       setStream(null);
-  //     });
-
-  //   // Cleanup
-  //   // Cleanup function
-  // return () => {
-  //   if (stream) {
-  //     stream.getTracks().forEach(track => track.stop());
-  //   }
-  // };
-
-  // }, [isCallActive,incomingCallInfo?.isSomeoneCalling]);
-  
-
-   //handling video call
-   useEffect(() => {
-    const handleIncomingCall = ({ from, signalData,callerData }) => {
-      console.log("Incoming call from:", from);
-      setIncomingCallInfo({ 
-        isSomeoneCalling: true, 
-        from, 
-        callerData,
-        signalData 
+  //handling video call
+  useEffect(() => {
+    const handleIncomingCall = (data) => {
+      console.log("Incoming call from:", data.from);
+      setIncomingCallInfo({
+        isSomeoneCalling: true,
+        from: data.from,
+        callerData: data.callerData,
+        signalData: data.signalData,
       });
     };
 
     const handleCallAccepted = ({ signalData }) => {
       setIsCallAccepted(true);
+      setIsCalling(false);
+
       if (connectionRef.current) {
         connectionRef.current.signal(signalData);
       }
     };
 
     const handleCallRejected = () => {
-      toast.error('Call was rejected');
+      toast.error("Call declined", { icon: "📞" });
       handleEndCall();
+    };
+
+    const handleCallEnded = () => {
+      toast.error("Call ended", { icon: "📞" });
+      handleEndCall(false);
     };
 
     const handleUserDisconnected = () => {
       if (isCallActive) {
-        toast.error('Call ended: User disconnected');
+        toast.error("Call ended: User disconnected");
         handleEndCall();
       }
     };
 
-    console.log('Setting up socket event listeners');
-    socketService.on('incoming-call', handleIncomingCall);
-    socketService.on('call-accepted', handleCallAccepted);
-    socketService.on('call-rejected', handleCallRejected);
-    socketService.on('user-disconnected', handleUserDisconnected);
+    console.log("Setting up socket event listeners");
+    socketService.on("incoming-call", handleIncomingCall);
+    socketService.on("call-accepted", handleCallAccepted);
+    socketService.on("call-rejected", handleCallRejected);
+    socketService.on("call-ended", handleCallEnded);
+    socketService.on("user-disconnected", handleUserDisconnected);
 
     return () => {
-      console.log('Cleaning up socket event listeners');
-      socketService.off('incoming-call', handleIncomingCall);
-      socketService.off('call-accepted', handleCallAccepted);
-      socketService.off('call-rejected', handleCallRejected);
-      socketService.off('user-disconnected', handleUserDisconnected);
-
-  
+      console.log("Cleaning up socket event listeners");
+      socketService.off("incoming-call", handleIncomingCall);
+      socketService.off("call-accepted", handleCallAccepted);
+      socketService.off("call-rejected", handleCallRejected);
+      socketService.off("call-ended", handleCallEnded);
+      socketService.off("user-disconnected", handleUserDisconnected);
     };
-  }, [stream,incomingCallInfo?.isSomeoneCalling]);
+  }, [stream, incomingCallInfo?.isSomeoneCalling]);
 
-  const userType = getUserRoleFromToken();
-
-  //get userType form token
-  function getUserRoleFromToken() {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      try {
-        const decodedToken = jwtDecode(token);
-        return decodedToken.type;
-      } catch (error) {
-        console.error("Invalid token:", error);
-      }
-    }
-    return null;
-  }
-
-
-  // Fetch all chats for the current user
-  const fetchChats = async () => {
-    try {
-      const response = await axiosInstance.get(
-        `/chat/get-all-chats/${tutor._id}`
-      );
-
-      const filteredChat = response.data.filter((chat) => {
-        if (chat.deletedBy.length > 0) {
-          return !chat.deletedBy.includes(tutor._id);
-        }
-        return true;
-      });
-
-      setChats(filteredChat);
-
-      if (selectedChat) {
-        console.log(selectedChat);
-
-        const chatStillExists = filteredChat.find(
-          (chat) => chat._id === selectedChat._id
-        );
-        console.log("chat exists?", chatStillExists);
-
-        if (!chatStillExists) {
-          setSelectedChat(null);
-          console.log("no chat");
-        } else {
-          const updatedSelectedChat = filteredChat.find(
-            (chat) => chat._id === selectedChat._id
-          );
-          setSelectedChat(updatedSelectedChat);
-          console.log("selected chat is updated",updatedSelectedChat);
-        }
-      }
-
-      else {
-        console.log("no selected chat");
-      }
-    } catch (error) {
-      console.error("Error fetching chats:", error);
-    }
-  };
-
-  // Fetch messages for a specific chat
-  const fetchMessages = async (chatId) => {
-    try {
-      const response = await axiosInstance.get(`/chat/get-messages/${chatId}`);
-      console.log(response);
-      setMessages(response.data);
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-    }
-  };
-
-  // Fetch tutors when modal opens
-  const fetchStudents = async () => {
-    try {
-      setLoading(true);
-
-      const response = await axiosInstance.get(
-        `/chat/get-students/${tutor._id}`
-      );
-
-      setStudents(response.data.students);
-    } catch (error) {
-      console.error("Error fetching tutors:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  //fetch students
   useEffect(() => {
     fetchStudents();
   }, []);
@@ -271,19 +142,13 @@ console.log("My Video",myVideoRef)
     }
   }, [messages, isTyping]);
 
-  const handleCreateChat = (newChat) => {
-    setChats((prev) => [newChat, ...prev]);
-    setSelectedChat(newChat);
-    fetchMessages(newChat._id);
-  };
-
   // Initialize chat data and socket connection
   useEffect(() => {
     let isSubscribed = true;
     let currentTypingTimeout = null;
 
     const handleStatusUpdate = async () => {
-      console.log("Other user is online",isSubscribed);
+      console.log("Other user is online", isSubscribed);
       if (isSubscribed) {
         console.log("fetching chats");
         await fetchChats();
@@ -292,18 +157,17 @@ console.log("My Video",myVideoRef)
 
     const handleRecieveMessage = (message) => {
       if (!isSubscribed) return;
-    
+
       console.log("Received message event triggered:", message);
-      
-      
+
       const validatedMessage = {
         ...message,
-        contentType: message.contentType || 'text' // Default to text for backward compatibility
+        contentType: message.contentType || "text", // Default to text for backward compatibility
       };
-    
+
       updateChatLastMessage(validatedMessage);
       fetchChats();
-    
+
       setSelectedChat((currentSelectedChat) => {
         if (currentSelectedChat?._id === message.chatId) {
           setMessages((prevMessages) => {
@@ -313,7 +177,7 @@ console.log("My Video",myVideoRef)
             }
             return [...prevMessages, validatedMessage];
           });
-    
+
           socketService.markMessagesRead({
             chatId: currentSelectedChat._id,
             userType,
@@ -326,7 +190,7 @@ console.log("My Video",myVideoRef)
               if (chat._id === message.chatId) {
                 const isFromOtherUser = message.sender.userId !== tutor._id;
                 const isNotCurrentChat = currentSelectedChat?._id !== chat._id;
-    
+
                 return {
                   ...chat,
                   unreadCount: {
@@ -346,7 +210,7 @@ console.log("My Video",myVideoRef)
             })
           );
         }
-    
+
         return currentSelectedChat;
       });
     };
@@ -441,7 +305,97 @@ console.log("My Video",myVideoRef)
         clearTimeout(typingTimeout);
       }
     };
-  }, [tutor?._id,selectedChat?._id]);
+  }, [tutor?._id, selectedChat?._id]);
+
+  //get userType form token
+  function getUserRoleFromToken() {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      try {
+        const decodedToken = jwtDecode(token);
+        return decodedToken.type;
+      } catch (error) {
+        console.error("Invalid token:", error);
+      }
+    }
+    return null;
+  }
+
+  // Fetch all chats for the current user
+  const fetchChats = async () => {
+    try {
+      const response = await axiosInstance.get(
+        `/chat/get-all-chats/${tutor._id}`
+      );
+
+      const filteredChat = response.data.filter((chat) => {
+        if (chat.deletedBy.length > 0) {
+          return !chat.deletedBy.includes(tutor._id);
+        }
+        return true;
+      });
+
+      setChats(filteredChat);
+
+      if (selectedChat) {
+        console.log(selectedChat);
+
+        const chatStillExists = filteredChat.find(
+          (chat) => chat._id === selectedChat._id
+        );
+        console.log("chat exists?", chatStillExists);
+
+        if (!chatStillExists) {
+          setSelectedChat(null);
+          console.log("no chat");
+        } else {
+          const updatedSelectedChat = filteredChat.find(
+            (chat) => chat._id === selectedChat._id
+          );
+          setSelectedChat(updatedSelectedChat);
+          console.log("selected chat is updated", updatedSelectedChat);
+        }
+      } else {
+        console.log("no selected chat");
+      }
+    } catch (error) {
+      console.error("Error fetching chats:", error);
+    }
+  };
+
+  // Fetch messages for a specific chat
+  const fetchMessages = async (chatId) => {
+    try {
+      const response = await axiosInstance.get(`/chat/get-messages/${chatId}`);
+      console.log(response);
+      setMessages(response.data);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+    }
+  };
+
+  // Fetch tutors when modal opens
+  const fetchStudents = async () => {
+    try {
+      setLoading(true);
+
+      const response = await axiosInstance.get(
+        `/chat/get-students/${tutor._id}`
+      );
+
+      setStudents(response.data.students);
+    } catch (error) {
+      console.error("Error fetching tutors:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateChat = (newChat) => {
+    setChats((prev) => [newChat, ...prev]);
+    setSelectedChat(newChat);
+    fetchMessages(newChat._id);
+  };
 
   // Update chat's last message
   const updateChatLastMessage = (message) => {
@@ -452,7 +406,7 @@ console.log("My Video",myVideoRef)
               ...chat,
               lastMessage: {
                 content: message.content,
-                contentType:message.contentType,
+                contentType: message.contentType,
                 senderId: message.sender.userId,
                 timestamp: message.createdAt,
               },
@@ -522,9 +476,9 @@ console.log("My Video",myVideoRef)
   // Handle sending messages
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    
+
     if ((!inputMessage.trim() && !selectedFile) || !selectedChat) return;
-  
+
     try {
       const messageData = {
         chatId: selectedChat._id,
@@ -542,30 +496,29 @@ console.log("My Video",myVideoRef)
         content: selectedFile || inputMessage.trim(),
         contentType: selectedFile ? "media" : "text", // Explicitly set content type
       };
-  
+
       console.log("Sending message with data:", messageData);
-  
+
       const response = await axiosInstance.post(
         "/chat/create-message",
         messageData
       );
-  
-   
 
       // Ensure contentType exists in the response data
       const validatedResponse = {
         ...response.data,
-        contentType: response.data.contentType || (selectedFile ? "media" : "text")
+        contentType:
+          response.data.contentType || (selectedFile ? "media" : "text"),
       };
 
-      console.log("validated response",validatedResponse);
-  
+      console.log("validated response", validatedResponse);
+
       setMessages((prevMessages) => [...prevMessages, validatedResponse]);
       setInputMessage("");
       clearSelectedFile();
       updateChatLastMessage(validatedResponse);
-      fetchChats()
-  
+      fetchChats();
+
       socketService.sendMessage({
         ...validatedResponse,
         timestamps: validatedResponse.createdAt,
@@ -579,11 +532,6 @@ console.log("My Video",myVideoRef)
   // Handle typing events
   const handleTyping = () => {
     if (selectedChat) {
-      const receiverId =
-        userType === "user"
-          ? selectedChat.tutorId._id
-          : selectedChat.userId._id;
-
       socketService.sendTyping({
         chatId: selectedChat._id,
         senderId: tutor._id,
@@ -635,14 +583,14 @@ console.log("My Video",myVideoRef)
 
   const renderMessageContent = (message) => {
     // Always default to text if no contentType specified
-    const contentType = message.contentType || 'text';
-    
+    const contentType = message.contentType || "text";
+
     switch (contentType) {
-      case 'text':
+      case "text":
         return <p>{message.content}</p>;
-        
-      case 'media':
-        if (typeof message.content === 'string') {
+
+      case "media":
+        if (typeof message.content === "string") {
           if (message.content.match(/\.(jpg|jpeg|png|gif)$/i)) {
             return (
               <img
@@ -652,8 +600,8 @@ console.log("My Video",myVideoRef)
                 onClick={() => window.open(message.content, "_blank")}
               />
             );
-          } 
-          
+          }
+
           if (message.content.match(/\.(mp4)$/i)) {
             return (
               <video controls className="max-w-[300px] rounded-lg">
@@ -664,7 +612,7 @@ console.log("My Video",myVideoRef)
           }
         }
         return <p>Unsupported media format</p>;
-        
+
       default:
         return <p>{message.content}</p>; // Fallback to showing content as text
     }
@@ -836,215 +784,208 @@ console.log("My Video",myVideoRef)
 
   const initiateCall = async () => {
     if (!tutor._id) return;
-    
-    try {
-        const mediaStream = await navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: true
-        });
-        
-        setStream(mediaStream);
-        
-        // Store the stream in a ref so we can access it later
-        const streamRef = mediaStream;
-        
-        // Create peer with the new stream immediately
-        createInitiatorPeer(streamRef);
-        
-        // Attempt to set the stream on the video element if it exists
-        if (myVideoRef.current) {
-            myVideoRef.current.srcObject = streamRef;
-        }
-        
-    } catch (error) {
-        console.error('Error accessing media devices:', error);
-        
-    }
-};
 
-// Separate function to create initiator peer
-const createInitiatorPeer = (mediaStream) => {
-    console.log("Creating initiator peer with stream:", mediaStream);
-    console.log("Stream tracks:", mediaStream?.getTracks());
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+
+      setStream(mediaStream);
+      setIsCalling(true);
+
+      if (myVideoRef.current) {
+        myVideoRef.current.srcObject = mediaStream;
+        console.log("my video mounted for caller side");
+      }
+
+      createInitiatorPeer(mediaStream);
+    } catch (error) {
+      console.error("Error accessing media devices:", error);
+    }
+  };
+
+  // Separate function to create initiator peer
+  const createInitiatorPeer = (mediaStream) => {
+    if (!mediaStream?.getTracks().length) {
+      console.error("No media tracks available");
+      return;
+    }
 
     const peer = new SimplePeer({
-        initiator: true,
-        trickle: false,
-        stream: mediaStream,
-        
+      initiator: true,
+      trickle: false,
+      stream: mediaStream,
     });
 
-    const receiverId = userType === "user" 
-        ? selectedChat.tutorId._id 
-        : selectedChat.userId._id;
-
-    peer.on('signal', (signalData) => {
-        if (signalData.type === 'offer') {
-            socketService.initializeCall({
-                recieverId: receiverId,
-                signalData,
-                from: socketService.socket.id,
-                callerName: tutor.fullName,
-                callerAvatar: tutor.profileImg,
-                callerUserId: tutor._id
-            });
-        }
+    peer.on("signal", (signalData) => {
+      socketService.initializeCall({
+        recieverId: receiverId,
+        signalData,
+        from: socketService.socket.id,
+        callerName: tutor.fullName,
+        callerAvatar: tutor.profileImg,
+        callerUserId: tutor._id,
+      });
     });
 
-    peer.on('stream', (remoteStream) => {
-        console.log('Received remote stream:', remoteStream);
-        if (peerVideoRef.current) {
-            peerVideoRef.current.srcObject = remoteStream;
-           
-        }
+    peer.on("stream", (remoteStream) => {
+      console.log("Received remote stream:", remoteStream);
+      if (peerVideoRef.current) {
+        peerVideoRef.current.srcObject = remoteStream;
+      }
     });
 
-    peer.on('connect', () => {
-        console.log('Peer connection established');
-        setIsCallActive(true);
+    peer.on("connect", () => {
+      console.log("Peer connection established");
+      setIsCallActive(true);
     });
 
-    peer.on('error', (err) => {
-        console.error('Peer error:', err);
-        handleEndCall();
+    peer.on("error", (err) => {
+      console.error("Peer error:", err);
+      handleEndCall();
     });
 
-    peer.on('close', () => {
-        console.log('Peer connection closed');
-        handleEndCall();
+    peer.on("close", () => {
+      console.log("Peer connection closed");
+      handleEndCall();
     });
 
     connectionRef.current = peer;
-};
+  };
 
-const answerCall = async () => {
+  const answerCall = async () => {
     if (!incomingCallInfo?.signalData) return;
 
     try {
-     
-            const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-                video: true, 
-                audio: true 
-            });
-            setStream(mediaStream);
-            
-            // Update video ref with new stream
-            if (myVideoRef.current) {
-                myVideoRef.current.srcObject = mediaStream;
-            }
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+      setStream(mediaStream);
 
-            // Create peer with the new stream
-            createAnswerPeer(mediaStream);
-        
+      // Update video ref with new stream
+      if (myVideoRef.current) {
+        myVideoRef.current.srcObject = mediaStream;
+      }
+
+      // Create peer with the new stream
+      createAnswerPeer(mediaStream);
     } catch (error) {
-        console.error('Error accessing media devices:', error);
-        // Handle error - maybe show a notification to user
+      console.error("Error accessing media devices:", error);
+      // Handle error - maybe show a notification to user
     }
-};
+  };
 
-// Separate function to create answering peer
-const createAnswerPeer = (mediaStream) => {
+  // Separate function to create answering peer
+  const createAnswerPeer = (mediaStream) => {
     console.log("Creating answer peer with stream:", mediaStream);
     console.log("Stream tracks:", mediaStream?.getTracks());
 
     setIsCallAccepted(true);
-    setIncomingCallInfo((prev) => ({...prev, isSomeoneCalling: false}));
+    setIncomingCallInfo((prev) => ({ ...prev, isSomeoneCalling: false }));
 
     const peer = new SimplePeer({
-        initiator: false,
-        trickle: false,
-        stream: mediaStream,
-       
+      initiator: false,
+      trickle: false,
+      stream: mediaStream,
     });
 
-    peer.on('signal', (signalData) => {
-        if (signalData.type === 'answer') {
-            socketService.answerCall({
-                signalData,
-                to: incomingCallInfo.from
-            });
-        }
+    peer.on("signal", (signalData) => {
+      if (signalData.type === "answer") {
+        socketService.answerCall({
+          signalData,
+          to: incomingCallInfo.from,
+        });
+      }
     });
 
-    peer.on('stream', (remoteStream) => {
-        console.log('Received caller stream:', remoteStream);
-        if (peerVideoRef.current) {
-            peerVideoRef.current.srcObject = remoteStream;
-           
-        }
+    peer.on("stream", (remoteStream) => {
+      console.log("Received caller stream:", remoteStream);
+      if (peerVideoRef.current) {
+        peerVideoRef.current.srcObject = remoteStream;
+      }
     });
 
-    peer.on('connect', () => {
-        console.log('Peer connection established');
-        setIsCallActive(true);
+    peer.on("connect", () => {
+      console.log("Peer connection established");
+      setIsCallActive(true);
     });
 
-    peer.on('error', (err) => {
-        console.error('Peer error:', err);
-        handleEndCall();
+    peer.on("error", (err) => {
+      console.error("Peer error:", err);
+      handleEndCall();
     });
 
-    peer.on('close', () => {
-        console.log('Peer connection closed');
-        handleEndCall();
+    peer.on("close", () => {
+      console.log("Peer connection closed");
+      handleEndCall();
     });
 
     // Signal the offer to the answering peer
     peer.signal(incomingCallInfo.signalData);
     connectionRef.current = peer;
-};
-const handleEndCall = () => {
-  // Clean up peer connection
-  if (connectionRef.current) {
+  };
+
+  const handleEndCall = (sendSocketEvent = true) => {
+    // Clean up peer connection
+    if (connectionRef.current) {
       connectionRef.current.destroy();
       connectionRef.current = null;
-  }
+    }
 
-  // Clean up video elements
-  if (myVideoRef.current) {
+    // Clean up video elements
+    if (myVideoRef.current) {
       myVideoRef.current.srcObject = null;
-  }
-  if (peerVideoRef.current) {
+    }
+    if (peerVideoRef.current) {
       peerVideoRef.current.srcObject = null;
-  }
+    }
 
-  // Stop all tracks in the stream
-  if (stream) {
-      stream.getTracks().forEach(track => {
-          track.stop();
-          stream.removeTrack(track);
+    // Stop all tracks in the stream
+    if (stream) {
+      stream.getTracks().forEach((track) => {
+        track.stop();
+        stream.removeTrack(track);
       });
-  }
-  setStream(null);
-  setIsCallActive(false);
-  setIsCallAccepted(false);
-  setIncomingCallInfo(null);
-};
-    
-    const handleRejectCall = () => {
-      socketService.rejectCall({ to: incomingCallInfo.from });
-      setIncomingCallInfo({});
-    };
-    
-    const onToggleVideo = () => {
-      if (stream) {
-        const videoTrack = stream.getVideoTracks()[0];
-        if (videoTrack) {
-          videoTrack.enabled = !isVideoEnabled;
-          setIsVideoEnabled(!isVideoEnabled);
-        }
+    }
+
+    setStream(null);
+    setIsCallActive(false);
+    setIsCallAccepted(false);
+    setIncomingCallInfo(null);
+    setIsCalling(false);
+
+    // Only send socket event if explicitly requested
+    if (sendSocketEvent && receiverId) {
+      socketService.endCall({ receiverId });
+    }
+  };
+
+  const handleRejectCall = () => {
+    socketService.rejectCall({ to: incomingCallInfo.from });
+    setIncomingCallInfo({});
+  };
+
+  const onToggleVideo = () => {
+    if (stream) {
+      const videoTrack = stream.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.enabled = !isVideoEnabled;
+        setIsVideoEnabled(!isVideoEnabled);
       }
-    };
-    
-    const onToggleAudio = () => {
-      if (stream) {
-        const audioTrack = stream.getAudioTracks()[0];
-        if (audioTrack) {
-          audioTrack.enabled = !isAudioEnabled;
-          setIsAudioEnabled(!isAudioEnabled);
-        }
+    }
+  };
+
+  const onToggleAudio = () => {
+    if (stream) {
+      const audioTrack = stream.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.enabled = !isAudioEnabled;
+        setIsAudioEnabled(!isAudioEnabled);
       }
-    };
+    }
+  };
 
   // Format timestamp
   const formatTime = (timestamp) => {
@@ -1056,41 +997,15 @@ const handleEndCall = () => {
 
   return (
     <div className="flex">
-     
       <Sidebar activeSection="Messages" />
 
       <div className="flex-1">
         {/* Header */}
-        <header className="flex items-center justify-between border-b bg-white p-4">
-          <div>
-            <h1 className="text-lg lg:text-xl ml-12 lg:ml-0 font-semibold">Messages</h1>
-            <p className="text-sm text-gray-500 hidden sm:block">
-              Good Morning
-            </p>
-          </div>
-          <div className="flex items-center gap-2 lg:gap-4">
-            <div className="relative hidden sm:block">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input
-                className="w-48 lg:w-64 pl-9 pr-3 py-2 rounded-md border border-gray-300"
-                placeholder="Search"
-              />
-            </div>
-            <button className="p-2 rounded-full hover:bg-gray-100">
-              <Bell className="h-5 w-5" />
-            </button>
-            <img
-              referrerPolicy="no-referrer"
-              crossOrigin="anonymous"
-              src={tutor?.profileImg || defProfile}
-              className="w-8 h-8 lg:w-12 lg:h-12 rounded-full"
-              alt=""
-            />
-          </div>
-        </header>
+        <TutorHeader heading="Messages"/>
 
         {/* Chat Container */}
         <div className="flex h-[calc(100vh-90px)] bg-white">
+
           {/* Chat List */}
           <div
             className={`${
@@ -1189,8 +1104,10 @@ const handleEndCall = () => {
                             </div>
                             <div className="flex items-center justify-between">
                               <p className="text-sm text-gray-600 truncate">
-                              {chat.lastMessage?.contentType==='media'? `Media 📷` :chat.lastMessage?.content ||
-                                "Start a conversation"}
+                                {chat.lastMessage?.contentType === "media"
+                                  ? `Media 📷`
+                                  : chat.lastMessage?.content ||
+                                    "Start a conversation"}
                               </p>
                               {chat.unreadCount?.[
                                 userType === "user" ? "student" : "tutor"
@@ -1285,33 +1202,32 @@ const handleEndCall = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                  <Video className='cursor-pointer' onClick={initiateCall}/>
-                <div className="relative">
-                  <Button
-                    onClick={() => handleOptionsModalOpen()}
-                    variant="ghost"
-                    size="icon"
-                  >
-                    <MoreHorizontal className="h-5 w-5" />
-                  </Button>
-                  {optionsModalOpen && (
-                    <div className="absolute right-4 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50 border border-gray-200">
-                      <button className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors">
-                        <AlertTriangle className="w-4 h-4 mr-2 text-orange-500" />
-                        Block Tutor
-                      </button>
-                      <button
-                        onClick={handleDeleteChat}
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors"
+                    <Video className="cursor-pointer" onClick={initiateCall} />
+                    <div className="relative">
+                      <Button
+                        onClick={() => handleOptionsModalOpen()}
+                        variant="ghost"
+                        size="icon"
                       >
-                        <Trash2Icon className="w-4 h-4 mr-2 text-orange-500" />
-                        Delete chat
-                      </button>
+                        <MoreHorizontal className="h-5 w-5" />
+                      </Button>
+                      {optionsModalOpen && (
+                        <div className="absolute right-4 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50 border border-gray-200">
+                          <button className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors">
+                            <AlertTriangle className="w-4 h-4 mr-2 text-orange-500" />
+                            Block Tutor
+                          </button>
+                          <button
+                            onClick={handleDeleteChat}
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors"
+                          >
+                            <Trash2Icon className="w-4 h-4 mr-2 text-orange-500" />
+                            Delete chat
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-               
-                </div>
+                  </div>
                 </div>
 
                 <ScrollArea className="flex-1 p-3">
@@ -1444,6 +1360,7 @@ const handleEndCall = () => {
               </div>
             )}
           </div>
+
         </div>
 
         <ComposeModalUser
@@ -1453,21 +1370,22 @@ const handleEndCall = () => {
           recipients={students}
           tutor={tutor}
         />
+        
         <VideoCallInterface
-  stream={stream}
-  myVideoRef={myVideoRef}
-  peerVideoRef={peerVideoRef}
-  isCallAccepted={isCallAccepted}
-  incomingCallInfo={incomingCallInfo}
-  onAnswer={answerCall}
-  onReject={handleRejectCall}
-  onEndCall={handleEndCall}
-  isCallActive={isCallActive || isCallAccepted}
-  onToggleAudio={onToggleAudio}
-  onToggleVideo={onToggleVideo}
-  isAudioEnabled={isAudioEnabled}
-  isVideoEnabled={isVideoEnabled}
-/>
+          stream={stream}
+          myVideoRef={myVideoRef}
+          peerVideoRef={peerVideoRef}
+          isCallAccepted={isCallAccepted}
+          incomingCallInfo={incomingCallInfo}
+          onAnswer={answerCall}
+          onReject={handleRejectCall}
+          onEndCall={handleEndCall}
+          isCallActive={isCallActive || isCallAccepted}
+          onToggleAudio={onToggleAudio}
+          onToggleVideo={onToggleVideo}
+          isAudioEnabled={isAudioEnabled}
+          isVideoEnabled={isVideoEnabled}
+        />
       </div>
     </div>
   );

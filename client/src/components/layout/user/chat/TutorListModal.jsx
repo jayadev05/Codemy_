@@ -26,7 +26,7 @@ export default function ComposeModal({ open, onOpenChange, onChatCreated ,recipi
     try {
       const response = await axiosInstance.post('/chat/create-chat', {
         tutorId,
-        userId:user._id
+        userId:user?._id
       })
       onChatCreated(response.data)
       onOpenChange(false)

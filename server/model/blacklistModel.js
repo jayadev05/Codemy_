@@ -12,5 +12,5 @@ const BlacklistSchema = new mongoose.Schema({
   },
 });
 
-const UserBlacklist = mongoose.model('Blacklist', BlacklistSchema);
-module.exports = UserBlacklist;
+const Blacklist = mongoose.model('Blacklist', BlacklistSchema);
+module.exports = Blacklist;

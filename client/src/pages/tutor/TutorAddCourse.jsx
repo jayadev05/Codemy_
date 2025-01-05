@@ -20,6 +20,7 @@ import Curriculum from "../../components/layout/tutor/courseInfoTabs/Curriculum"
 import CoursePreview from "../../components/layout/tutor/Preview";
 import { addCourse, clearCourse, selectCourse } from "../../store/slices/courseSlice";
 import { useNavigate } from "react-router";
+import TutorHeader from "@/components/layout/tutor/TutorHeader";
 
 export default function AddCourse() {
 
@@ -287,30 +288,7 @@ const handleCurriculumData = useCallback((dataFromChild) => {
         </div>
 
         <main className="w-full bg-gray-100 pb-8">
-          <header className="flex items-center justify-between border-b bg-white px-6 py-4 ">
-            <div>
-              <h1 className="text-xl font-semibold">Create New Course</h1>
-              <p className="text-sm text-gray-500">Good Morning</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <input
-                  className="w-64 pl-9 pr-3 py-2 rounded-md border border-gray-300"
-                  placeholder="Search"
-                />
-              </div>
-              <button className="p-2 rounded-full hover:bg-gray-100">
-                <Bell className="h-5 w-5" />
-              </button>
-              <img
-                crossOrigin="anonymous"
-                src={tutor.profileImg || defProfile}
-                className="w-12 h-12 rounded-full"
-                alt=""
-              />
-            </div>
-          </header>
+       <TutorHeader heading="Create new Course"/>
 
           <div className="bg-white max-w-[1100px] mx-auto px-8 py-2 mt-3  ">
             <nav className="flex gap-8 border-b">

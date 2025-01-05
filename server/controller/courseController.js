@@ -137,7 +137,12 @@ const getCourses = async (req, res) => {
         );
     }
 
-    res.status(200).json({ courses });
+    const totalStudents = await User.find();
+    const totalTutors = await Tutor.find();
+
+    console.log("adsasdad",totalTutors,totalStudents);
+
+    res.status(200).json({ courses , totalStudents:totalStudents.length , totalTutors:totalTutors.length });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Failed to fetch courses" });
@@ -184,7 +189,8 @@ const getCoursesByStudentId = async (req, res) => {
     const { userId } = req.params;
 
     const user = await User.findById(userId);
-    const courseIds = user.activeCourses;
+    const courseIds = user?.activeCourses;
+
 
     const courses = await Course.find({ _id: { $in: courseIds } }).populate(
       "categoryId",
@@ -545,7 +551,7 @@ const getWishlist = async (req, res) => {
     }
 
     // Find the wishlist for the given user and populate course details
-    const wishlist = await Wishlist.findOne({ userId }).populate({
+    let wishlist = await Wishlist.findOne({ userId }).populate({
       path: "courses.courseId",
       select: "title description price thumbnail averageRating",
     });

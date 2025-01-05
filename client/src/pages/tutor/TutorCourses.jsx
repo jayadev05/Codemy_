@@ -10,6 +10,7 @@ import { useNavigate } from "react-router";
 import { addCourse } from "../../store/slices/courseSlice";
 import Pagination from "../../components/utils/Pagination";
 import axiosInstance from "@/config/axiosConfig";
+import TutorHeader from "@/components/layout/tutor/TutorHeader";
 
 export default function TutorCourses() {
   const tutor = useSelector(selectTutor);
@@ -135,33 +136,7 @@ export default function TutorCourses() {
       </div>
 
       <main className="w-full">
-        <header className="flex items-center justify-between border-b bg-white px-6 py-4 ">
-          <div>
-            <h1 className="text-xl ml-12 lg:ml-0 font-semibold">My Courses</h1>
-            <p className="text-sm hidden lg:block text-gray-500">
-              Good Morning
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative hidden lg:block">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input
-                className="w-64 pl-9 pr-3 py-2 rounded-md border border-gray-300"
-                placeholder="Search"
-              />
-            </div>
-            <button className="p-2 rounded-full hover:bg-gray-100">
-              <Bell className="h-5 w-5" />
-            </button>
-            <img
-              referrerPolicy="no-referrer"
-              crossOrigin="anonymous"
-              src={tutor.profileImg || defProfile}
-              className="w-12 h-12 rounded-full"
-              alt=""
-            />
-          </div>
-        </header>
+      <TutorHeader heading="My Courses"/>
 
         <div className="my-6 ml-24 flex gap-4">
           <select

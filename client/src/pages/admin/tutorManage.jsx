@@ -14,6 +14,7 @@ import { logoutAdmin, selectAdmin } from "../../store/slices/adminSlice";
 import { useNavigate } from "react-router";
 import Sidebar from "../../components/layout/admin/sidebar";
 import axiosInstance from "../..//config/axiosConfig";
+import AdminHeader from "@/components/layout/admin/AdminHeader";
 
 const TutorManagement = () => {
   const user = useSelector(selectUser);
@@ -77,76 +78,46 @@ const TutorManagement = () => {
   const handleApplicationAction = async (applicationId, action) => {
     try {
       setLoading(true);
-      const result = await axiosInstance.patch(
-        `http://localhost:3000/admin/approve-tutor/${applicationId}`,
-        {
-          status: action,
-        }
+      
+      // Update application status
+      const response = await axiosInstance.patch(
+        `/admin/approve-tutor/${applicationId}`,
+        { status: action }
       );
-
-      if (action === "approved") {
-        if (result.data.tutor) {
-          // Transform the application data to match tutor data structure
-          const newTutor = {
-            _id: result.data.tutor._id,
-            fullName: result.data.tutor.fullName,
-            email: result.data.tutor.email,
-            userName: result.data.tutor.userName,
-            isActive: result.data.tutor.isActive,
-            profileImg: result.data.tutor.profileImg,
-
-            ...result.data.tutor,
-          };
-
-          // Add the new tutor to the tutors list
-          setTutors((prevTutors) => {
-            const tutorExists = prevTutors.some(
-              (tutor) => tutor._id === newTutor._id
-            );
-            return tutorExists
-              ? prevTutors.map((tutor) =>
-                  tutor._id === newTutor._id ? { ...tutor, ...newTutor } : tutor
-                )
-              : [...prevTutors, newTutor];
-          });
-        }
-
-        // Remove the application from the list
-        setApplications((prevApplications) =>
-          prevApplications.filter((app) => app._id !== applicationId)
-        );
-
-        //clear user state
+  
+      // Review application
+      const result = await axiosInstance.put(
+        `/admin/instructor-applications/${applicationId}/review`,
+        { status: response.data.status }
+      );
+  
+      if (action === "approved" && result.data.tutor) {
+        // Update tutors list
+        setTutors(prevTutors => {
+          const newTutor = result.data.tutor;
+          return prevTutors.find(t => t._id === newTutor._id)
+            ? prevTutors.map(t => t._id === newTutor._id ? newTutor : t)
+            : [...prevTutors, newTutor];
+        });
+  
+        setApplications(prev => prev.filter(app => app._id !== applicationId));
         dispatch(logoutUser(user));
-
-        setLoading(false);
-        toast.success("Tutor Application Approved Successfully");
-
-        // Optionally, switch to the tutors tab to show the newly added tutor
         setActiveTab("tutors");
+        toast.success("Tutor Application Approved Successfully");
       } else {
-        // If rejected, update the application status
-        setApplications((prevApplications) =>
-          prevApplications.map((app) =>
-            app._id === applicationId ? { ...app, status: "rejected" } : app
+        setApplications(prev => 
+          prev.map(app => app._id === applicationId 
+            ? { ...app, status: "rejected" } 
+            : app
           )
         );
-        setLoading(false);
         toast.error("Tutor Application Rejected");
       }
     } catch (error) {
-      console.error(
-        `Error ${
-          action === "approved" ? "approving" : "rejecting"
-        } tutor application:`,
-        error
-      );
-
-      toast.error(
-        `There was an error ${
-          action === "approved" ? "approving" : "rejecting"
-        } the Tutor`
-      );
+      console.error("Error processing application:", error);
+      toast.error(`Failed to ${action} the Tutor`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -183,20 +154,6 @@ const TutorManagement = () => {
     setCurrentPage(pageNumber);
   };
 
-  const onLogout = () => {
-    try {
-      const response = axiosInstance.post("http://localhost:3000/admin/logout");
-
-      dispatch(logoutAdmin(admin));
-
-      toast.success("Logged out successfully");
-
-      navigate("/login");
-    } catch (error) {
-      console.log(error.message);
-      toast.error(error.message || "Error Logging out user");
-    }
-  };
 
   // Conversion function
   const convertDecimalToNumber = (decimalObj) => {
@@ -268,52 +225,7 @@ const TutorManagement = () => {
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="flex items-center justify-between border-b bg-white px-6 py-4 ">
-          <div>
-            <h1 className="text-3xl font-bold">Tutor Management</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <button className="p-2 rounded-full hover:bg-gray-100">
-              <Bell className="h-5 w-5" />
-            </button>
-
-            {/* Dropdown container */}
-            <div className="relative group">
-              <img
-                referrerPolicy="no-referrer"
-                crossOrigin="anonymous"
-                className="h-10 w-10 rounded-full cursor-pointer hover:ring-2 hover:ring-orange-500"
-                src={admin?.profileImg || defProfile}
-                alt=""
-              />
-
-              {/* Dropdown menu */}
-              <div className="absolute z-10 right-0  w-48 bg-white rounded-md shadow-lg py-1 border hidden group-hover:block">
-                <div className="px-4 py-2 border-b">
-                  <p className="text-sm font-medium text-gray-900">
-                    {admin?.userName}
-                  </p>
-                  <p className="text-sm text-gray-500 truncate">
-                    {admin?.email}
-                  </p>
-                </div>
-
-                <a className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                  Profile
-                </a>
-                <a className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                  Settings
-                </a>
-                <button
-                  onClick={onLogout}
-                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                >
-                  Logout
-                </button>
-              </div>
-            </div>
-          </div>
-        </header>
+        <AdminHeader heading="Tutor Management"/>
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
           <div className="max-w-6xl mx-auto px-4 py-8">
             <div className="bg-white rounded-xl shadow-lg lg:min-h-[550px] p-8">
@@ -566,6 +478,8 @@ const TutorManagement = () => {
               {selectedApplication.profileImg && (
                 <div className="flex justify-center mb-4">
                   <img
+                  crossOrigin="anonymous"
+                  referrerPolicy="no-referrer"
                     src={selectedApplication.profileImg}
                     alt={`${selectedApplication.fullName}'s profile`}
                     className="w-32 h-32 rounded-full object-cover border-4 border-orange-500"
@@ -671,7 +585,7 @@ const TutorManagement = () => {
       )}
       {isCertificateModalOpen && selectedCertificate && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl p-8 max-w-2xl h-[700px] w-full">
+          <div className="bg-white rounded-xl p-6 max-w-2xl  w-full">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-3xl font-bold text-gray-800">
                 Certificate Preview

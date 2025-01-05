@@ -31,6 +31,7 @@ import { CourseRatingOverview } from '@/components/layout/tutor/courseDetails/Co
 import { CourseReviews } from '@/components/layout/tutor/courseDetails/CourseReviews'
 import { useEffect, useState } from 'react'
 import axiosInstance from '@/config/axiosConfig'
+import TutorHeader from '@/components/layout/tutor/TutorHeader'
 
 
 function TutorViewCourse() {
@@ -71,31 +72,7 @@ function TutorViewCourse() {
       </div>
 
       <main className="flex-1">
-       <header className="flex items-center justify-between border-b bg-white px-6 py-4 ">
-              <div>
-                <h1 className="text-xl ml-12 lg:ml-0 font-semibold">My Courses</h1>
-                <p className="text-sm text-gray-500">Good Morning</p>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                  <input
-                    className="w-64 pl-9 pr-3 py-2 rounded-md border border-gray-300"
-                    placeholder="Search"
-                  />
-                </div>
-                <button className="p-2 rounded-full hover:bg-gray-100">
-                  <Bell className="h-5 w-5" />
-                </button>
-                <img
-                  referrerPolicy="no-referrer"
-                  crossOrigin="anonymous"
-                  src={tutor.profileImg || defProfile}
-                  className="w-12 h-12 rounded-full"
-                  alt=""
-                />
-              </div>
-            </header>
+      <TutorHeader heading="Course Details"/>
 
         <div className="space-y-6 p-6">
           <Card>

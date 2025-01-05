@@ -418,26 +418,7 @@ export default function TutorSettings() {
       {/* Main content */}
       <main className="flex-grow overflow-x-hidden">
         {/* Header - Now full width */}
-        <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-white px-6 py-4">
-          <div>
-            <h1 className="text-xl ml-12 lg:ml-0 font-semibold">
-              {" "}
-              Settings & Profile{" "}
-            </h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input
-                className="w-64 pl-9 pr-3 py-2 rounded-md border border-gray-300"
-                placeholder="Search"
-              />
-            </div>
-            <button className="p-2 rounded-full hover:bg-gray-100">
-              <Bell className="h-5 w-5" />
-            </button>
-          </div>
-        </header>
+        <TutorHeader heading="Settings and Profile"/>
 
         {/* Settings content - Now with responsive padding */}
         <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">

@@ -192,7 +192,7 @@ joinRoom(roomId) {
         callerAvatar: data.callerAvatar,
         callerUserId: data.callerUserId
       });
-      console.log('[SocketService] Sending initiate call event');
+      console.log('[SocketService] Sending initiate call event to ',data.recieverId);
     }
   }
 
@@ -206,8 +206,22 @@ joinRoom(roomId) {
     }
   }
 
-  rejectCall(){
+  rejectCall(data){
+    if (this.isConnected()) {
+      this.socket.emit('call-rejected', {
+        to: data.to
+      });
+      console.log('[SocketService] Sending  call rejected event to',data.to);
+    }
+  }
 
+  endCall(data){
+    if (this.isConnected()) {
+      this.socket.emit('call-ended', {
+        to: data.receiverId
+      });
+      console.log('[SocketService] Sending  call ended event to',data.receiverId);
+    }
   }
 
 

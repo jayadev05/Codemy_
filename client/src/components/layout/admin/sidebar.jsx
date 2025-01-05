@@ -82,12 +82,7 @@ const Sidebar = ({ activeSection }) => {
       href: "/admin/billing",
       isActive: activeSection === "Billing",
     },
-    {
-      title: "Settings and profile",
-      icon: Settings,
-      href: "#",
-      isActive: activeSection === "Settings and profile",
-    },
+    
     {
       title: "Coupon management",
       icon: Ticket,

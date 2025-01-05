@@ -11,9 +11,10 @@ function ProtectedRoute({ children, userType, isLoginPage = false }) {
   const admin = useSelector(selectAdmin);
 
   const activeUser = admin ? "admin" : (user ? "user" : (tutor ? "tutor" : null));
+  const token = localStorage.getItem('accessToken')
 
   // If the route is for the login page and a user is already authenticated, redirect them
-  if (isLoginPage && activeUser) {
+  if (isLoginPage && activeUser && token) {
     return <Navigate to={activeUser!=='user'?`/${activeUser}/dashboard`:`/`} replace />;
   }
 

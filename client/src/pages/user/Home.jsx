@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Search, ShoppingBag, Star, Trash } from "lucide-react";
 import hero_img from "../../assets/hero_img.png";
-import logo from "../../assets/logo_cap.png";
 import cat1 from "../../assets/cat-1.png";
 import cat2 from "../../assets/cat-2.png";
 import cat3 from "../../assets/cat-3.png";
@@ -184,17 +183,17 @@ export default function Home() {
   return (
     <>
       <Header showModal={setShowModal} isLoggedIn={isLoggedIn} />
-      <div className="min-h-screen bg-white">
-        <MainHeader />
+      <div className="min-h-screen  dark:bg-[#1d2026]">
+        <MainHeader showModal={setShowModal} isLoggedIn={isLoggedIn} />
 
-        <main className="container mx-auto px-10 py-10">
-          <section className="grid items-center gap-10 md:grid-cols-2 lg:gap-16">
+        <main className="container mx-auto px-10 py-10 ">
+          <section className="grid items-center gap-10 md:grid-cols-2 lg:gap-16 ">
             <div className="space-y-6">
-              <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 tracking-tight">
+              <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 dark:text-white tracking-tight">
                 Learn with an <span className="text-orange-500">Expert</span>{" "}
                 anytime, anywhere
               </h1>
-              <p className="text-base text-gray-600 leading-relaxed">
+              <p className="text-base text-gray-600 dark:text-gray-400 leading-relaxed">
                 Our mission is to help people find the best course online and
                 learn with experts anytime, anywhere.
               </p>
@@ -220,14 +219,14 @@ export default function Home() {
 
           {/* section-1 */}
           <section className="mt-16">
-            <h2 className="mb-12 text-4xl font-extrabold text-center text-gray-800 tracking-tight">
+            <h2 className="mb-12 text-4xl font-extrabold text-center text-gray-800 dark:text-white tracking-tight">
               Browse Top Categories
             </h2>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4">
               {categories.map((category) => (
                 <div
                   key={category.name}
-                  className="p-4 transition-shadow bg-white border rounded-lg hover:shadow-lg focus-within:ring-2 focus-within:ring-orange-500"
+                  className="p-4 transition-shadow bg-white dark:bg-slate-900 border rounded-lg dark:border-gray-700 hover:shadow-lg focus-within:ring-2 focus-within:ring-orange-500"
                 >
                   <div className="flex items-center gap-3">
                     <div
@@ -248,9 +247,9 @@ export default function Home() {
           </section>
 
           {/* section-2 */}
-          <section className="mt-16 bg-gray-50">
+          <section className="mt-16 bg-gray-50 dark:bg-[#1d2026]">
             <div className="max-w-10xl mx-auto">
-              <h2 className="mb-12 text-4xl font-extrabold text-center text-gray-800 tracking-tight">
+              <h2 className="mb-12 text-4xl font-extrabold text-center text-gray-800 dark:text-white tracking-tight">
                 Best Selling Courses
               </h2>
 
@@ -258,7 +257,7 @@ export default function Home() {
                 {courses.map((course) => (
                   <div
                     key={course._id}
-                    className="flex flex-col overflow-hidden rounded-lg bg-white shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out"
+                    className="flex flex-col overflow-hidden rounded-lg bg-white dark:bg-slate-900 dark:border border-gray-600 shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out"
                   >
                     <div className="relative aspect-[3/2] max-h-[200px] w-full">
                       <img
@@ -283,7 +282,7 @@ export default function Home() {
                       </span>
                       <h3
                         onClick={() => handleCourseView(course._id)}
-                        className="mt-2 text-lg font-semibold line-clamp-2 text-gray-900 flex-grow cursor-pointer"
+                        className="mt-2 text-lg font-semibold line-clamp-2 text-gray-900 dark:text-white flex-grow cursor-pointer"
                       >
                         {course.title}
                       </h3>
@@ -305,7 +304,7 @@ export default function Home() {
                             </svg>
                           ))}
                         </div>
-                        <span className="text-sm font-medium text-gray-900">
+                        <span className="text-sm font-medium text-gray-900 dark:text-white">
                           {course.averageRating.toFixed(1)}
                         </span>
                         <span className="text-sm text-gray-500">
@@ -313,7 +312,7 @@ export default function Home() {
                         </span>
                       </div>
                       <div className="mt-3 flex items-center justify-between">
-                        <span className="text-xl font-bold text-gray-900">
+                        <span className="text-xl font-bold text-gray-900 dark:text-white">
                           ₹{formatCurrency(course.price.$numberDecimal)}
                         </span>
                         <button
@@ -370,7 +369,7 @@ export default function Home() {
                         <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-semibold">
                           {step.number}
                         </div>
-                        <p className="text-sm text-gray-600">{step.title}</p>
+                        <p className="text-sm text-gray-600 dark:text-white">{step.title}</p>
                       </div>
                     ))}
                   </div>

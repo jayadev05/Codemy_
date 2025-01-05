@@ -9,6 +9,7 @@ const tutorRoute = require("./routes/tutor/tutorRoutes");
 const courseRoute = require("./routes/course/courseRoutes");
 const paymentRoute = require("./routes/payment/paymentRoutes");
 const chatRoute = require("./routes/chat/chatRoutes");
+const verifyUser = require("./middleware/authMiddleware");
 
 
 
@@ -21,6 +22,7 @@ const corsOptions = {
   origin: 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT','PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-refresh-token'],
+  exposedHeaders: ['Content-Disposition'],
   credentials: true,
   allowEIO3: true // Enable Socket.IO version 3
 };
@@ -49,12 +51,12 @@ mongoose.connect("mongodb://localhost:27017/Codemy")
   });
 
 // Routes
-app.use("/user", userRoute);
+app.use("/user",userRoute);
 app.use("/admin", adminRoute);
 app.use("/tutor", tutorRoute);
 app.use('/course', courseRoute);
-app.use('/checkout', paymentRoute);
-app.use('/chat', chatRoute);
+app.use('/checkout',verifyUser, paymentRoute);
+app.use('/chat',verifyUser, chatRoute);
 
 // Start server
 server.listen(3000, () => {

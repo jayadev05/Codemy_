@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router'
 import Pagination from '../../components/utils/Pagination'
 import Sidebar from '../../components/layout/admin/sidebar'
 import axiosInstance from '../../config/axiosConfig'
+import AdminHeader from '@/components/layout/admin/AdminHeader'
 
 export default function CategoryManagement() {
   const admin = useSelector(selectAdmin);
@@ -109,22 +110,6 @@ export default function CategoryManagement() {
   }
   }
 
-  const onLogout=()=>{
-    try {
-      const response=axiosInstance.post("http://localhost:3000/admin/logout");
-
-      dispatch(logoutAdmin(admin));
-
-      toast.success("Logged out successfully");
-      
-      navigate('/login');
-
-      
-    } catch (error) {
-      console.log(error.message);
-      toast.error(error.message || "Error Logging out user")
-    }
-  }
 
   const handleDelete = (_id) => {
     Swal.fire({
@@ -185,53 +170,7 @@ export default function CategoryManagement() {
       </div>
       
       <main className="flex-1">
-        <header className="flex items-center justify-between border-b bg-white px-6 py-4">
-          <div>
-            <h1 className="text-3xl font-bold">Category Management</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <button className="p-2 rounded-full hover:bg-gray-100">
-              <Bell className="h-5 w-5" />
-            </button>
-            <div className="relative group">
-              <img
-                referrerPolicy="no-referrer"
-                crossOrigin="anonymous"
-                className="h-10 w-10 rounded-full cursor-pointer hover:ring-2 hover:ring-orange-500"
-                src={admin?.profileImg || '/placeholder.svg'}
-                alt=""
-              />
-              <div className="absolute right-0 w-48 bg-white rounded-md shadow-lg py-1 border hidden group-hover:block">
-                <div className="px-4 py-2 border-b">
-                  <p className="text-sm font-medium text-gray-900">
-                    {admin?.userName}
-                  </p>
-                  <p className="text-sm text-gray-500 truncate">
-                    {admin?.email}
-                  </p>
-                </div>
-                <a
-                  
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >
-                  Profile
-                </a>
-                <a
-                 
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >
-                  Settings
-                </a>
-                <button
-                  onClick={onLogout}
-                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                >
-                  Logout
-                </button>
-              </div>
-            </div>
-          </div>
-        </header>
+       <AdminHeader heading="Category Management"/>
         
         <div className="space-y-6 mt-12 px-12">
           <div className="flex max-w-6xl mx-auto justify-between items-center">

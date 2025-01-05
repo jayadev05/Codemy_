@@ -27,10 +27,11 @@ import { CoursesTable } from "@/components/layout/admin/CourseManage"
 import { PayoutRequests } from "@/components/layout/admin/PayoutManage"
 
 import axiosInstance from "@/config/axiosConfig"
+import AdminHeader from "@/components/layout/admin/AdminHeader"
 
 
 
-export function StatsCards({activeCourses,totalRevenue}) {
+export function StatsCards({activeCourses,totalRevenue,totalStudents,totalTutors}) {
 
   const formatCurrency = (num) => {
     const cleanedNum = num.toString().replace(/[^\d]/g, "");
@@ -40,7 +41,7 @@ export function StatsCards({activeCourses,totalRevenue}) {
   const stats = [
     {
       title: "Total Students",
-      value: "134",
+      value: totalStudents,
       icon: GraduationCap,
       color: "text-blue-500",
     },
@@ -58,7 +59,7 @@ export function StatsCards({activeCourses,totalRevenue}) {
     },
     {
       title: "Total Tutors",
-      value: "8",
+      value: totalTutors,
       icon: School,
       color: "text-purple-500",
     },
@@ -84,7 +85,7 @@ export function StatsCards({activeCourses,totalRevenue}) {
 
 export default function Dashboard() {
   const [courses, setCourses] = useState([])
-  const [payoutRequests, setPayoutRequests] = useState([])
+  const [payoutRequests, setPayoutRequests] = useState([]);
   const [sortBy, setSortBy] = useState("all")
   const [isLoading, setIsLoading] = useState(true)
 
@@ -94,6 +95,11 @@ export default function Dashboard() {
 
   const activeCourses = courses.filter((course)=> course.isListed).length;
   const totalRevenue = courses.reduce((sum,course)=> sum + (course.enrolleeCount * course.price.$numberDecimal) ,0);
+  const [totalStudents,setTotalStudents]=useState(null);
+  const [totalTutors,setTotalTutors]=useState(null);
+
+  console.log(totalStudents);
+  console.log(totalTutors);
  
 
   useEffect(() => {
@@ -112,6 +118,9 @@ export default function Dashboard() {
       
 
       setCourses(coursesRes.value.data.courses)
+      setTotalStudents(coursesRes.value.data.totalStudents)
+      setTotalTutors(coursesRes.value.data.totalTutors)
+    
       setPayoutRequests(payoutsRes.value.data.payoutRequests)
 
     } catch (error) {
@@ -121,16 +130,6 @@ export default function Dashboard() {
     }
   }
 
-  const handleLogout = async () => {
-    try {
-      await axios.post("http://localhost:3000/admin/logout")
-      dispatch(logoutAdmin(admin))
-      toast.success("Logged out successfully")
-      navigate("/login")
-    } catch (error) {
-      toast.error(error.message || "Error logging out")
-    }
-  }
 
   const handleToggleList = async (id, isListed) => {
     try {
@@ -200,64 +199,10 @@ export default function Dashboard() {
       </div>
 
       <main className="flex-1">
-        <header className="flex items-center justify-between border-b bg-white px-6 py-4 ">
-                     <div>
-                       <h1 className="text-3xl font-bold">Dashboard</h1>
-                       <p className="text-md text-muted-foreground">Good Morning</p>
-                       
-                     </div>
-                     <div className="flex items-center gap-4">
-                       
-                       <button className="p-2 rounded-full hover:bg-gray-100">
-                         <Bell className="h-5 w-5" />
-                       </button>
-                      
-                      {/* Dropdown container */}
-                      <div className="relative group">
-                           <img
-                             referrerPolicy="no-referrer"
-                             crossOrigin="anonymous"
-                             className="h-10 w-10 rounded-full cursor-pointer hover:ring-2 hover:ring-orange-500"
-                             src={admin?.profileImg || defProfile}
-                             alt=""
-                           />
-           
-                           {/* Dropdown menu */}
-                           <div className="absolute right-0 z-10  w-48 bg-white rounded-md shadow-lg py-1 border hidden group-hover:block">
-                             <div className="px-4 py-2 border-b">
-                               <p className="text-sm font-medium text-gray-900">
-                                 {admin?.userName}
-                               </p>
-                               <p className="text-sm text-gray-500 truncate">
-                                 {admin?.email}
-                               </p>
-                             </div>
-           
-                             <a
-                             
-                               className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                             >
-                               Profile
-                             </a>
-                             <a
-                           
-                               className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                             >
-                               Settings
-                             </a>
-                             <button
-                             onClick={handleLogout}
-                               className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                             >
-                               Logout
-                             </button>
-                           </div>
-                         </div>
-                     </div>
-            </header>
+        <AdminHeader heading="Dashboard" subheading="Good Morning"/>
 
         <div className="space-y-6 p-6 pb-16">
-          <StatsCards activeCourses={activeCourses} totalRevenue={totalRevenue} />
+          <StatsCards activeCourses={activeCourses} totalRevenue={totalRevenue} totalStudents={totalStudents} totalTutors={totalTutors} />
 
           <Tabs defaultValue="courses" className="space-y-6">
             <TabsList>

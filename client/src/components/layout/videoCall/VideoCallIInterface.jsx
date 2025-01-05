@@ -25,7 +25,9 @@ const VideoCallInterface = ({
   myVideoRef,
   peerVideoRef,
   isCallAccepted,
+  isCalling,
   incomingCallInfo,
+  outgoingCallInfo,
   onAnswer,
   onReject,
   onEndCall,
@@ -45,7 +47,7 @@ const VideoCallInterface = ({
     if (myVideoRef.current && stream) {
       myVideoRef.current.srcObject = stream;
     }
-  }, [stream, myVideoRef]);
+  }, [stream, myVideoRef ,isCallAccepted, isCallActive]);
 
   console.log("My video",myVideoRef.current?.srcObject)
   console.log("Peer video",peerVideoRef)
@@ -53,10 +55,10 @@ const VideoCallInterface = ({
   return (
     <>
       {/* Incoming Call Dialog */}
-      <Dialog open={incomingCallInfo?.isSomeoneCalling}>
+      <Dialog open={incomingCallInfo?.isSomeoneCalling || isCalling}>
         <DialogContent className="sm:max-w-md bg-gradient-to-b from-gray-900 to-gray-800 border-gray-800 text-white">
           <DialogHeader>
-            <DialogTitle className="text-white">Incoming Call</DialogTitle>
+            <DialogTitle className="text-white">{isCalling?"Outgoing Call" : "Incoming Call"}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center space-y-6 py-4">
             <div className="relative">
@@ -64,33 +66,45 @@ const VideoCallInterface = ({
               <img
                 crossOrigin="anonymous"
                 referrerPolicy="no-referrer"
-                src={incomingCallInfo?.callerData?.avatar || '/placeholder.svg'}
+                src={isCalling ? outgoingCallInfo?.callerData?.avatar :   incomingCallInfo?.callerData?.avatar }
                 alt="caller"
                 className="relative w-24 h-24 rounded-full border-4 border-white/10"
               />
             </div>
             <div className="text-center">
               <p className="text-xl font-semibold">
-                {incomingCallInfo?.callerData?.name}
+                { isCalling? outgoingCallInfo?.callerData?.name : incomingCallInfo?.callerData?.name}
               </p>
               <p className="text-sm text-gray-400 animate-pulse">
-                Incoming video call...
+              {isCalling?"Outgoing Video Call..." : "Incoming Video Call..."}
               </p>
             </div>
             <div className="flex space-x-4">
-              <Button
+              {!isCalling ? ( <>
+                <Button
                 onClick={onAnswer}
                 className="bg-green-500 hover:bg-green-600 text-white rounded-full px-8 transition-transform hover:scale-105"
               >
                 Answer
-              </Button>
-              <Button
-                onClick={onReject}
-                variant="destructive"
-                className="rounded-full px-8 transition-transform hover:scale-105"
-              >
-                Decline
-              </Button>
+              </Button> 
+             <Button
+             onClick={onReject}
+             variant="destructive"
+             className="rounded-full px-8 transition-transform hover:scale-105"
+           >
+             Decline
+           </Button>
+              </> ) : <Button
+             onClick={onEndCall}
+             variant="destructive"
+             className="rounded-full px-8 transition-transform hover:scale-105"
+           >
+             End Call
+           </Button> }
+              
+             
+              
+              
             </div>
           </div>
         </DialogContent>

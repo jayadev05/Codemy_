@@ -17,6 +17,7 @@ import { useNavigate } from "react-router";
 import LessonEditModal from "../../components/layout/tutor/LessonEditModal";
 import LessonAddModal from "../../components/layout/tutor/LessonAddModal";
 import axiosInstance from "@/config/axiosConfig";
+import TutorHeader from "@/components/layout/tutor/TutorHeader";
 
 function TutorEditCourse() {
   const tutor = useSelector(selectTutor);
@@ -352,32 +353,7 @@ function TutorEditCourse() {
         {/* Main Content */}
         <main className="w-full">
           {/* Header */}
-          <header className="flex items-center justify-between border-b bg-white px-6 py-4 ">
-            <div>
-              <h1 className="text-xl ml-12 lg:ml-0 font-semibold">
-                Edit Course
-              </h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <input
-                  className="w-64 pl-9 pr-3 py-2 rounded-md border border-gray-300"
-                  placeholder="Search"
-                />
-              </div>
-              <button className="p-2 rounded-full hover:bg-gray-100">
-                <Bell className="h-5 w-5" />
-              </button>
-              <img
-                referrerPolicy="no-referrer"
-                crossOrigin="anonymous"
-                src={tutor.profileImg || defProfile}
-                className="w-12 h-12 rounded-full"
-                alt=""
-              />
-            </div>
-          </header>
+          <TutorHeader heading="Edit Course"/>
 
           {/* View course Content */}
           <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
