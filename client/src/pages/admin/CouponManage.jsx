@@ -297,7 +297,7 @@ const admin= useSelector(selectAdmin);
                   <TableCell>
                     {coupon.discountType === 'Percentage' 
                       ? `${coupon.discountValue}%` 
-                      : `$${coupon.discountValue}`}
+                      : `₹${coupon.discountValue}`}
                   </TableCell>
                   <TableCell>
                     {coupon.usageLimit 

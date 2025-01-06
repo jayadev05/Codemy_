@@ -7,7 +7,7 @@ import axiosInstance from '@/config/axiosConfig';
 import { clearCart } from '@/store/slices/cartSlice';
 import toast from 'react-hot-toast';
 import { useDispatch } from 'react-redux';
-import axios from 'axios';
+
 
 const PaymentFailed = () => {
   const { orderId } = useParams();

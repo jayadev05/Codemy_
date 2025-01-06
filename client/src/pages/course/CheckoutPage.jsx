@@ -77,7 +77,7 @@ export default function CheckoutPage() {
       setIsLoadingCoupons(true)
       try {
         const response = await axiosInstance.get(`/user/get-coupons/${user._id}`);
-        setAvailableCoupons(response.data.coupons)
+        setAvailableCoupons(response.data.coupons);
       } catch (error) {
         console.log(error);
       } finally {

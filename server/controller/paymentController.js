@@ -128,10 +128,11 @@ const verifyPayment = async (req, res) => {
     const courses = await Course.find({_id:{$in:order.courses}});
 
     for (const course of courses) {
+      
     
       await Tutor.findOneAndUpdate(
           { _id: course.tutorId }, 
-          { $inc: {totalRevenue: course.price?.$numberDecimal/100 } }, 
+          { $inc: {totalRevenue: order.totalAmount /100 } }, 
           { new: true } 
       );
   }

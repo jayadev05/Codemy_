@@ -209,6 +209,13 @@ const googleLogin = async (req, res, next) => {
         updatedAt: new Date(),
       });
     } else {
+
+      //check if user is blocked
+
+      if( currentUser.isActive && currentUser.isActive===false)return res.status(400).json({message:"User is blocked by admin! Please contact admin"});
+
+      
+
       if (!profileImg) {
         currentUser.profileImg = profileImg;
       }
@@ -414,24 +421,26 @@ const getCoupons=async(req,res)=>{
     const coupons = await Coupon.aggregate([
       {
         $match: {
-          isActive: true,                   
-          validTill: { $gt: currentDate },   
-          usedBy :{$nin:[userId]}
+          isActive: true,
+          validTill: { $gt: currentDate },
+          usedBy: { $nin: [userId] },
         },
       },
       {
         $addFields: {
-          isUnderUsageLimit: { $lt: ["$usedCount", "$usageLimit"] }, // Add a field for usage limit comparison
+          effectiveUsageLimit: { $ifNull: ["$usageLimit", Infinity] }, // Replace null with Infinity
+          isUnderUsageLimit: { $lt: ["$usedCount", { $ifNull: ["$usageLimit", Infinity] }] }, // Compare against effective usage limit
         },
       },
       {
         $match: {
-          isUnderUsageLimit: true, // Only include coupons that meet the usage limit criteria
+          isUnderUsageLimit: true,
         },
       },
     ]);
     
-    console.log(coupons);
+    
+    console.log("coupons",coupons);
     
     
     return res.status(200).json({message:"Coupons fetched successfully",coupons})

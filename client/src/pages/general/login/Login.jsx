@@ -176,18 +176,14 @@ const Login = () => {
 
   return (
     <>
-      {isLoading && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
-        </div>
-      )}
-      <header className="flex justify-around items-center mb-8">
+     
+      <header className="flex justify-around items-center pb-4 dark:bg-slate-800">
         <div className="text-3xl font-bold text-gray-700 flex items-center">
-          <img src={logo} alt="Logo" className="h-8 w-8 mr-2 mt-2" />
-          Codemy
+          <img src={logo} alt="Logo" className="h-8 w-8 mr-2 mt-2 " />
+          <h2 className="dark:text-white text-[1.5rem]">Codemy</h2>
         </div>
         <div>
-          <span className="text-gray-500 mr-2">Don't have an account?</span>
+          <span className="text-gray-500 dark:text-white mr-2">Don't have an account?</span>
           <button
             onClick={() => navigate("/signup")}
             className="text-orange-500 font-semibold hover:underline"
@@ -197,7 +193,7 @@ const Login = () => {
         </div>
       </header>
 
-      <div className="flex flex-grow grid-cols-2 bg-white">
+      <div className="flex flex-grow grid-cols-2 bg-white pt-8 dark:bg-[#1d2026]">
         <div className="hidden lg:flex w-1/2 items-center justify-center">
           <div className="w-3/4">
             <img src={illustration} alt="Illustration" className="mx-auto" />
@@ -206,29 +202,29 @@ const Login = () => {
 
         <div className="flex flex-col justify-center w-full lg:w-1/2 p-10 relative">
           <div className="max-w-md mx-auto w-full">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+            <h2 className="text-2xl font-semibold text-gray-800 dark:text-white mb-6">
               Sign in to your account
             </h2>
 
             <form onSubmit={handleLogin} className="space-y-5">
               <div>
-                <label className="block text-gray-600 mb-2">Email</label>
+                <label className="block text-gray-600 dark:text-white mb-2">Email</label>
                 <input
                   onChange={(e) => setEmail(e.target.value)}
                   type="email"
                   placeholder="Username or email address..."
-                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-orange-400"
+                  className="w-full px-4 py-2 border rounded-lg dark:bg-slate-800 focus:outline-none focus:border-orange-400"
                 />
               </div>
 
               <div>
-                <label className="block text-gray-600 mb-2">Password</label>
+                <label className="block text-gray-600 dark:text-white mb-2">Password</label>
                 <div className="relative">
                   <input
                     onChange={(e) => setPassword(e.target.value)}
                     type={showPassword ? "text" : "password"}
                     placeholder="Password"
-                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-orange-400"
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none dark:bg-slate-800  focus:border-orange-400"
                   />
                   <span
                     onClick={() => setShowPassword(!showPassword)}
@@ -251,7 +247,7 @@ const Login = () => {
 
               <div className="flex items-center">
                 <input type="checkbox" id="remember" className="mr-2" />
-                <label htmlFor="remember" className="text-gray-600">
+                <label htmlFor="remember" className="text-gray-600 dark:text-white">
                   Remember me
                 </label>
               </div>
@@ -265,13 +261,13 @@ const Login = () => {
               </button>
             </form>
 
-            <div className="mt-3 text-center text-gray-500">or</div>
+            <div className="mt-3 text-center text-gray-500 dark:text-white">or</div>
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-xs uppercase mt-3 mb-4">
-                <span className="bg-[#F8F7FF] px-2 text-gray-500">
+                <span className="bg-[#F8F7FF] px-2 text-gray-500 dark:text-white bg-gray-600">
                   Sign In with
                 </span>
               </div>
@@ -282,7 +278,7 @@ const Login = () => {
                 onClick={() => !isLoading && googleLogin()}
                 type="button"
                 disabled={isLoading}
-                className="flex w-50 items-center justify-around rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                className="flex w-50 items-center justify-around rounded-md border border-gray-300 bg-white dark:bg-[#1d2026] text-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
               >
                 <img src={google_logo} alt="" className="w-[25px]" />
                 <span className="ml-2 border-l-2 pl-2">Google</span>

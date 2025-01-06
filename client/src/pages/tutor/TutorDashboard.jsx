@@ -32,7 +32,7 @@ const StatCard = ({ icon: Icon, label, value, iconColor, iconBg }) => (
     )}
     <div>
       <p className="text-sm text-gray-500">{label || 'N/A'}</p>
-      <p className="text-2xl font-semibold">{value || 'N/A'}</p>
+      <p className="text-2xl font-semibold">{value || 0}</p>
     </div>
   </div>
 );
@@ -48,6 +48,7 @@ const Dashboard = () => {
   const [myCourses,setMyCourses]=useState(null);
   const [totalStudents,setTotalStudents]=useState(null);
   const [averageRating,setAverageRating]=useState(null);
+
 
 
  useEffect(() => {
@@ -176,7 +177,7 @@ const availableBalance = totalRevenue - amountWithdrawn;
                 </select>
               </div>
               <div className="mb-6 flex items-end gap-4">
-                <div className="text-4xl font-bold">{averageRating}</div>
+                <div className="text-4xl font-bold">{averageRating?.toFixed(1)}</div>
                 <div className="flex text-yellow-400">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="h-5 w-5 fill-current" />

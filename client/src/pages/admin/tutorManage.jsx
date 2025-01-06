@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { Search, FileText, X, Bell } from "lucide-react";
+import { Search, FileText, X, Bell, Loader2 } from "lucide-react";
 
 import axios from "axios";
 import { toast } from "react-hot-toast";
@@ -30,7 +30,7 @@ const TutorManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [tutors, setTutors] = useState([]);
   const [applications, setApplications] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(null);
   const [error, setError] = useState(null);
   const [selectedCertificate, setSelectedCertificate] = useState(null);
   const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(false);
@@ -77,7 +77,7 @@ const TutorManagement = () => {
 
   const handleApplicationAction = async (applicationId, action) => {
     try {
-      setLoading(true);
+      setLoading(action);
       
       // Update application status
       const response = await axiosInstance.patch(
@@ -117,7 +117,7 @@ const TutorManagement = () => {
       console.error("Error processing application:", error);
       toast.error(`Failed to ${action} the Tutor`);
     } finally {
-      setLoading(false);
+      setLoading(null);
     }
   };
 
@@ -200,21 +200,7 @@ const TutorManagement = () => {
             application.email.toLowerCase().includes(searchTerm.toLowerCase())
         );
 
-  if (loading) {
-    return (
-      <div className="flex h-screen overflow-hidden justify-center items-center bg-white">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-gray-900"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-screen overflow-hidden justify-center items-center bg-white text-red-500 text-xl font-semibold">
-        {error}
-      </div>
-    );
-  }
+  
 
   const paginatedItems = paginateData(filteredItems);
 
@@ -419,24 +405,29 @@ const TutorManagement = () => {
                           <FileText className="h-6 w-6" />
                         </button>
                         <div className="flex space-x-2">
-                          <button
-                            onClick={() =>
-                              handleApplicationAction(item._id, "approved")
-                            }
-                            className="px-4 py-2 text-sm bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            disabled={item.status !== "pending"}
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleApplicationAction(item._id, "rejected")
-                            }
-                            className="px-4 py-2 text-sm bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            disabled={item.status !== "pending"}
-                          >
-                            Reject
-                          </button>
+                        <button
+  onClick={() => handleApplicationAction(item._id, "approved")}
+  className="px-4 py-2 text-sm bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+  disabled={item.status !== "pending" || loading === "approved"}
+>
+  {loading === "approved" ? (
+   <Loader2 className="h-4 w-4 animate-spin" />
+  ) : (
+    "Approve"
+  )}
+</button>
+<button
+  onClick={() => handleApplicationAction(item._id, "rejected")}
+  className="px-4 py-2 text-sm bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+  disabled={item.status !== "pending" || loading === "rejected"}
+>
+  {loading === "rejected" ? (
+  <Loader2 className="h-4 w-4 animate-spin" />
+  ) : (
+    "Reject"
+  )}
+</button>
+
                         </div>
                       </div>
                     </div>

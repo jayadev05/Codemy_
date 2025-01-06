@@ -14,7 +14,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { logoutAdmin, selectAdmin } from "../../../store/slices/adminSlice";
 import defProfile from "../../../assets/user-profile.png";
 import { useNavigate } from "react-router";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast";
 import axios from 'axios'
 
 

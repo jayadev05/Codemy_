@@ -5,6 +5,7 @@ import SecondaryFooter from '../../components/layout/user/SecondaryFooter';
 import { useNavigate, useParams } from 'react-router';
 import axios from 'axios';
 import { CheckCircleIcon } from 'lucide-react';
+import axiosInstance from "@/config/axiosConfig";
 
 const PurchaseCompleted = () => {
  
@@ -16,7 +17,7 @@ const PurchaseCompleted = () => {
     const fetchOrderDetails=async()=>{
       try {
 
-        const response=await axios.get(`http://localhost:3000/checkout/get-order-details/${orderId}`);
+        const response=await axiosInstance.get(`http://localhost:3000/checkout/get-order-details/${orderId}`);
 
         setOrder(response.data.order);
 

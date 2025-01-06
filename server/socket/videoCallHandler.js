@@ -54,20 +54,20 @@ socket.on("initiate-call", async (data) => {
 
       console.log("Answer call data:", signalData , "to:",to);
 
-      const callerSocketId = findReceiverSocket(to);
+      const receiverSocketId = findReceiverSocket(to);
 
       console.log(Object.values(onlineStudents),Object.values(onlineTutors));
      
       
-        io.to(callerSocketId).emit("call-accepted", { signalData });
+        io.to(receiverSocketId).emit("call-accepted", { signalData });
       
     });
   
     socket.on("call-rejected", ({ to }) => {
       console.log("call rejected event trigerred",to);
-      const callerSocketId = findReceiverSocket(to);
+      const receiverSocketId = findReceiverSocket(to);
      
-        io.to(callerSocketId).emit("call-rejected");
+        io.to(receiverSocketId).emit("call-rejected");
       
       
     });

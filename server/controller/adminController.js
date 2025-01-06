@@ -415,6 +415,7 @@ const reviewInstructorApplication = async (req, res) => {
         // Convert existing user to tutor
         const newTutor = new Tutor({
           ...existingUser.toObject(),
+          _id:new ObjectId(),
           email: application.email,
           fullName: application.fullName,
           password: hashedPassword,
