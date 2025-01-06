@@ -131,7 +131,7 @@ const verifyPayment = async (req, res) => {
     
       await Tutor.findOneAndUpdate(
           { _id: course.tutorId }, 
-          { $inc: {totalRevenue: order.totalAmount/100 } }, 
+          { $inc: {totalRevenue: course.price?.$numberDecimal/100 } }, 
           { new: true } 
       );
   }
