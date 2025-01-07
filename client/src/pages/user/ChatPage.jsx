@@ -891,6 +891,7 @@ export default function ChatInterface() {
       });
 
       setStream(mediaStream);
+     
 
       // Update video ref with new stream
       if (myVideoRef.current) {
@@ -916,12 +917,12 @@ export default function ChatInterface() {
       return;
     }
   
-    // Create configuration with TURN servers for better connectivity
+    
     const configuration = {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:global.stun.twilio.com:3478' },
-        // Add TURN servers if you have them
+        
       ],
       iceTransportPolicy: 'all',
       iceCandidatePoolSize: 10
@@ -938,12 +939,12 @@ export default function ChatInterface() {
   
     peer.on("signal", async signalData => {
       console.log("Answer peer signaling:", signalData.type);
-      if (signalData.type === "answer") {
+     
        await socketService.answerCall({
           signalData,
           to: incomingCallInfo.from
         });
-      }
+      
       
     });
   
@@ -952,6 +953,7 @@ export default function ChatInterface() {
      
       setIsCallActive(true);
       setIsCallAccepted(true);
+      setIsCalling(false)
     });
   
     peer.on("error", err => {
@@ -1418,6 +1420,8 @@ export default function ChatInterface() {
           peerVideoRef={peerVideoRef}
           isCallAccepted={isCallAccepted}
           incomingCallInfo={incomingCallInfo}
+          outgoingCallInfo={outgoingCallInfo}
+          isCalling={isCalling}
           onAnswer={answerCall}
           onReject={handleRejectCall}
           onEndCall={handleEndCall}

@@ -41,6 +41,9 @@ const VideoCallInterface = ({
   const user=useSelector(selectUser);
   const tutor=useSelector(selectTutor);
 
+  console.log("outoging call info",outgoingCallInfo);
+  console.log("iscallng",isCalling);
+
   const currentUser = user || tutor;
   
   useEffect(() => {

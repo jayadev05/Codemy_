@@ -61,6 +61,7 @@ export default function TutorChatPage() {
   const [isCalling, setIsCalling] = useState(false);
   const [isCallAccepted, setIsCallAccepted] = useState(false);
   const [incomingCallInfo, setIncomingCallInfo] = useState({});
+  const [outgoingCallInfo, setoutgoingCallInfo] = useState({});
   const [isCallActive, setIsCallActive] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
@@ -785,6 +786,20 @@ export default function TutorChatPage() {
   const initiateCall = async () => {
     if (!tutor._id) return;
 
+    setIsCalling(true);
+    setoutgoingCallInfo({
+      callerData: {
+        avatar:
+          userType === "user"
+            ? selectedChat?.tutorId?.profileImg
+            : selectedChat?.userId?.profileImg,
+        name:
+          userType === "user"
+            ? selectedChat?.tutorId?.fullName
+            : selectedChat?.userId?.fullName,
+      },
+    });
+
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: true,
@@ -890,12 +905,12 @@ export default function TutorChatPage() {
       return;
     }
   
-    // Create configuration with TURN servers for better connectivity
+    
     const configuration = {
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:global.stun.twilio.com:3478' },
-        // Add TURN servers if you have them
+        
       ],
       iceTransportPolicy: 'all',
       iceCandidatePoolSize: 10
@@ -911,12 +926,12 @@ export default function TutorChatPage() {
    
     peer.on("signal",async signalData => {
       console.log("Answer peer signaling:", signalData.type);
-      if (signalData.type === "answer") {
+     
         await socketService.answerCall({
           signalData,
           to: incomingCallInfo.from
         });
-      }
+      
      
     });
   
@@ -925,6 +940,7 @@ export default function TutorChatPage() {
      
       setIsCallActive(true);
       setIsCallAccepted(true);
+      setIsCalling(false)
     });
   
     peer.on("error", err => {
@@ -1396,6 +1412,8 @@ export default function TutorChatPage() {
           peerVideoRef={peerVideoRef}
           isCallAccepted={isCallAccepted}
           incomingCallInfo={incomingCallInfo}
+          outgoingCallInfo={outgoingCallInfo}
+          isCalling={isCalling}
           onAnswer={answerCall}
           onReject={handleRejectCall}
           onEndCall={handleEndCall}
