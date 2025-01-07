@@ -49,7 +49,7 @@ export default function CourseDetails() {
   useEffect(() => {
     fetchWishlist();
     fetchReviews();
-  }, []);
+  }, [course._id]);
   
   console.log("reviews",reviews)
 
@@ -127,7 +127,7 @@ export default function CourseDetails() {
   const fetchReviews = async()=>{
     try {
       
-      const response=await axiosInstance.get(`/course/get-ratings/${courseId}`);
+      const response=await axiosInstance.get(`/course/get-course-review`,{  params:{courseId:course?._id}  });
 
       if(response.status===200){
         setReviews(response.data.ratings);

@@ -14,11 +14,20 @@ const path = require("path");
 const cloudinary = require("../config/cloudinaryConfig");
 const Certificate = require("../model/certificateModel");
 
-
 const getBasicCourseInfo = async (req, res) => {
-  const { search, sortBy, page, limit, courseId, categories, levels , ratings ,priceRange} = req.query;
+  const {
+    search,
+    sortBy,
+    page,
+    limit,
+    courseId,
+    categories,
+    levels,
+    ratings,
+    priceRange,
+  } = req.query;
 
-  console.log(req.query)
+  console.log(req.query);
 
   // Single Course Retrieval
   if (courseId) {
@@ -47,33 +56,35 @@ const getBasicCourseInfo = async (req, res) => {
     }
   }
 
-   // Course Listing
-   try {
+  // Course Listing
+  try {
     const pageNumber = Number(page) || 1;
     const limitNumber = Number(limit) || 8;
     const skip = (pageNumber - 1) * limitNumber;
-    
+
     let query = { isListed: true };
-    
+
     if (search) {
       query.title = { $regex: search, $options: "i" };
     }
- 
+
     if (levels) {
       query.level = { $in: levels };
     }
 
-    if(priceRange){
-      query.price ={  $gte: mongoose.Types.Decimal128.fromString(priceRange.min), $lte: mongoose.Types.Decimal128.fromString(priceRange.max)  }
-
+    if (priceRange) {
+      query.price = {
+        $gte: mongoose.Types.Decimal128.fromString(priceRange.min),
+        $lte: mongoose.Types.Decimal128.fromString(priceRange.max),
+      };
     }
 
     if (ratings) {
       // Convert ratings array strings to numbers
-      const ratingNumbers = ratings.map(rating => Number(rating));
+      const ratingNumbers = ratings.map((rating) => Number(rating));
       query.averageRating = { $gte: Math.min(...ratingNumbers) };
     }
-    
+
     let sortOptions = { createdAt: -1 };
     if (sortBy === "trending") {
       sortOptions = { enrolleeCount: -1 };
@@ -82,7 +93,7 @@ const getBasicCourseInfo = async (req, res) => {
     }
 
     const totalCount = await Course.countDocuments(query);
-    
+
     let courses = await Course.find(query)
       .populate("tutorId", "fullName profileImg")
       .populate("categoryId", "title")
@@ -92,16 +103,17 @@ const getBasicCourseInfo = async (req, res) => {
       .skip(skip)
       .limit(limitNumber)
       .sort(sortOptions);
-    
+
     // Handle categories array filtering
     if (categories) {
-      courses = courses.filter(course => 
-        course.categoryId && categories.includes(course.categoryId.title)
+      courses = courses.filter(
+        (course) =>
+          course.categoryId && categories.includes(course.categoryId.title)
       );
     }
 
     const hasMore = skip + courses.length < totalCount;
-    
+
     res.status(200).json({
       courses,
       hasMore,
@@ -109,7 +121,6 @@ const getBasicCourseInfo = async (req, res) => {
       currentPage: pageNumber,
       totalPages: Math.ceil(totalCount / limitNumber),
     });
-    
   } catch (error) {
     console.error("Courses fetch error:", error);
     res.status(500).json({
@@ -118,7 +129,6 @@ const getBasicCourseInfo = async (req, res) => {
     });
   }
 };
-
 
 const getCourses = async (req, res) => {
   try {
@@ -140,9 +150,15 @@ const getCourses = async (req, res) => {
     const totalStudents = await User.find();
     const totalTutors = await Tutor.find();
 
-    console.log("adsasdad",totalTutors,totalStudents);
+    console.log("adsasdad", totalTutors, totalStudents);
 
-    res.status(200).json({ courses , totalStudents:totalStudents.length , totalTutors:totalTutors.length });
+    res
+      .status(200)
+      .json({
+        courses,
+        totalStudents: totalStudents.length,
+        totalTutors: totalTutors.length,
+      });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Failed to fetch courses" });
@@ -191,7 +207,6 @@ const getCoursesByStudentId = async (req, res) => {
     const user = await User.findById(userId);
     const courseIds = user?.activeCourses;
 
-
     const courses = await Course.find({ _id: { $in: courseIds } }).populate(
       "categoryId",
       "title"
@@ -224,7 +239,6 @@ const getCoursesByStudentId = async (req, res) => {
 const playCourse = async (req, res) => {
   try {
     const { courseId, userId } = req.query;
-
 
     if (!courseId || !userId) {
       return res.status(400).json({ message: "Missing course or user ID" });
@@ -269,13 +283,12 @@ const playCourse = async (req, res) => {
       title: course.title,
       description: course.description,
       tutor: course.tutorId.fullName,
-      tutorId:course.tutorId._id,
+      tutorId: course.tutorId._id,
       level: course.level,
       language: course.language,
       certificateUrl: courseProgress.certificateUrl || null,
       totalLessons: course.lessons.length,
       lessons: course.lessons.map((lesson) => {
-        
         const lessonProgress = courseProgress
           ? courseProgress.lessonsProgress.find(
               (progress) =>
@@ -296,7 +309,9 @@ const playCourse = async (req, res) => {
         };
       }),
       progress: {
-        percentage: courseProgress ? courseProgress.progressPercentage.toFixed(0) : 0,
+        percentage: courseProgress
+          ? courseProgress.progressPercentage.toFixed(0)
+          : 0,
         isCompleted: courseProgress ? courseProgress.isCompleted : false,
       },
     };
@@ -378,7 +393,6 @@ const createCourse = async (req, res) => {
 };
 
 const viewCourse = async (req, res) => {
-
   const { id } = req.params;
 
   try {
@@ -387,7 +401,7 @@ const viewCourse = async (req, res) => {
     }
 
     const course = await Course.findById(id);
-    console.log("course",course)
+    console.log("course", course);
 
     if (!course) {
       return res.status(404).json({ message: "Course not found" });
@@ -420,7 +434,6 @@ const editCourse = async (req, res) => {
       lessons,
       tutorId,
     } = req.body.course;
-
 
     const { id } = req.params;
 
@@ -475,6 +488,9 @@ const editCourse = async (req, res) => {
 };
 
 const deleteCourse = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const { courseId, tutorId } = req.query;
 
@@ -489,14 +505,68 @@ const deleteCourse = async (req, res) => {
         .json({ message: "Unauthorized to delete this course" });
     }
 
-    await Lesson.deleteMany({ courseId: courseId });
+    const errors = [];
+    
+    // Remove course from users' active courses
+    try {
+      await User.updateMany(
+        { activeCourses: courseId },
+        { $pull: { activeCourses: courseId } }
+      );
+    } catch (error) {
+      errors.push(`Error removing from active courses: ${error.message}`);
+    }
 
-    await Course.findByIdAndDelete(courseId);
+  
 
-    res.status(200).json({ message: "Course deleted successfully" });
+    // Delete course progress records
+    try {
+      await CourseProgress.deleteMany({ courseId: courseId });
+    } catch (error) {
+      errors.push(`Error deleting course progress: ${error.message}`);
+    }
+
+    // Delete course ratings
+    try {
+      await Ratings.deleteMany({ courseId: courseId });
+    } catch (error) {
+      errors.push(`Error deleting ratings: ${error.message}`);
+    }
+
+    // Delete course lessons
+    try {
+      await Lesson.deleteMany({ courseId: courseId });
+    } catch (error) {
+      errors.push(`Error deleting lessons: ${error.message}`);
+    }
+
+  
+
+
+
+    // Finally, delete the course itself
+    try {
+      await Course.findByIdAndDelete(courseId);
+    } catch (error) {
+      errors.push(`Error deleting course: ${error.message}`);
+    }
+
+    // If there were any errors during the process, return them
+    if (errors.length > 0) {
+      return res.status(500).json({
+        message: "Partial deletion occurred with errors",
+        errors: errors
+      });
+    }
+
+    res.status(200).json({ message: "Course and all related data deleted successfully" });
+
   } catch (error) {
     console.error("Error in deleteCourse:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({ 
+      message: "Server error", 
+      error: error.message 
+    });
   }
 };
 
@@ -557,11 +627,10 @@ const getWishlist = async (req, res) => {
     });
 
     if (!wishlist) {
-    
-        wishlist = new Wishlist({
-          userId,
-          courses: [],
-        });
+      wishlist = new Wishlist({
+        userId,
+        courses: [],
+      });
     }
 
     res.status(200).json({ wishlist: wishlist.courses });
@@ -602,28 +671,24 @@ const removeFromWishlist = async (req, res) => {
 const handleCertificate = async (req, res) => {
   const { userId, courseId, courseName } = req.body;
 
- 
   if (!userId || !courseId || !courseName) {
-    return res.status(400).json({ 
+    return res.status(400).json({
       error: "User ID, Course ID, and Course Name are required.",
-      success: false 
+      success: false,
     });
   }
 
   try {
-  
     let certificate = await Certificate.findOne({ userId, courseId });
-
 
     if (certificate) {
       return res.status(200).json({
         message: "Certificate already exists",
         certificateUrl: certificate.certificateUrl,
-        success: true
+        success: true,
       });
     }
 
-    
     // Ensure certificates directory exists
     const certificatesDir = path.join(__dirname, "../certificates");
     if (!fs.existsSync(certificatesDir)) {
@@ -632,9 +697,9 @@ const handleCertificate = async (req, res) => {
 
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ 
-        error: "User not found", 
-        success: false 
+      return res.status(404).json({
+        error: "User not found",
+        success: false,
       });
     }
 
@@ -680,7 +745,6 @@ const handleCertificate = async (req, res) => {
     // Delete temporary file
     fs.unlinkSync(tempFilePath);
 
-    
     certificate = new Certificate({
       userId,
       courseId,
@@ -688,7 +752,6 @@ const handleCertificate = async (req, res) => {
     });
     await certificate.save();
 
-  
     const updatedProgress = await CourseProgress.findOneAndUpdate(
       { userId, courseId },
       { $set: { certificateUrl: result.secure_url } },
@@ -696,24 +759,23 @@ const handleCertificate = async (req, res) => {
     );
 
     if (!updatedProgress) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         error: "Course progress not found.",
-        success: false 
+        success: false,
       });
     }
 
     res.status(200).json({
       message: "Certificate generated successfully!",
       certificateUrl: result.secure_url,
-      success: true
+      success: true,
     });
-
   } catch (error) {
     console.error("Error handling certificate:", error);
-    res.status(500).json({ 
-      error: "Internal Server Error", 
+    res.status(500).json({
+      error: "Internal Server Error",
       details: error.message,
-      success: false 
+      success: false,
     });
   }
 };
@@ -733,10 +795,10 @@ const rateCourse = async (req, res) => {
 
     const existingRating = await Ratings.findOne({ userId, courseId });
 
-    //checking if lesson has been updated 
+    //checking if lesson has been updated
 
     const courseLessons = await Lesson.find({ _id: { $in: course.lessons } });
-    
+
     let isLessonUpdated = false;
     if (existingRating) {
       isLessonUpdated = courseLessons.some(
@@ -745,29 +807,32 @@ const rateCourse = async (req, res) => {
     }
 
     if (existingRating && !isLessonUpdated) {
-      return res.status(400).json({ message: "You have already rated this course." });
+      return res
+        .status(400)
+        .json({ message: "You have already rated this course." });
     }
 
- 
     if (existingRating && isLessonUpdated) {
+      //remove old rating
+      course.ratings = course.ratings.filter(
+        (r) => r !== existingRating.rating
+      );
 
-     //remove old rating
-      course.ratings = course.ratings.filter(r => r !== existingRating.rating);
-
-    //add new rating
+      //add new rating
       course.ratings.push(rating);
 
       existingRating.rating = rating;
-      existingRating.feedback= feedback;
-      existingRating.updatedAt= new Date();
+      existingRating.feedback = feedback;
+      existingRating.updatedAt = new Date();
 
       await existingRating.save();
 
       // Recalculate average rating
       const totalRatings = course.ratings.length;
-      const averageRating = course.ratings.reduce((sum, value) => sum + value, 0) / totalRatings;
+      const averageRating =
+        course.ratings.reduce((sum, value) => sum + value, 0) / totalRatings;
       course.averageRating = averageRating;
-      
+
       await course.save();
 
       return res.status(200).json({
@@ -781,7 +846,8 @@ const rateCourse = async (req, res) => {
 
     //calcuate average rating
     const totalRatings = course.ratings.length;
-    const averageRating = course.ratings.reduce((sum, value) => sum + value, 0) / totalRatings;
+    const averageRating =
+      course.ratings.reduce((sum, value) => sum + value, 0) / totalRatings;
 
     course.averageRating = averageRating;
 
@@ -792,7 +858,7 @@ const rateCourse = async (req, res) => {
       userId,
       courseId,
       rating,
-      feedback
+      feedback,
     });
 
     await userRating.save();
@@ -806,45 +872,44 @@ const rateCourse = async (req, res) => {
   }
 };
 
-
 const isRated = async (req, res) => {
-  
   try {
     const { userId, courseId } = req.query;
 
-
     const rating = await Ratings.findOne({ userId, courseId });
-    
+
     res.status(200).json({
       hasRated: !!rating,
-      rating: rating ? rating.rating : null
+      rating: rating ? rating.rating : null,
     });
-
   } catch (error) {
     console.log("Error in fetching ratings", error);
     res.status(500).json({ message: "Internal server error" });
   }
-
 };
 
 const getRatingsbyCourseId = async (req, res) => {
-  
   try {
     const { courseId } = req.query;
 
+    console.log("course id ", courseId);
+    console.log("req query ", req.query, req.params);
 
-    const ratings = await Ratings.find(courseId).populate('userId','fullName profileImg');
-    
+    const ratings = await Ratings.find({ courseId }).populate(
+      "userId",
+      "fullName profileImg"
+    );
+
+    console.log(ratings);
+
     res.status(200).json({
-     message:"Ratings fetched succesfully",
-      ratings
+      message: "Ratings fetched succesfully",
+      ratings: ratings,
     });
-
   } catch (error) {
     console.log("Error in fetching ratings", error);
     res.status(500).json({ message: "Internal server error" });
   }
-
 };
 
 module.exports = {
@@ -863,6 +928,5 @@ module.exports = {
   handleCertificate,
   rateCourse,
   isRated,
-  getRatingsbyCourseId
-  
+  getRatingsbyCourseId,
 };

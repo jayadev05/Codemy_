@@ -57,19 +57,21 @@ export default function CheckoutPage() {
   let totalCartPrice = cart.totalCartPrice
   let discountAmount = 0
 
+
+  totalCartPrice = Math.max(totalCartPrice, 0);
+  const tax = parseInt((totalCartPrice * 0.04).toFixed(1));
+  let total = parseInt(totalCartPrice + tax);
+
   if (appliedCoupon) {
     if (appliedCoupon.discountType === "Percentage") {
       discountAmount = (totalCartPrice * appliedCoupon.discountValue) / 100
-      totalCartPrice -= discountAmount
+      total -= discountAmount
     } else if (appliedCoupon.discountType === "Flat") {
       discountAmount = appliedCoupon.discountValue
-      totalCartPrice -= discountAmount
+      total -= discountAmount
     }
   }
 
-  totalCartPrice = Math.max(totalCartPrice, 0);
-  const tax = parseInt((totalCartPrice * 0.08).toFixed(1));
-  const total = parseInt(totalCartPrice + tax);
   const courses = cart.items.map((course) => course.courseId._id);
 
   useEffect(() => {
@@ -320,19 +322,21 @@ export default function CheckoutPage() {
                   {/* Price Breakdown */}
                   <div className="space-y-3">
                     <div className="flex justify-between text-gray-600">
-                      <span>Subtotal</span>
+                      <span>Total :</span>
                       <span>₹{cart.totalCartPrice}</span>
                     </div>
+                    
                     <div className="flex justify-between text-gray-600">
-                      <span>Discount</span>
-                      <span>-₹{discountAmount}</span>
-                    </div>
-                    <div className="flex justify-between text-gray-600">
-                      <span>Tax (8%)</span>
+                      <span>Tax :</span>
                       <span>₹{tax}</span>
                     </div>
+
+                    <div className="flex justify-between text-gray-600">
+                      <span>Discount :</span>
+                      <span>-₹{discountAmount}</span>
+                    </div>
                     <div className="flex justify-between font-bold text-lg pt-3 border-t">
-                      <span>Total</span>
+                      <span>Sub Total :</span>
                       <span>₹{total}</span>
                     </div>
                   </div>

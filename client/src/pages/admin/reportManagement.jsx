@@ -224,7 +224,7 @@ fetchReports();
                     {report.title.toUpperCase()}
                   </h3>
                   <p className="text-sm text-gray-500">
-                    Reported By : {report.reportedBy.fullName}  {report.date}
+                    Reported By : {report.reportedBy?.fullName}  {report.date}
                   </p>
                   <p className="text-sm text-gray-500">
                     Issue Type : {report.type}  {report.date}
@@ -278,7 +278,7 @@ fetchReports();
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h2 className="text-xl font-semibold mb-4 text-black">Send Action to Reporter</h2>
             <p className="text-sm text-black mb-4">
-              Report: {selectedReport.title} by {selectedReport.reportedBy.fullName}
+              Report: {selectedReport.title} by {selectedReport.reportedBy?.fullName}
             </p>
             <textarea
               value={actionTaken}

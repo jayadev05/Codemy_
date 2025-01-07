@@ -183,27 +183,61 @@ joinRoom(roomId) {
   }
 
   initializeCall(data) {
-    if (this.isConnected()) {
-      this.socket.emit('initiate-call', {
-        recieverId: data.recieverId,
-        signalData: data.signalData,
-        from: data.from,
-        callerName: data.callerName,
-        callerAvatar: data.callerAvatar,
-        callerUserId: data.callerUserId
-      });
-      console.log('[SocketService] Sending initiate call event to ',data.recieverId);
-    }
+    return new Promise((resolve, reject) => {
+      if (this.isConnected()) {
+        // Set 30 second timeout
+        const timeout = setTimeout(() => {
+          reject(new Error('Call initialization timed out'));
+        }, 30000);
+
+        this.socket.emit('initiate-call', {
+          recieverId: data.recieverId,
+          signalData: data.signalData,
+          from: data.from,
+          callerName: data.callerName,
+          callerAvatar: data.callerAvatar,
+          callerUserId: data.callerUserId
+        }, (acknowledgment) => {
+          clearTimeout(timeout);
+          if (acknowledgment?.error) {
+            reject(new Error(acknowledgment.error));
+          } else {
+            resolve(acknowledgment);
+          }
+        });
+        
+        console.log('[SocketService] Sending initiate call event to', data.recieverId);
+      } else {
+        reject(new Error('Socket not connected'));
+      }
+    });
   }
 
   answerCall(data) {
-    if (this.isConnected()) {
-      this.socket.emit('answer-call', {
-        signalData: data.signalData,  
-        to: data.to
-      });
-      console.log('[SocketService] Sending answer call event to',data.to);
-    }
+    return new Promise((resolve, reject) => {
+      if (this.isConnected()) {
+        // Set 30 second timeout
+        const timeout = setTimeout(() => {
+          reject(new Error('Call answer timed out'));
+        }, 30000);
+
+        this.socket.emit('answer-call', {
+          signalData: data.signalData,
+          to: data.to
+        }, (acknowledgment) => {
+          clearTimeout(timeout);
+          if (acknowledgment?.error) {
+            reject(new Error(acknowledgment.error));
+          } else {
+            resolve(acknowledgment);
+          }
+        });
+
+        console.log('[SocketService] Sending answer call event to', data.to);
+      } else {
+        reject(new Error('Socket not connected'));
+      }
+    });
   }
 
   rejectCall(data){

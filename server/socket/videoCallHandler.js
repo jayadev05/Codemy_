@@ -8,7 +8,7 @@ const videoCallHandler = (io, socket, onlineStudents, onlineTutors) => {
     return receiver?.socketId;
 };
 
-socket.on("initiate-call", async (data) => {
+socket.on("initiate-call", async (data,callback) => {
     try {
         const {
             recieverId,
@@ -42,24 +42,35 @@ socket.on("initiate-call", async (data) => {
           }
       });
 
-       
+      callback({ success: true });
 
     } catch (error) {
         console.error("Error in initiate-call:", error);
+        callback({ error: error.message });
         socket.emit("call-failed", { reason: error.message });
     }
 });
 
-    socket.on("answer-call", ({ signalData, to }) => {
+    socket.on("answer-call", ({ signalData, to },callback) => {
 
-      console.log("Answer call data:", signalData , "to:",to);
+      try{
+        console.log("Answer call data:", signalData , "to:",to);
 
-      const receiverSocketId = findReceiverSocket(to);
+        const receiverSocketId = findReceiverSocket(to);
+  
+        console.log(Object.values(onlineStudents),Object.values(onlineTutors));
+       
+        
+          io.to(receiverSocketId).emit("call-accepted", { signalData });
 
-      console.log(Object.values(onlineStudents),Object.values(onlineTutors));
-     
+          callback({ success: true });
+      }
+      catch(error){
+        console.log(error);
+        callback({ error: error.message });
+      }
+
       
-        io.to(receiverSocketId).emit("call-accepted", { signalData });
       
     });
   

@@ -832,11 +832,17 @@ export default function ChatInterface() {
       initiator: true,
       trickle: false,
       stream: mediaStream,
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:global.stun.twilio.com:3478' }
+        ]
+      }
     });
 
-    peer.on("signal", (signalData) => {
+    peer.on("signal", async(signalData) => {
       if (signalData.type === "offer") {
-        socketService.initializeCall({
+        await socketService.initializeCall({
           recieverId: receiverId,
           signalData,
           from: socketService.socket.id,
@@ -905,52 +911,68 @@ export default function ChatInterface() {
 
   // Separate function to create answering peer
   const createAnswerPeer = (mediaStream) => {
-    console.log("Creating answer peer with stream:", mediaStream);
-    console.log("Stream tracks:", mediaStream?.getTracks());
-
-    setIsCallAccepted(true);
-    setIncomingCallInfo((prev) => ({ ...prev, isSomeoneCalling: false }));
-
+    if (!mediaStream?.getTracks().length) {
+      console.error("Invalid media stream");
+      return;
+    }
+  
+    // Create configuration with TURN servers for better connectivity
+    const configuration = {
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:global.stun.twilio.com:3478' },
+        // Add TURN servers if you have them
+      ],
+      iceTransportPolicy: 'all',
+      iceCandidatePoolSize: 10
+    };
+  
     const peer = new SimplePeer({
       initiator: false,
-      trickle: false,
+      trickle: true, // Enable trickle ICE
       stream: mediaStream,
+      config: configuration
     });
-
-    peer.on("signal", (signalData) => {
-      socketService.answerCall({
-        signalData,
-        to: incomingCallInfo.from,
-      });
-    });
-
-    peer.on("stream", (stream) => {
-      console.log("Received caller stream:", stream);
-      if (peerVideoRef.current) {
-        peerVideoRef.current.srcObject = stream;
+  
+    
+  
+    peer.on("signal", async signalData => {
+      console.log("Answer peer signaling:", signalData.type);
+      if (signalData.type === "answer") {
+       await socketService.answerCall({
+          signalData,
+          to: incomingCallInfo.from
+        });
       }
+      
     });
-
+  
     peer.on("connect", () => {
       console.log("Peer connection established");
+     
       setIsCallActive(true);
+      setIsCallAccepted(true);
     });
-
-    peer.on("error", (err) => {
-      console.error("Peer error:", err);
-      handleEndCall();
+  
+    peer.on("error", err => {
+      console.error("Peer connection error:", err);
+     
     });
-
-    peer.on("close", () => {
-      console.log("Peer connection closed");
-      handleEndCall();
-    });
-
-    // Signal the offer to the answering peer
-    peer.signal(incomingCallInfo.signalData);
-
+  
+    // Process the offer
+    try {
+      console.log("Processing offer signal");
+      peer.signal(incomingCallInfo.signalData);
+    } catch (error) {
+      console.error("Error processing offer:", error);
+      
+    }
+  
     connectionRef.current = peer;
+    
   };
+  
+
 
   const handleEndCall = (sendSocketEvent = true) => {
     // Clean up peer connection

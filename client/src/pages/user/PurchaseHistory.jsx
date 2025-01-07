@@ -8,6 +8,7 @@ import {
   IndianRupeeIcon,
   RefreshCw,
   X,
+  AlertCircle,
 } from "lucide-react";
 import {
   Dialog,
@@ -209,7 +210,7 @@ const PurchaseHistory = () => {
             <div className="space-y-4">
               {filteredOrder.map((order) => {
                 const course = order.course["0"];
-                const courseNumber = order.course.length;
+                const courseNumber = order.course?.length;
                 console.log("No of courses in order", courseNumber);
                 const isPending = order.orderStatus === "Pending";
 
@@ -222,24 +223,38 @@ const PurchaseHistory = () => {
                     <div className="flex gap-6 p-6">
                       <div className="relative h-24 w-36 flex-shrink-0 overflow-hidden rounded-lg">
                         <img
-                          src={course.thumbnail || "/placeholder-course.png"}
-                          alt={course.title}
+                          src={course?.thumbnail || "/placeholder.svg"}
+                          alt={course?.title || "Course unavailable"}
                           className="absolute inset-0 h-full w-full object-cover"
+                          width={640}
+                          height={360}
                           onError={(e) => {
-                            e.target.src = "/placeholder-course.png";
+                            // Reset src to our custom placeholder
+                            e.currentTarget.src = "/placeholder.svg";
                           }}
                         />
+
+                        {/* Overlay for deleted/unavailable courses */}
+                        {!course?.thumbnail && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted/95">
+                            <AlertCircle className="h-12 w-12 text-muted-foreground" />
+                            <p className="mt-2 text-center text-sm font-medium text-muted-foreground">
+                              This course might be deleted
+                            </p>
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex flex-1 flex-col justify-between">
                         <div className="flex items-start justify-between gap-4">
                           <div className="space-y-1">
                             <h3 className="font-semibold text-gray-900">
-                              {order.course.length > 1
-                                ? `${course.title.slice(0, 25)} ...+${
+                              {order.course?.length > 1
+                                ? `${course?.title.slice(0, 25)} ...+${
                                     order.course?.length - 1
                                   }`
-                                : course.title}
+                                : course?.title ||
+                                  "Course details unavailable"}
                             </h3>
                             <div className="flex items-center gap-3">
                               <span
@@ -303,6 +318,7 @@ const PurchaseHistory = () => {
                 );
               })}
             </div>
+
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
               <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>
@@ -348,22 +364,22 @@ const PurchaseHistory = () => {
                       </div>
                       <div className="space-y-4">
                         <h3 className="font-medium">Purchased Courses</h3>
-                        {selectedOrder.course.map((course, index) => (
+                        {selectedOrder.course?.map((course, index) => (
                           <div
                             key={index}
                             className="flex items-center gap-4 border-b pb-4"
                           >
                             <img
                               src={
-                                course.thumbnail || "/placeholder-course.png"
+                                course?.thumbnail || "/placeholder-course?.png"
                               }
-                              alt={course.title}
+                              alt={course?.title}
                               className="h-16 w-24 rounded object-cover"
                             />
                             <div>
-                              <h4 className="font-medium">{course.title}</h4>
+                              <h4 className="font-medium">{course?.title}</h4>
                               <p className="text-sm text-gray-600">
-                                Instructor: {course.tutor}
+                                Instructor: {course?.tutor}
                               </p>
                             </div>
                           </div>

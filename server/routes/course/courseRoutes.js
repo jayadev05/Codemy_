@@ -24,7 +24,8 @@ courseRoute.get('/view-course/:id',viewCourse)
 courseRoute.get('/play-course',playCourse);
 courseRoute.get('/get-lessons/:courseId',getLessons);
 courseRoute.get('/get-ratings',isRated);
-courseRoute.get('/get-ratings/:courseId',getRatingsbyCourseId);
+courseRoute.get('/get-course-review',getRatingsbyCourseId);
+
 
 
 

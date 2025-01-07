@@ -17,6 +17,8 @@ const StarRating = ({ rating }) => (
 )
 
 const CourseReviews = ({ reviews }) => {
+
+  console.log('hjkhkjjh',reviews)
   if (reviews?.length === 0) {
     return (
       <div className="py-8">
@@ -33,12 +35,12 @@ const CourseReviews = ({ reviews }) => {
       <div>
         <h2 className="text-2xl font-bold">Course Reviews</h2>
         <p className="text-gray-600">
-          {reviews.length} reviews 
+          {reviews?.length} reviews 
         </p>
       </div>
 
       <div className="grid gap-4">
-        {reviews.map((review) => (
+        {reviews?.map((review) => (
           <div key={review._id} className="rounded-lg border p-6 shadow-sm space-y-4">
             <div className="flex items-start gap-4">
               <img

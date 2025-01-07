@@ -31,7 +31,7 @@ adminRoute.post('/send-notification',verifyUser,sendNotification);
 adminRoute.put('/instructor-applications/:id/review',verifyUser, reviewInstructorApplication);
 adminRoute.put("/listuser/:id",verifyUser,listUser)
 adminRoute.put("/unlistuser/:id",verifyUser,unlistUser)
-adminRoute.put("/listtutor/:id",lisTtutor)
+adminRoute.put("/listtutor/:id",verifyUser,lisTtutor)
 adminRoute.put("/unlisttutor/:id",verifyUser,unlisTtutor)
 adminRoute.put("/unlistCourse/:id",verifyUser,unlistCourse)
 adminRoute.put("/listCourse/:id",verifyUser,listCourse)

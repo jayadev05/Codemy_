@@ -7,6 +7,7 @@ import { addTutor, selectTutor } from "../../store/slices/tutorSlice";
 import { toast } from "react-hot-toast";
 import defProfile from "../../assets/user-profile.png";
 import axiosInstance from "@/config/axiosConfig";
+import TutorHeader from "@/components/layout/tutor/TutorHeader";
 
 export default function TutorSettings() {
   const tutor = useSelector(selectTutor);
