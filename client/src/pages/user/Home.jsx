@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Search, ShoppingBag, Star, Trash } from "lucide-react";
-import hero_img from "../../assets/hero_img.png";
+import hero_img from "../../assets/hero_img-4.png";
 import cat1 from "../../assets/cat-1.png";
 import cat2 from "../../assets/cat-2.png";
 import cat3 from "../../assets/cat-3.png";
@@ -17,7 +17,6 @@ import Footer from "../../components/layout/Footer";
 import { InstructorModal } from "../general/signup/InstructorSignUp";
 import { BookOpen, Users, Heart } from "lucide-react";
 import { toast } from "react-hot-toast";
-import axios from "axios";
 import Header from "../../components/layout/Header";
 import {
   addToWishlist,
@@ -27,6 +26,7 @@ import {
 import MainHeader from "../../components/layout/user/MainHeader";
 import { addToCart, clearCart, selectCart } from "../../store/slices/cartSlice";
 import axiosInstance from "@/config/axiosConfig";
+import { setCurrentCourse } from "@/store/slices/courseSlice";
 
 const categories = [
   { name: "Label", courses: "21,245", bgColor: "bg-blue-100", img: cat1 },
@@ -141,7 +141,8 @@ export default function Home() {
 
   const handleCourseView = (courseId) => {
     try {
-      navigate(`/course/details/${courseId}`);
+      dispatch(setCurrentCourse(courseId));
+      navigate(`/course/details`);
     } catch (error) {
       console.log(error);
       toast.error(error.message || "Failed to view course");
@@ -212,7 +213,7 @@ export default function Home() {
               <img
                 src={hero_img}
                 alt="Learning illustration"
-                className="object-cover h-full w-full"
+                className="object-cover lg:w-[500px]"
               />
             </div>
           </section>

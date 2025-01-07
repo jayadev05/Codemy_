@@ -267,7 +267,7 @@ const Login = () => {
                 <div className="w-full border-t border-gray-300" />
               </div>
               <div className="relative flex justify-center text-xs uppercase mt-3 mb-4">
-                <span className="bg-[#F8F7FF] px-2 text-gray-500 dark:text-white bg-gray-600">
+                <span className="bg-[#F8F7FF] px-2 text-gray-500 dark:text-white dark:bg-gray-600">
                   Sign In with
                 </span>
               </div>
@@ -278,7 +278,7 @@ const Login = () => {
                 onClick={() => !isLoading && googleLogin()}
                 type="button"
                 disabled={isLoading}
-                className="flex w-50 items-center justify-around rounded-md border border-gray-300 bg-white dark:bg-[#1d2026] text-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                className="flex w-50 items-center justify-around rounded-md border border-gray-300 bg-white dark:bg-[#1d2026] dark:text-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
               >
                 <img src={google_logo} alt="" className="w-[25px]" />
                 <span className="ml-2 border-l-2 pl-2">Google</span>

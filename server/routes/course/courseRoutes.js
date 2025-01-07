@@ -1,6 +1,6 @@
 const express = require("express");
 const courseRoute = express.Router();
-const { createCourse,getCourses, getCoursesByTutorId, getCoursesByStudentId, deleteCourse, viewCourse, editCourse, getBasicCourseInfo, addToWishlist, removeFromWishlist, getWishlist, playCourse,  rateCourse, getRatings,  handleCertificate} = require('../../controller/courseController');
+const { createCourse,getCourses, getCoursesByTutorId, getCoursesByStudentId, deleteCourse, viewCourse, editCourse, getBasicCourseInfo, addToWishlist, removeFromWishlist, getWishlist, playCourse,  rateCourse, isRated,  handleCertificate, getRatingsbyCourseId} = require('../../controller/courseController');
 const verifyUser = require('../../middleware/authMiddleware');
 const { addLesson, updateLesson, getLessons, deleteLesson, updateCourseProgress } = require("../../controller/lessonController");
 const { addToCart, viewCart, removeFromCart } = require("../../controller/cartController");
@@ -23,7 +23,9 @@ courseRoute.get('/student-courses/:userId',getCoursesByStudentId);
 courseRoute.get('/view-course/:id',viewCourse)
 courseRoute.get('/play-course',playCourse);
 courseRoute.get('/get-lessons/:courseId',getLessons);
-courseRoute.get('/get-ratings',getRatings);
+courseRoute.get('/get-ratings',isRated);
+courseRoute.get('/get-ratings/:courseId',getRatingsbyCourseId);
+
 
 
 courseRoute.put('/update-lesson/:lessonId', updateLesson);

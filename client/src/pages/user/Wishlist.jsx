@@ -121,17 +121,20 @@ const WishlistPage = () => {
           My Wishlist ({wishlistItems.length} items)
         </h2>
         <div className="space-y-4">
-          {wishlistItems.map((item) => (
-            <WishlistItem
-              key={item.courseId._id} 
-              product={{
-                id: item.courseId._id,
-                name: item.courseId.title, 
-                price: item.courseId.price.$numberDecimal, 
-                image: item.courseId.thumbnail, 
-              }}
-            />
-          ))}
+        {wishlistItems
+  .filter((item) => item !== undefined && item !== null) // Filter out undefined and null items
+  .map((item) => (
+    <WishlistItem
+      key={item?.courseId?._id} 
+      product={{
+        id: item?.courseId?._id,
+        name: item?.courseId?.title, 
+        price: item?.courseId.price?.$numberDecimal, 
+        image: item?.courseId?.thumbnail, 
+      }}
+    />
+  ))}
+
         </div>
       </div>
     );

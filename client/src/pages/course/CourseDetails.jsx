@@ -15,20 +15,21 @@ import {
 import { addToCart, selectCart } from "../../store/slices/cartSlice";
 import { selectCourse } from "@/store/slices/courseSlice";
 import axiosInstance from "@/config/axiosConfig";
+import CourseReviews from "@/components/layout/user/CourseReviews";
 
 export default function CourseDetails() {
   const user = useSelector(selectUser);
   const cart = useSelector(selectCart);
-
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-
   const courseId = useSelector(selectCourse);
 
   const [course, setCourse] = useState([]);
   const [wishlist, setWishlist] = useState([]);
+  const [reviews,setReviews]=useState([])
 
-  console.log(wishlist);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+
 
   const features = [
     "Comprehensive course materials and resources",
@@ -47,7 +48,10 @@ export default function CourseDetails() {
 
   useEffect(() => {
     fetchWishlist();
+    fetchReviews();
   }, []);
+  
+  console.log("reviews",reviews)
 
   const handleAddToCart = async (courseId, price) => {
     try {
@@ -78,6 +82,7 @@ export default function CourseDetails() {
         });
     }
   };
+
   const handleBuy = async (courseId, price) => {
     try {
       const response = await axiosInstance.post(
@@ -112,13 +117,30 @@ export default function CourseDetails() {
       console.log("response:", response.data);
 
       setCourse(response.data.course);
+      
     } catch (error) {
       console.error(error);
       toast.error(error.response?.data?.message || "Failed to fetch course");
     }
   };
 
+  const fetchReviews = async()=>{
+    try {
+      
+      const response=await axiosInstance.get(`/course/get-ratings/${courseId}`);
+
+      if(response.status===200){
+        setReviews(response.data.ratings);
+      }
+
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
   const ratings = course?.ratings?.length > 0 ? course.ratings : [0];
+
+  console.log("ratings",ratings)
 
   // Calculate rating statistics
   const totalRatings = ratings.length;
@@ -163,7 +185,7 @@ export default function CourseDetails() {
     }
   };
 
-  const fetchWishlist = async () => {
+  const  fetchWishlist = async () => {
     try {
       const response = await axiosInstance.get(
         "http://localhost:3000/course/get-wishlist",
@@ -201,7 +223,9 @@ export default function CourseDetails() {
                   "Embark on a journey of knowledge and skill development with our expertly crafted course."}
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-4">
-                <button className="px-8 py-3 bg-white text-orange-600 rounded-full font-semibold text-lg hover:bg-orange-100 transition-colors">
+                <button
+                 onClick={() => handleBuy(course._id, course.price)}
+                className="px-8 py-3 bg-white text-orange-600 rounded-full font-semibold text-lg hover:bg-orange-100 transition-colors">
                   Enroll Now
                 </button>
                 <button
@@ -431,7 +455,17 @@ export default function CourseDetails() {
               ))}
             </div>
           </div>
+
+<div>
+ {/*reviews */}
+<CourseReviews reviews={reviews}/>   
+</div>
+         
+         
+
         </section>
+
+
       </main>
       <SecondaryFooter />
     </div>

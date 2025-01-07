@@ -807,7 +807,7 @@ const rateCourse = async (req, res) => {
 };
 
 
-const getRatings = async (req, res) => {
+const isRated = async (req, res) => {
   
   try {
     const { userId, courseId } = req.query;
@@ -818,6 +818,26 @@ const getRatings = async (req, res) => {
     res.status(200).json({
       hasRated: !!rating,
       rating: rating ? rating.rating : null
+    });
+
+  } catch (error) {
+    console.log("Error in fetching ratings", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+
+};
+
+const getRatingsbyCourseId = async (req, res) => {
+  
+  try {
+    const { courseId } = req.query;
+
+
+    const ratings = await Ratings.find(courseId).populate('userId','fullName profileImg');
+    
+    res.status(200).json({
+     message:"Ratings fetched succesfully",
+      ratings
     });
 
   } catch (error) {
@@ -842,6 +862,7 @@ module.exports = {
   playCourse,
   handleCertificate,
   rateCourse,
-  getRatings,
+  isRated,
+  getRatingsbyCourseId
   
 };
