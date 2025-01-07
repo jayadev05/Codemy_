@@ -1,0 +1,12 @@
+# Normalize line endings for text files
+* text=auto
+
+# Ensure binary files are treated correctly
+*.node binary
+
+# Optional: Use Git LFS for certain large file types
+*.node filter=lfs diff=lfs merge=lfs -text
+
+# Exclude other large files from text normalization
+*.dll binary
+*.exe binary
