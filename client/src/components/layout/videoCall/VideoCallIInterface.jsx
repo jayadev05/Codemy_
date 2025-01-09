@@ -41,8 +41,7 @@ const VideoCallInterface = ({
   const user=useSelector(selectUser);
   const tutor=useSelector(selectTutor);
 
-  console.log("outoging call info",outgoingCallInfo);
-  console.log("iscallng",isCalling);
+  
 
   const currentUser = user || tutor;
   
@@ -52,8 +51,7 @@ const VideoCallInterface = ({
     }
   }, [stream, myVideoRef ,isCallAccepted, isCallActive]);
 
-  console.log("My video",myVideoRef.current?.srcObject)
-  console.log("Peer video",peerVideoRef)
+
 
   return (
     <>

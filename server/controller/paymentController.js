@@ -214,7 +214,9 @@ const getOrderHistory=async(req,res)=>{
   if(!userId) return res.status(400).json({message:"User id is missing "})
 
   try {
-    const orders= await Order.find({userId});
+    const orders= await Order.find({userId}).sort({createdAt:-1});
+
+ 
 
     const courseIds = [...new Set(orders.flatMap(order => order.courses))];
 
@@ -222,7 +224,7 @@ const getOrderHistory=async(req,res)=>{
     .select('title price thumbnail tutorId').populate('tutorId','fullName');
 
 //response data
-  const data = orders.map(order => {
+  let data = orders.map(order => {
     
     const orderBaseDetails = {
         orderId:order.orderId,
@@ -237,6 +239,8 @@ const getOrderHistory=async(req,res)=>{
 
         const course = courses.find(c => c._id.toString() === courseId.toString());
         
+     
+
         if (!course) return null;
         
         return {
@@ -258,6 +262,9 @@ const getOrderHistory=async(req,res)=>{
 
   });
 
+  data.sort((a,b)=>b.purchaseDate - a.purchaseDate);
+
+  
 
 
     res.status(200).json({message:"Orders fetched successfully",data});

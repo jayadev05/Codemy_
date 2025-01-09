@@ -162,7 +162,7 @@ export function WithdrawDialog({ open, onOpenChange, availableBalance, tutorId }
             paymentMethod:formData.paymentMethod
           }
 
-      const response = await axiosInstance.post('/tutor/payout-request', {
+      const response = await axiosInstance.post('/tutor/payouts/requests', {
         amount: parseFloat(formData.amount),
         tutorId,
         paymentDetails

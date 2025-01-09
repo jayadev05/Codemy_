@@ -13,7 +13,7 @@ function TutorHeader({heading,subheading}) {
 
     const handleLogout = async () => {
         try {
-          await axiosInstance.post("/tutor/logout")
+          await axiosInstance.post("/tutor/auth/logout")
           dispatch(logoutTutor(tutor))
           toast.success("Logged out successfully")
           navigate("/login")

@@ -13,7 +13,7 @@ export default function DateRangePicker() {
 
   const handleExport = async () => {
     try {
-      const response = await axiosInstance.get(`/admin/download-sales-report`, {
+      const response = await axiosInstance.get(`/admin/sales-report`, {
         params: { startDate, endDate },
         responseType: 'blob',
       });

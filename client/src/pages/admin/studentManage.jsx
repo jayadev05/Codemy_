@@ -5,13 +5,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import defProfile from "../../assets/user-profile.png";
-import {
-  Search,
-  FileText,
-  X,
-  Bell,
-
-} from "lucide-react";
+import { Search, FileText, X, Bell } from "lucide-react";
 import Pagination from "../../components/utils/Pagination";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutAdmin, selectAdmin } from "../../store/slices/adminSlice";
@@ -21,9 +15,9 @@ import axiosInstance from "../../config/axiosConfig";
 import AdminHeader from "@/components/layout/admin/AdminHeader";
 
 const StudentManagement = () => {
-  const admin=useSelector(selectAdmin);
-  const dispatch=useDispatch()
-  const navigate=useNavigate()
+  const admin = useSelector(selectAdmin);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [students, setStudents] = useState([]);
@@ -38,35 +32,36 @@ const StudentManagement = () => {
 
   const fetchStudents = async () => {
     try {
-    
-      const response = await axiosInstance.get("http://localhost:3000/admin/get-students",{withCredentials:true});
-      console.log("response data length ",response.data.students.length);
+      const response = await axiosInstance.get(
+        "http://localhost:3000/admin/students",
+        { withCredentials: true }
+      );
+      console.log("response data length ", response.data.students.length);
       setStudents(response.data.students || []);
-      
     } catch (err) {
       setError("Failed to fetch students");
-     
+
       console.error(err);
       toast.error("Failed to load students");
     }
   };
 
-    //pagination
-  
-    const [currentPage,setCurrentPage]=useState(1);
-    const [dataPerPage]=useState(4);
-  
-    // Pagination logic for both tutors and applications
-  
-    const paginateData = (data) => {
-      const startIndex = currentPage * dataPerPage - dataPerPage;
-      const endIndex = startIndex + dataPerPage;
-      return data.slice(startIndex, endIndex);
-    };
-   
-    const handlePageChange = (pageNumber) => {
-      setCurrentPage(pageNumber);
-    };
+  //pagination
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [dataPerPage] = useState(4);
+
+  // Pagination logic for both tutors and applications
+
+  const paginateData = (data) => {
+    const startIndex = currentPage * dataPerPage - dataPerPage;
+    const endIndex = startIndex + dataPerPage;
+    return data.slice(startIndex, endIndex);
+  };
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
 
   const openModal = (student) => {
     setSelectedStudent(student);
@@ -84,7 +79,7 @@ const StudentManagement = () => {
       student.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const paginatedItems=paginateData(filteredStudents);
+  const paginatedItems = paginateData(filteredStudents);
 
   if (loading) {
     return (
@@ -104,25 +99,28 @@ const StudentManagement = () => {
 
   const handleToggleList = async (id, currentStatus) => {
     try {
-      const endpoint = currentStatus === false
-        ? `http://localhost:3000/admin/listuser/${id}` 
-        : `http://localhost:3000/admin/unlistuser/${id}`;
-  
-      const result = await axiosInstance.put(endpoint,{withCredentials:true});
-      
+      const endpoint =
+        currentStatus === false
+          ? `http://localhost:3000/admin/user/${id}/list`
+          : `http://localhost:3000/admin/user/${id}/unlist`;
+
+      const result = await axiosInstance.put(endpoint, {
+        withCredentials: true,
+      });
+
       // Update the student state to reflect the new status
 
-      setStudents(prevStudents => 
-        prevStudents.map(student => 
-          student._id === id 
-            ? { ...student, isActive: currentStatus === false ? true : false } 
+      setStudents((prevStudents) =>
+        prevStudents.map((student) =>
+          student._id === id
+            ? { ...student, isActive: currentStatus === false ? true : false }
             : student
         )
       );
-  
+
       toast.success(
         currentStatus === false
-          ? "Student Unblocked successfully" 
+          ? "Student Unblocked successfully"
           : "Student Blocked successfully"
       );
     } catch (error) {
@@ -131,44 +129,39 @@ const StudentManagement = () => {
     }
   };
 
-  const onLogout=()=>{
+  const onLogout = () => {
     try {
-      const response=axiosInstance.post("http://localhost:3000/admin/logout");
+      const response = axiosInstance.post("http://localhost:3000/admin/auth/logout");
 
       dispatch(logoutAdmin(admin));
 
       toast.success("Logged out successfully");
-      
-      navigate('/login');
 
-      
+      navigate("/login");
     } catch (error) {
       console.log(error.message);
-      toast.error(error.message || "Error Logging out user")
+      toast.error(error.message || "Error Logging out user");
     }
-  }
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-white">
-   
       <Sidebar activeSection={"Students"} />
       <div className="flex-1 flex flex-col overflow-hidden">
+        <AdminHeader heading="Student Management" />
 
-     <AdminHeader heading="Student Management"/>
-        
         <main className="flex-1  overflow-x-hidden overflow-y-auto bg-gray-100">
           <div className="max-w-6xl mx-auto px-4 py-8">
             <div className="bg-white  rounded-xl min-h-[500px] shadow-lg p-8">
               <div className="mb-6 flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
-
-              <div className="flex space-x-4">
-              <button           
-              className={`px-6 py-3 rounded-lg font-semibold transition-colors  bg-[#ff6738] text-white`}                  >
-                Students
-               </button>
-              </div>
+                <div className="flex space-x-4">
+                  <button
+                    className={`px-6 py-3 rounded-lg font-semibold transition-colors  bg-[#ff6738] text-white`}
+                  >
+                    Students
+                  </button>
+                </div>
                 <div className="relative  w-64">
-                
                   <input
                     type="text"
                     placeholder="Search students..."
@@ -179,7 +172,7 @@ const StudentManagement = () => {
                   <Search className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
                 </div>
               </div>
-             
+
               <div className="overflow-x-auto">
                 <table className="w-full bg-white border border-gray-200">
                   <thead>
@@ -211,7 +204,7 @@ const StudentManagement = () => {
                           <div className="flex items-center">
                             <img
                               crossorigin="anonymous"
-                             referrerPolicy="no-referrer"
+                              referrerPolicy="no-referrer"
                               src={student.profileImg || defProfile}
                               alt={student.fullName}
                               className="h-10 w-10 rounded-full mr-3 object-cover"
@@ -233,12 +226,14 @@ const StudentManagement = () => {
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-500">
-                            {student.phone || 'N/A'}
+                            {student.phone || "N/A"}
                           </div>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-center">
                           <div className="text-sm text-gray-500">
-                            {student.coursesEnrolled ? student.coursesEnrolled.length : 0}
+                            {student.coursesEnrolled
+                              ? student.coursesEnrolled.length
+                              : 0}
                           </div>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-right">
@@ -265,11 +260,7 @@ const StudentManagement = () => {
                                   : "Block User"
                               }
                             >
-                              {student.isActive === false ? (
-                                "Unblock"
-                              ) : (
-                               "Block"
-                              )}
+                              {student.isActive === false ? "Unblock" : "Block"}
                             </button>
                           </div>
                         </td>
@@ -277,16 +268,17 @@ const StudentManagement = () => {
                     ))}
                   </tbody>
                 </table>
-
               </div>
             </div>
-
-
           </div>
-          <Pagination className="flex items-center justify-center mt-3" totalData={filteredStudents.length} dataPerPage={dataPerPage} currentPage={currentPage} setCurrentPage={handlePageChange}/>
-
+          <Pagination
+            className="flex items-center justify-center mt-3"
+            totalData={filteredStudents.length}
+            dataPerPage={dataPerPage}
+            currentPage={currentPage}
+            setCurrentPage={handlePageChange}
+          />
         </main>
-
       </div>
 
       {isModalOpen && selectedStudent && (
@@ -307,8 +299,8 @@ const StudentManagement = () => {
               {selectedStudent.profileImg && (
                 <div className="flex justify-center mb-4">
                   <img
-                   referrerPolicy="no-referrer"
-                  crossOrigin="anonymous"
+                    referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
                     src={selectedStudent.profileImg}
                     alt={`${selectedStudent.fullName}'s profile`}
                     className="w-32 h-32 rounded-full object-cover border-4 border-orange-500"
@@ -334,18 +326,24 @@ const StudentManagement = () => {
 
                 <div>
                   <p className="font-semibold text-gray-900">Phone:</p>
-                  <p>{selectedStudent.phone || 'N/A'}</p>
+                  <p>{selectedStudent.phone || "N/A"}</p>
                 </div>
               </div>
 
               <div className="space-y-2">
                 <p className="font-semibold text-gray-900">Courses Enrolled:</p>
-                <p>{selectedStudent.coursesEnrolled ? selectedStudent.coursesEnrolled.length : 0}</p>
+                <p>
+                  {selectedStudent.activeCourses
+                    ? selectedStudent.activeCourses.length
+                    : 0}
+                </p>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <p className="font-semibold text-gray-900">Account Created:</p>
+                  <p className="font-semibold text-gray-900">
+                    Account Created:
+                  </p>
                   <p>
                     {new Date(selectedStudent.createdAt).toLocaleDateString()}
                   </p>
@@ -360,4 +358,3 @@ const StudentManagement = () => {
 };
 
 export default StudentManagement;
-

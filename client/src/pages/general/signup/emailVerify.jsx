@@ -65,7 +65,7 @@ export default function EmailVerify({ formData, setIsModalVisible }) {
       };
 
       const response = await axiosInstance.post(
-        "http://localhost:3000/user/create",
+        "http://localhost:3000/user/users",
         requestPayload
       );
 
@@ -89,7 +89,7 @@ export default function EmailVerify({ formData, setIsModalVisible }) {
 
     try {
       setLoading(true);
-      const response = await axios.post("http://localhost:3000/user/sendotp", {
+      const response = await axios.post("http://localhost:3000/user/otp/send", {
         email: formData.email,
       });
 

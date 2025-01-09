@@ -21,6 +21,7 @@ import CoursePreview from "../../components/layout/tutor/Preview";
 import { addCourse, clearCourse, selectCourse } from "../../store/slices/courseSlice";
 import { useNavigate } from "react-router";
 import TutorHeader from "@/components/layout/tutor/TutorHeader";
+import axiosInstance from "@/config/axiosConfig";
 
 export default function AddCourse() {
 
@@ -254,8 +255,8 @@ const handleCurriculumData = useCallback((dataFromChild) => {
    
 
     try {
-      const response = await axios.post(
-        "http://localhost:3000/course/create-course",
+      const response = await axiosInstance.post(
+        "http://localhost:3000/course/courses",
         payload
       );
       toast.success("Course created successfully!",{style: {

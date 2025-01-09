@@ -65,10 +65,10 @@ function AppContent() {
 
           socketService.connect(token, refreshToken);
 
-          socketService.onConnect(() => {
+          // socketService.onConnect(() => {
          
-            socketService.joinRoom(currentUser?._id);
-          });
+          //   socketService.joinRoom(currentUser?._id);
+          // });
     
           // Handle any connection errors
           socketService.onError((error) => {

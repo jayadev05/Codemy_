@@ -54,28 +54,25 @@ export default function CoursePlayer() {
   const completedLessons = useRef(new Set());
   const videoRef = useRef(null);
   const navigate = useNavigate();
-  const courseId=useSelector(selectCourse);
+  const courseId = useSelector(selectCourse);
 
   const [courseRating, setCourseRating] = useState(0);
-  const [feedback, setFeedback] = useState('');
+  const [feedback, setFeedback] = useState("");
   const [hoveredRating, setHoveredRating] = useState(0);
   const [ratingModalOpen, setRatingModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const [reportTargetType, setReportTargetType] = useState('Course'); 
-  const [reportTargetId, setReportTargetId] = useState('');
+  const [reportTargetType, setReportTargetType] = useState("Course");
+  const [reportTargetId, setReportTargetId] = useState("");
 
   const openReportModal = (type) => {
-   
     const targetId = type === "Tutor" ? course.tutorId : courseId;
-    
+
     setReportTargetType(type);
     setReportTargetId(targetId);
     setIsMenuOpen(false);
-  
-    setIsReportModalOpen(true);
-    
-  };
 
+    setIsReportModalOpen(true);
+  };
 
   //certificate modal check
 
@@ -103,7 +100,7 @@ export default function CoursePlayer() {
           { params: { userId: user._id, courseId } }
         );
 
-        console.log("response",response.data)
+        console.log("response", response.data);
 
         const courseData = response.data.CourseResponse;
 
@@ -131,14 +128,13 @@ export default function CoursePlayer() {
     const fetchRating = async () => {
       try {
         const response = await axiosInstance.get(
-          "http://localhost:3000/course/get-ratings",
+          "http://localhost:3000/course/ratings",
           {
             params: { userId: user._id, courseId },
           }
         );
 
         setAlreadyRated(response.data?.hasRated || false);
-
       } catch (error) {
         if (error.response) {
           console.error("Error response:", error.response.data);
@@ -154,7 +150,7 @@ export default function CoursePlayer() {
     fetchCourse();
     fetchRating();
   }, [courseId, user._id]);
-               
+
   const handleVideoProgress = (lesson) => {
     if (!videoRef.current) return;
 
@@ -195,7 +191,7 @@ export default function CoursePlayer() {
     try {
       setCertificateLoading(true);
       const response = await axiosInstance.post(
-        "http://localhost:3000/course/generate-certificate",
+        "http://localhost:3000/course/certificate/generate",
         {
           userId: user._id,
           courseId: courseId,
@@ -217,11 +213,14 @@ export default function CoursePlayer() {
 
   const sendProgressToBackend = async (lessonId) => {
     try {
-      await axiosInstance.put("http://localhost:3000/course/update-course-progress", {
-        userId: user._id,
-        courseId,
-        lessonId,
-      });
+      await axiosInstance.put(
+        "http://localhost:3000/course/course-progress",
+        {
+          userId: user._id,
+          courseId,
+          lessonId,
+        }
+      );
     } catch (error) {
       console.error("Error updating lesson progress", error);
     }
@@ -305,12 +304,12 @@ export default function CoursePlayer() {
   const submitCourseReview = async () => {
     try {
       const response = await axiosInstance.post(
-        "http://localhost:3000/course/add-rating",
+        "http://localhost:3000/course/ratings",
         {
           courseId: courseId,
           userId: user._id,
           rating: courseRating,
-          feedback
+          feedback,
         }
       );
 
@@ -420,60 +419,63 @@ export default function CoursePlayer() {
         )}
 
         {ratingModalOpen && (
-         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-         <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4 transform transition-all">
-           <div className="relative">
-             <button
-               onClick={() => setRatingModalOpen(false)}
-               className="absolute -right-2 -top-2 text-gray-500 hover:text-gray-700"
-             >
-               <X className="w-6 h-6" />
-             </button>
-             
-             <div className="text-center">
-               <div className="mb-3 inline-flex p-3 bg-yellow-100 rounded-full">
-                 <ThumbsUp className="w-12 h-12 text-yellow-500" />
-               </div>
-               
-               <p className="text-gray-600 mb-6">
-                 You've completed the course! Please give the course a rating.
-               </p>
-   
-               <div className="flex justify-center items-center mb-6">
-                 {renderStarRating()}
-               </div>
-   
-               <div className="space-y-4 mb-6">
-                 <div className="space-y-2">
-                   <Label htmlFor="feedback" className="text-left block">Share your feedback</Label>
-                   <Textarea
-                     id="feedback"
-                     placeholder="Tell us what you think... Your feedback helps us improve."
-                     className="min-h-[120px] resize-none"
-                     value={feedback}
-                     onChange={(e) => setFeedback(e.target.value)}
-                     maxLength={250}
-                   />
-                 </div>
-                 <div className="text-sm text-muted-foreground text-right">
-                   {feedback.length}/250 characters
-                 </div>
-               </div>
-   
-               <button
-                 onClick={() => {
-                   submitCourseReview(feedback)
-                   setFeedback("")
-                 }}
-                 disabled={!courseRating}
-                 className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-               >
-                 Submit Rating
-               </button>
-             </div>
-           </div>
-         </div>
-       </div>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4 transform transition-all">
+              <div className="relative">
+                <button
+                  onClick={() => setRatingModalOpen(false)}
+                  className="absolute -right-2 -top-2 text-gray-500 hover:text-gray-700"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+
+                <div className="text-center">
+                  <div className="mb-3 inline-flex p-3 bg-yellow-100 rounded-full">
+                    <ThumbsUp className="w-12 h-12 text-yellow-500" />
+                  </div>
+
+                  <p className="text-gray-600 mb-6">
+                    You've completed the course! Please give the course a
+                    rating.
+                  </p>
+
+                  <div className="flex justify-center items-center mb-6">
+                    {renderStarRating()}
+                  </div>
+
+                  <div className="space-y-4 mb-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="feedback" className="text-left block">
+                        Share your feedback
+                      </Label>
+                      <Textarea
+                        id="feedback"
+                        placeholder="Tell us what you think... Your feedback helps us improve."
+                        className="min-h-[120px] resize-none"
+                        value={feedback}
+                        onChange={(e) => setFeedback(e.target.value)}
+                        maxLength={250}
+                      />
+                    </div>
+                    <div className="text-sm text-muted-foreground text-right">
+                      {feedback.length}/250 characters
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      submitCourseReview(feedback);
+                      setFeedback("");
+                    }}
+                    disabled={!courseRating}
+                    className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    Submit Rating
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
         <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
@@ -548,7 +550,7 @@ export default function CoursePlayer() {
                 <ChevronRight className="w-5 h-5" />
               </button>
 
-                  {/* report option  */}
+              {/* report option  */}
 
               <div className="relative">
                 <button
@@ -560,28 +562,29 @@ export default function CoursePlayer() {
                 {isMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50 border border-gray-200">
                     <button
-                     onClick={() => openReportModal('Course')}
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors">
+                      onClick={() => openReportModal("Course")}
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors"
+                    >
                       <AlertTriangle className="w-4 h-4 mr-2 text-orange-500" />
                       Report Course
                     </button>
-                    <button 
-                     onClick={() => openReportModal('Tutor')}
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors">
+                    <button
+                      onClick={() => openReportModal("Tutor")}
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors"
+                    >
                       <AlertTriangle className="w-4 h-4 mr-2 text-orange-500" />
                       Report Tutor
                     </button>
                   </div>
                 )}
                 <ReportModal
-        isOpen={isReportModalOpen}
-        onClose={() => setIsReportModalOpen(false)}
-        targetType={reportTargetType}
-        targetId={reportTargetId}
-        reportedBy={user._id}
-      />
+                  isOpen={isReportModalOpen}
+                  onClose={() => setIsReportModalOpen(false)}
+                  targetType={reportTargetType}
+                  targetId={reportTargetId}
+                  reportedBy={user._id}
+                />
               </div>
-
             </div>
           </div>
         </header>

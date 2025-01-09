@@ -82,7 +82,7 @@ export default function CourseListing() {
   const fetchCategories = async () => {
     try {
       const response = await axiosInstance.get(
-        "http://localhost:3000/admin/get-categories"
+        "http://localhost:3000/admin/categories"
       );
       setCategories(response.data);
     } catch (error) {
@@ -98,7 +98,7 @@ export default function CourseListing() {
   const fetchWishlist = async () => {
     try {
       const response = await axiosInstance.get(
-        "http://localhost:3000/course/get-wishlist",
+        "http://localhost:3000/user/wishlist",
         { params: { userId: user._id } }
       );
       setWishlist(response.data.wishlist);
@@ -111,7 +111,7 @@ export default function CourseListing() {
   const fetchCourses = async () => {
     try {
       const response = await axiosInstance.get(
-        "http://localhost:3000/course/get-course-info",
+        "http://localhost:3000/course/courses/basic-info",
         {
           params: {
             search: searchQuery,
@@ -158,16 +158,7 @@ export default function CourseListing() {
     }));
   };
 
-  const handleLogout = async () => {
-    try {
-      await axios.post("http://localhost:3000/user/logout");
-      dispatch(logoutUser(user));
-      navigate("/login");
-      toast.success("Logged out successfully");
-    } catch (error) {
-      toast.error(error.message || "Error logging out user");
-    }
-  };
+ 
 
   const FilterSection = () => (
     <div
@@ -303,7 +294,7 @@ export default function CourseListing() {
   const handleWishlist = async (id) => {
     try {
       const response = await axiosInstance.post(
-        "http://localhost:3000/course/addToWishlist",
+        "http://localhost:3000/user/wishlist",
         {
           userId: user._id,
           courseId: id,
@@ -316,8 +307,8 @@ export default function CourseListing() {
         dispatch(addToWishlist(response.data.wishlist));
 
         fetchWishlist();
-      } else {
-        toast.error(response.data.message);
+      } else  {
+        toast.error(response.data.message,{icon:'⚠️',style: { borderRadius: "10px", background: "#eb5a0c", color: "#fff" }});
       }
     } catch (error) {
       console.error(error);
@@ -331,7 +322,7 @@ export default function CourseListing() {
   const handleAddToCart = async (courseId, price) => {
     try {
       const response = await axiosInstance.post(
-        "http://localhost:3000/course/addToCart",
+        "http://localhost:3000/user/cart",
         {
           courseId,
           userId: user._id,
@@ -352,7 +343,7 @@ export default function CourseListing() {
       console.error("Failed to add to cart", error);
       if (error.response)
         toast.error(error.response.data.message || "Failed to add to cart", {
-          icon: "🕴️",
+          icon: "⚠️",
           style: { borderRadius: "10px", background: "#eb5a0c", color: "#fff" },
         });
     }
@@ -366,8 +357,10 @@ export default function CourseListing() {
     <div className="min-h-screen flex flex-col mx-auto ">
       <Header />
 
-      <main className="flex-1 bg-gray-50 min-h-[90vh] dark:bg-[#1d2026]
-      ">
+      <main
+        className="flex-1 bg-gray-50 min-h-[90vh] dark:bg-[#1d2026]
+      "
+      >
         <MainHeader />
 
         {/* Filter Section */}
@@ -403,7 +396,9 @@ export default function CourseListing() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600 dark:text-white">Sort by:</span>
+              <span className="text-sm text-gray-600 dark:text-white">
+                Sort by:
+              </span>
               <select
                 name="sortBy"
                 value={sortBy}

@@ -24,12 +24,10 @@ export default function CourseDetails() {
 
   const [course, setCourse] = useState([]);
   const [wishlist, setWishlist] = useState([]);
-  const [reviews,setReviews]=useState([])
+  const [reviews, setReviews] = useState([]);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
-
 
   const features = [
     "Comprehensive course materials and resources",
@@ -50,13 +48,13 @@ export default function CourseDetails() {
     fetchWishlist();
     fetchReviews();
   }, [course._id]);
-  
-  console.log("reviews",reviews)
+
+  console.log("reviews", reviews);
 
   const handleAddToCart = async (courseId, price) => {
     try {
       const response = await axiosInstance.post(
-        "http://localhost:3000/course/addToCart",
+        "http://localhost:3000/user/cart",
         {
           courseId,
           userId: user._id,
@@ -86,7 +84,7 @@ export default function CourseDetails() {
   const handleBuy = async (courseId, price) => {
     try {
       const response = await axiosInstance.post(
-        "http://localhost:3000/course/addToCart",
+        "http://localhost:3000/user/cart",
         {
           courseId,
           userId: user._id,
@@ -108,7 +106,7 @@ export default function CourseDetails() {
   const fetchCourse = async () => {
     try {
       const response = await axiosInstance.get(
-        `http://localhost:3000/course/get-course-info`,
+        `http://localhost:3000/course/courses/basic-info`,
         {
           params: { courseId },
         }
@@ -117,30 +115,29 @@ export default function CourseDetails() {
       console.log("response:", response.data);
 
       setCourse(response.data.course);
-      
     } catch (error) {
       console.error(error);
       toast.error(error.response?.data?.message || "Failed to fetch course");
     }
   };
 
-  const fetchReviews = async()=>{
+  const fetchReviews = async () => {
     try {
-      
-      const response=await axiosInstance.get(`/course/get-course-review`,{  params:{courseId:course?._id}  });
+      const response = await axiosInstance.get(`/course/reviews`, {
+        params: { courseId: course?._id },
+      });
 
-      if(response.status===200){
+      if (response.status === 200) {
         setReviews(response.data.ratings);
       }
-
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
-  }
+  };
 
   const ratings = course?.ratings?.length > 0 ? course.ratings : [0];
 
-  console.log("ratings",ratings)
+  console.log("ratings", ratings);
 
   // Calculate rating statistics
   const totalRatings = ratings.length;
@@ -163,7 +160,7 @@ export default function CourseDetails() {
   const handleWishlist = async (id) => {
     try {
       const response = await axiosInstance.post(
-        "http://localhost:3000/course/addToWishlist",
+        "http://localhost:3000/user/wishlist",
         {
           userId: user._id,
           courseId: id,
@@ -185,10 +182,10 @@ export default function CourseDetails() {
     }
   };
 
-  const  fetchWishlist = async () => {
+  const fetchWishlist = async () => {
     try {
       const response = await axiosInstance.get(
-        "http://localhost:3000/course/get-wishlist",
+        "http://localhost:3000/user/wishlist",
         { params: { userId: user._id } }
       );
       setWishlist(response.data.wishlist);
@@ -224,8 +221,9 @@ export default function CourseDetails() {
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-4">
                 <button
-                 onClick={() => handleBuy(course._id, course.price)}
-                className="px-8 py-3 bg-white text-orange-600 rounded-full font-semibold text-lg hover:bg-orange-100 transition-colors">
+                  onClick={() => handleBuy(course._id, course.price)}
+                  className="px-8 py-3 bg-white text-orange-600 rounded-full font-semibold text-lg hover:bg-orange-100 transition-colors"
+                >
                   Enroll Now
                 </button>
                 <button
@@ -456,16 +454,11 @@ export default function CourseDetails() {
             </div>
           </div>
 
-<div>
- {/*reviews */}
-<CourseReviews reviews={reviews}/>   
-</div>
-         
-         
-
+          <div>
+            {/*reviews */}
+            <CourseReviews reviews={reviews} />
+          </div>
         </section>
-
-
       </main>
       <SecondaryFooter />
     </div>

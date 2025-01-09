@@ -44,7 +44,7 @@ export default function ThemeToggle({className}) {
   return (
     <button
       onClick={toggleTheme}
-    className={`relative h-8 w-16 rounded-full bg-slate-200 p-1 transition-colors duration-200 dark:bg-slate-800 dark:border dark:border-slate-600 ${className}`}
+    className={`relative h-8 w-16 rounded-full bg-slate-200 p-1 transition-colors duration-200 dark:bg-slate-800 dark:border dark:border-slate-800 ${className}`}
       aria-label="Toggle theme"
     >
       {/* Track */}

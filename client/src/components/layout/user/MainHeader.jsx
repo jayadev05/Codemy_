@@ -29,8 +29,8 @@ import {
 } from "../../../store/slices/userSlice";
 import logo from "../../../assets/logo_cap.png";
 import { useNavigate } from "react-router";
-import { selectCart } from "../../../store/slices/cartSlice";
-import { selectWishlist } from "../../../store/slices/wishlistSlice";
+import { clearCart, selectCart, setCart } from "../../../store/slices/cartSlice";
+import { clearWishlsit, selectWishlist, setWishlistItems } from "../../../store/slices/wishlistSlice";
 import NotificationDetailModal from "./NotificationDetailsModal";
 import defProfile from "../../../assets/user-profile.png";
 import { socketService } from "@/services/socket";
@@ -78,6 +78,9 @@ const MainHeader = ({showModal,isLoggedIn}) => {
   const wishlist = useSelector(selectWishlist);
   const cart = useSelector(selectCart);
 
+  
+  
+
   const notifications = user?.notifications;
   notifications?.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
@@ -97,6 +100,30 @@ const MainHeader = ({showModal,isLoggedIn}) => {
     };
   }, [user?._id]);
 
+  useEffect(() => {
+
+    if ((!wishlist || wishlist.length === 0) || (!cart || cart.length === 0)) {
+      fetchBag();
+    }
+  }, []); 
+  
+  const fetchBag=async () =>{
+    try {
+      const [cartRes, wishlistRes] = await Promise.all([
+        axiosInstance.get('/user/cart', { params: { userId: user._id } }),
+        axiosInstance.get('/user/wishlist', { params: { userId: user._id } })
+      ]);
+  
+      
+      dispatch(setCart(cartRes.data.cart));
+      dispatch(setWishlistItems(wishlistRes.data.wishlist));
+
+    } catch (error) {
+      console.error('Error fetching cart or wishlist:', error);
+    }
+  }
+  
+
   const getIcon = (type) => {
     switch (type) {
       case "message":
@@ -112,8 +139,12 @@ const MainHeader = ({showModal,isLoggedIn}) => {
 
   const handleLogout = async () => {
     try {
-      await axiosInstance.post("http://localhost:3000/user/logout");
+      await axiosInstance.post("http://localhost:3000/user/auth/logout");
+
       dispatch(logoutUser(user));
+      dispatch(clearCart(cart));
+      dispatch(clearWishlsit(wishlist));
+
       toast.success("Logged out successfully");
     } catch (error) {
       toast.error(error.message || "Error logging out user");
@@ -123,7 +154,7 @@ const MainHeader = ({showModal,isLoggedIn}) => {
   const handleDeleteNotification = async (userId) => {
     try {
       const response = await axios.patch(
-        `http://localhost:3000/user/clear-notifications/${userId}`
+        `http://localhost:3000/user/users/${userId}/notifications/clear`
       );
       dispatch(addUser(response.data.updatedUser));
     } catch (error) {
@@ -141,7 +172,7 @@ const MainHeader = ({showModal,isLoggedIn}) => {
 
     try {
       const response = await axiosInstance.put(
-        "http://localhost:3000/user/toggle-notifications",
+        "http://localhost:3000/user/notifications/toggle",
         {
           userId,
           notificationId,
@@ -338,12 +369,12 @@ const MainHeader = ({showModal,isLoggedIn}) => {
                         >
                           <Heart className="mr-2 h-4 w-4 text-gray-700 dark:text-gray-300" />
                           Wishlist
-                          {wishlist.length > 0 && (
+                          {wishlist?.length > 0 && (
                             <Badge
                               variant="secondary"
                               className="ml-auto bg-primary text-primary-foreground dark:bg-orange-500 dark:text-white"
                             >
-                              {wishlist.length}
+                              {wishlist?.length}
                             </Badge>
                           )}
                         </Button>
@@ -359,7 +390,7 @@ const MainHeader = ({showModal,isLoggedIn}) => {
                               variant="secondary"
                               className="ml-auto bg-primary text-primary-foreground dark:bg-orange-500 dark:text-white"
                             >
-                              {cart.items.length}
+                              {cart.items?.length}
                             </Badge>
                           )}
                         </Button>
@@ -419,9 +450,9 @@ const MainHeader = ({showModal,isLoggedIn}) => {
               className="relative"
             >
               <Bell className="w-5 h-5 text-gray-700 hover:text-orange-500 dark:text-gray-300 dark:hover:text-orange-400" />
-              {notifications?.filter((n) => !n.isRead).length > 0 && (
+              {notifications?.filter((n) => !n.isRead)?.length > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                  {notifications.filter((n) => !n.isRead).length}
+                  {notifications.filter((n) => !n.isRead)?.length}
                 </span>
               )}
             </Button>
@@ -527,9 +558,9 @@ const MainHeader = ({showModal,isLoggedIn}) => {
                 className="relative"
               >
                 <Heart className="w-5 h-5 text-gray-700 hover:text-red-500 dark:text-gray-300"/>
-                {wishlist.length > 0 && (
+                {wishlist?.length > 0 && (
                   <span className="absolute -top-1 -right-1 bg-[#ff6738] text-white text-xs font-bold rounded-full px-[6px] py-[1px]">
-                    {wishlist.length}
+                    {wishlist?.length}
                   </span>
                 )}
               </Button>

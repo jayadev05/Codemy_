@@ -33,9 +33,10 @@ class SocketService {
 
     this.socket = io('http://localhost:3000', {
       auth: { token, refreshToken, type },
+      timeout: 45000,
       reconnection: true,
       reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
+      reconnectionDelay: 1000
     });
 
     this.setupDefaultListeners();
@@ -183,62 +184,60 @@ joinRoom(roomId) {
   }
 
   initializeCall(data) {
-    return new Promise((resolve, reject) => {
-      if (this.isConnected()) {
-        // Set 30 second timeout
-        const timeout = setTimeout(() => {
-          reject(new Error('Call initialization timed out'));
-        }, 30000);
-
-        this.socket.emit('initiate-call', {
-          recieverId: data.recieverId,
-          signalData: data.signalData,
-          from: data.from,
-          callerName: data.callerName,
-          callerAvatar: data.callerAvatar,
-          callerUserId: data.callerUserId
-        }, (acknowledgment) => {
-          clearTimeout(timeout);
-          if (acknowledgment?.error) {
-            reject(new Error(acknowledgment.error));
-          } else {
-            resolve(acknowledgment);
-          }
-        });
-        
-        console.log('[SocketService] Sending initiate call event to', data.recieverId);
-      } else {
-        reject(new Error('Socket not connected'));
-      }
+    if (!this.isConnected()) {
+      return;
+    }
+  
+    this.socket.emit("initiate-call", {
+      recieverId: data.recieverId,
+      signalData: data.signalData,
+      from: data.from,
+      callerName: data.callerName,
+      callerAvatar: data.callerAvatar,
+      callerUserId: data.callerUserId
+    });
+  
+    // Set up handlers for the call initiation response
+    this.socket.once("call-failed", (error) => {
+      console.error("[SocketService] Call failed:", error);
+      // Handle call failure in your UI
     });
   }
+  
+  acknowledgeCall(from) {
+    if (!this.isConnected()) {
+      return Promise.reject(new Error('Socket not connected'));
+    }
 
-  answerCall(data) {
     return new Promise((resolve, reject) => {
-      if (this.isConnected()) {
-        // Set 30 second timeout
-        const timeout = setTimeout(() => {
-          reject(new Error('Call answer timed out'));
-        }, 30000);
-
-        this.socket.emit('answer-call', {
-          signalData: data.signalData,
-          to: data.to
-        }, (acknowledgment) => {
-          clearTimeout(timeout);
-          if (acknowledgment?.error) {
-            reject(new Error(acknowledgment.error));
-          } else {
-            resolve(acknowledgment);
-          }
-        });
-
-        console.log('[SocketService] Sending answer call event to', data.to);
-      } else {
-        reject(new Error('Socket not connected'));
-      }
+      this.socket.emit('acknowledge-call', { from }, (response) => {
+        if (response?.error) {
+          reject(new Error(response.error));
+        } else {
+          resolve(response);
+        }
+      });
     });
   }
+  
+  
+
+answerCall(data) {
+    
+        if (!this.isConnected()) {
+           
+            return;
+        }
+
+       
+        this.socket.emit("answer-call", {
+            signalData: data.signalData,
+            to: data.to
+        });
+
+        console.log('[SocketService] Sending  call answer event ');
+   
+}
 
   rejectCall(data){
     if (this.isConnected()) {

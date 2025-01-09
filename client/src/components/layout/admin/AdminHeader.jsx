@@ -13,7 +13,7 @@ function AdminHeader({heading,subheading}) {
 
     const handleLogout = async () => {
         try {
-          await axiosInstance.post("/admin/logout")
+          await axiosInstance.post("/admin/auth/logout")
           dispatch(logoutAdmin(admin))
           toast.success("Logged out successfully")
           navigate("/login")

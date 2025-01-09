@@ -1,22 +1,27 @@
-import React from 'react';
-import { useSelector } from 'react-redux';
-import { selectUser } from '../../store/slices/userSlice';
-import { selectTutor } from '../../store/slices/tutorSlice';
-import { selectAdmin } from '../../store/slices/adminSlice';
-import { Navigate } from 'react-router-dom';
+import React from "react";
+import { useSelector } from "react-redux";
+import { selectUser } from "../../store/slices/userSlice";
+import { selectTutor } from "../../store/slices/tutorSlice";
+import { selectAdmin } from "../../store/slices/adminSlice";
+import { Navigate } from "react-router-dom";
 
 function ProtectedRoute({ children, userType, isLoginPage = false }) {
   const user = useSelector(selectUser);
   const tutor = useSelector(selectTutor);
   const admin = useSelector(selectAdmin);
 
-  const activeUser = admin ? "admin" : (user ? "user" : (tutor ? "tutor" : null));
+  const activeUser = admin ? "admin" : user ? "user" : tutor ? "tutor" : null;
 
-  const token = localStorage.getItem('accessToken')
+  const token = localStorage.getItem("accessToken");
 
-//  If the route is for the login page and a user is already authenticated, redirect them
+  //  If the route is for the login page and a user is already authenticated, redirect them
   if (isLoginPage && activeUser && token) {
-    return <Navigate to={activeUser!=='user'?`/${activeUser}/dashboard`:`/`} replace />;
+    return (
+      <Navigate
+        to={activeUser !== "user" ? `/${activeUser}/dashboard` : `/`}
+        replace
+      />
+    );
   }
 
   // Redirect to login if no user is authenticated and this is a protected route

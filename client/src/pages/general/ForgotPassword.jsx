@@ -4,6 +4,7 @@ import logo from "../../assets/logo_cap.png";
 import { useState } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import axiosInstance from "@/config/axiosConfig";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -34,8 +35,8 @@ export default function ForgotPassword() {
 
     try {
       setLoading(true);
-      const response = await axios.post(
-        "http://localhost:3000/admin/forgot-password",
+      const response = await axiosInstance.post(
+        "http://localhost:3000/admin/auth/forgot-password",
         { email },
         {
           headers: {

@@ -27,7 +27,7 @@ const Sidebar = ({ activeSection }) => {
 
   const onLogout=()=>{
     try {
-      const response=axios.post("http://localhost:3000/admin/logout");
+      const response=axios.post("http://localhost:3000/admin/auth/logout");
 
       dispatch(logoutAdmin(admin));
 

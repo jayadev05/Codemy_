@@ -83,23 +83,24 @@ export default function Home() {
   const fetchCourses = async () => {
     try {
       const response = await axiosInstance.get(
-        "http://localhost:3000/course/get-course-info"
+        "http://localhost:3000/course/courses/basic-info"
       );
       setCourses(response.data.courses);
     } catch (error) {
       console.log(error);
-      if(error.response?.status===403){
-        toast.error("User has been invalidated . Please try to login again or check mail if you had requested to be a tutor");
-        navigate('/login')
+      if (error.response?.status === 403) {
+        toast.error(
+          "User has been invalidated . Please try to login again or check mail if you had requested to be a tutor"
+        );
+        navigate("/login");
       }
-     
     }
   };
 
   const handleAddToCart = async (courseId, price) => {
     try {
       const response = await axiosInstance.post(
-        "http://localhost:3000/course/addToCart",
+        "http://localhost:3000/user/cart",
         {
           courseId,
           userId: user._id,
@@ -129,7 +130,7 @@ export default function Home() {
   const fetchWishlist = async () => {
     try {
       const response = await axiosInstance.get(
-        "http://localhost:3000/course/get-wishlist",
+        "http://localhost:3000/user/wishlist",
         { params: { userId: user._id } }
       );
       setWishlist(response.data.wishlist);
@@ -152,7 +153,7 @@ export default function Home() {
   const handleWishlist = async (id) => {
     try {
       const response = await axiosInstance.post(
-        "http://localhost:3000/course/addToWishlist",
+        "http://localhost:3000/user/wishlist",
         {
           userId: user._id,
           courseId: id,
@@ -370,7 +371,9 @@ export default function Home() {
                         <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-semibold">
                           {step.number}
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-white">{step.title}</p>
+                        <p className="text-sm text-gray-600 dark:text-white">
+                          {step.title}
+                        </p>
                       </div>
                     ))}
                   </div>

@@ -43,7 +43,7 @@ export default function ResetPassword() {
 
     try {
       const response = await axiosInstance.post(
-        `http://localhost:3000/admin/reset/${token}`,
+        `http://localhost:3000/admin/reset-password/${token}`,
         { password }
       );
 

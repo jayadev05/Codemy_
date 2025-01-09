@@ -56,7 +56,7 @@ export default function TutorCourses() {
   const handleViewCourse = async (id) => {
     try {
       const response = await axiosInstance.get(
-        `http://localhost:3000/course/view-course/${id}`
+        `http://localhost:3000/course/course/${id}`
       );
 
       dispatch(addCourse(response.data.data));
@@ -73,7 +73,7 @@ export default function TutorCourses() {
   const handleEditCourse = async (id) => {
     try {
       const response = await axiosInstance.get(
-        `http://localhost:3000/course/view-course/${id}`
+        `http://localhost:3000/course/course/${id}`
       );
 
       dispatch(addCourse(response.data.data));
@@ -97,7 +97,7 @@ export default function TutorCourses() {
       console.log(courseToDelete);
       if (courseToDelete) {
         await axiosInstance.delete(
-          `http://localhost:3000/course/delete-course?courseId=${courseToDelete}&tutorId=${tutorId}`
+          `http://localhost:3000/course/course?courseId=${courseToDelete}&tutorId=${tutorId}`
         );
 
         setDeleteModal(false);

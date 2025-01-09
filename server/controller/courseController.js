@@ -15,6 +15,8 @@ const cloudinary = require("../config/cloudinaryConfig");
 const Certificate = require("../model/certificateModel");
 
 const getBasicCourseInfo = async (req, res) => {
+
+
   const {
     search,
     sortBy,
@@ -168,6 +170,9 @@ const getCourses = async (req, res) => {
 const getCoursesByTutorId = async (req, res) => {
   try {
     const { tutorId } = req.params;
+
+    console.log("req.params :",req.params);
+
     const { sortBy } = req.query;
 
     if (!tutorId)
@@ -203,6 +208,7 @@ const getCoursesByTutorId = async (req, res) => {
 const getCoursesByStudentId = async (req, res) => {
   try {
     const { userId } = req.params;
+ console.log("req.params :",req.params);
 
     const user = await User.findById(userId);
     const courseIds = user?.activeCourses;
@@ -239,6 +245,8 @@ const getCoursesByStudentId = async (req, res) => {
 const playCourse = async (req, res) => {
   try {
     const { courseId, userId } = req.query;
+
+    console.log("req.query",req.query)
 
     if (!courseId || !userId) {
       return res.status(400).json({ message: "Missing course or user ID" });

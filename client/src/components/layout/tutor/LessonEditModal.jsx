@@ -237,7 +237,7 @@ const LessonEditModal = ({
       };
 
       const response = await axiosInstance.put(
-        `http://localhost:3000/course/update-lesson/${lesson._id}`,
+        `http://localhost:3000/course/lesson/${lesson._id}`,
         payload
       );
 

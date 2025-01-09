@@ -24,7 +24,7 @@ export default function ComposeModal({ open, onOpenChange, onChatCreated ,recipi
   // Create new chat with selected tutor
   const handleTutorSelect = async (tutorId) => {
     try {
-      const response = await axiosInstance.post('/chat/create-chat', {
+      const response = await axiosInstance.post('/chat/chats', {
         tutorId,
         userId:user?._id
       })

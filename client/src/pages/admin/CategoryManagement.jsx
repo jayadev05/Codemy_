@@ -22,6 +22,7 @@ export default function CategoryManagement() {
   const [categories, setCategories] = useState([])
   const [currentPage, setCurrentPage] = useState(1)
   const [searchTerm, setSearchTerm] = useState('')
+  const [errors,SetErrors]=useState({});
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [newCategory, setNewCategory] = useState({ title: '', description: '' })
@@ -37,7 +38,7 @@ export default function CategoryManagement() {
 
   const fetchCategories = async () => {
     try {
-      const response = await axiosInstance.get('http://localhost:3000/admin/get-categories');
+      const response = await axiosInstance.get('http://localhost:3000/admin/categories');
       console.log(response.data);
       setCategories(response.data);
      
@@ -73,26 +74,33 @@ export default function CategoryManagement() {
   const validateInfo=()=>{
     const newErrors={};
 
-    if(!editCategory.title.trim().length<8){
+    if(editCategory.title.trim().length<8){
       newErrors.title="Please enter a title of atleast 8 characters"
     }
+    if(editCategory.description.trim().length<8){
+      newErrors.description="Please enter a description of atleast 10-30 characters"
+    }
+    if(newCategory.title.trim().length<8){
+      newErrors.newTitle="Please enter a title of atleast 8 characters"
+    }
+    if(newCategory.description.trim().length<8){
+      newErrors.newDescription="Please enter a description of atleast 10-30 characters"
+    }
 
-    setError(newErrors);
+
+    SetErrors(newErrors);
 
     return Object.keys(newErrors).length===0;
   }
 
   const handleSaveEdit = async () => {
 
- 
-    
 
-   if(editCategory.title && editCategory.description){
-
+    if(!validateInfo()) return
 
     try {
       // Assuming you have an API endpoint for updating categories
-      await axiosInstance.put(`http://localhost:3000/admin/update-category/${editCategory._id}`, editCategory);
+      await axiosInstance.put(`http://localhost:3000/admin/categories/${editCategory._id}`, editCategory);
       
       const updatedCategories = categories.map(cat => 
         cat._id === editCategory._id ? { ...cat, ...editCategory } : cat
@@ -104,10 +112,7 @@ export default function CategoryManagement() {
       console.error('Error updating category:', error)
       toast.error('Failed to update category')
     }
-  }
-  else {
-    toast.error("Please fill in all fields")
-  }
+  
   }
 
 
@@ -124,7 +129,7 @@ export default function CategoryManagement() {
       if (result.isConfirmed) {
         try {
           // Fixed the typo in the URL (added missing 'h' in 'http')
-          const response = await axiosInstance.delete(`http://localhost:3000/admin/delete-category/${_id}`);
+          const response = await axiosInstance.delete(`http://localhost:3000/admin/category/${_id}`);
           
           // Remove the deleted category from the state
           const updatedCategories = categories.filter(cat => cat._id !== _id);
@@ -145,11 +150,10 @@ export default function CategoryManagement() {
 
   const handleAddCategory = async () => {
 
-    
+      if(!validateInfo()) return
 
-    if (newCategory.title && newCategory.description) {
       try {
-        const response = await axiosInstance.post('http://localhost:3000/admin/add-category', newCategory);
+        const response = await axiosInstance.post('http://localhost:3000/admin/categories', newCategory);
         setCategories(prevCategories => [...prevCategories, response.data.category]);
         setNewCategory({ title: '', description: '' });
         setIsAddModalOpen(false);
@@ -158,9 +162,7 @@ export default function CategoryManagement() {
         console.error('Error adding category:', error);
         toast.error(error.response?.data?.message || 'Failed to add category');
       }
-    } else {
-      toast.error('Please fill in all fields');
-    }
+    
   }
 
   return (
@@ -250,26 +252,37 @@ export default function CategoryManagement() {
                 <X size={24} />
               </button>
             </div>
+            <div>
             <input
               type="text"
               placeholder="Category Title"
               value={newCategory.title}
               onChange={(e) => setNewCategory({ ...newCategory, title: e.target.value })}
-              className="w-full mb-4 px-4 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full mb-1 px-4 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               required
               minLength={6}
             />
+            {errors.newTitle && <span className=" text-red-500 text-sm text-center ">{errors.newTitle}</span> }
+            </div>
             
+            <div>
             <textarea
               placeholder="Category Description"
               value={newCategory.description}
               onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
-              className="w-full mb-4 px-4 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              className="w-full mb-1 px-4 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               rows={4}
               required
               minLength={12}
             />
-            <div className="flex justify-end">
+            {errors.newDescription && <span className="text-red-500 text-sm text-center ">{errors.newDescription}</span> }
+            </div>
+            
+
+            
+            
+
+            <div className="flex justify-end mt-2">
               <button
                 onClick={handleAddCategory}
                 className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition duration-300"
@@ -310,6 +323,8 @@ export default function CategoryManagement() {
               className="w-full mb-4 px-4 py-2 border rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               rows={4}
             />
+               {errors.title && <span className="text-red-500 text-sm text-center ">{errors.title}</span> }
+            {errors.description && <span className="text-red-500 text-sm text-center ">{errors.description}</span> }
             <div className="flex justify-end">
               <button
                 onClick={handleSaveEdit}

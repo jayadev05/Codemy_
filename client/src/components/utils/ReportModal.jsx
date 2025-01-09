@@ -16,6 +16,7 @@ export default function ReportModal({
   const [description, setDescription] = useState("");
   const [issueType, setIssueType] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors,SetErrors]=useState({});
 
   // Issue type options based on target type
   const issueTypeOptions = {
@@ -30,12 +31,34 @@ export default function ReportModal({
     ],
   };
 
+  const validateForm=()=>{
+    const newErrors={};
+
+    if(title.length<10){
+      newErrors.title="Title must be at least 10 characters long"
+    }
+
+    if(description.length<10){
+      newErrors.description="Description must be at least 10-50 characters long"
+    }
+
+    SetErrors(newErrors)
+
+  return Object.keys(newErrors).length===0;
+
+  
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Validate form
+
+    
+    if (!validateForm() )return
+
     if (!title.trim() || !description.trim() || !issueType) {
-      alert("Please fill in all required fields");
+      toast("Please fill in all required fields",{icon:"⚠️"});
       return;
     }
 
@@ -43,7 +66,7 @@ export default function ReportModal({
 
     try {
       const response = await axiosInstance.post(
-        "http://localhost:3000/admin/open-report",
+        "http://localhost:3000/admin/reports",
         {
           title,
           description,
@@ -138,6 +161,7 @@ export default function ReportModal({
               placeholder="Briefly describe the issue"
               required
             />
+           {errors.title && <span className="text-red-500 text-sm text-center ">{errors.title}</span> }
           </div>
 
           <div>
@@ -155,6 +179,7 @@ export default function ReportModal({
               placeholder="Provide more details about the issue"
               required
             ></textarea>
+            {errors.description && <span className="text-red-500 text-sm text-center ">{errors.description}</span> }
           </div>
 
           <div className="flex justify-end space-x-2">

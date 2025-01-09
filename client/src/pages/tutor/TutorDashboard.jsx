@@ -1,17 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { BookOpen,  Star, Users, Search, Bell } from 'lucide-react';
-import Sidebar from '../../components/layout/tutor/Sidebar';
-import { useDispatch, useSelector } from 'react-redux';
-import { logoutTutor, selectTutor } from '../../store/slices/tutorSlice';
-import defProfile from '../../assets/user-profile.png'
-import { useNavigate } from 'react-router';
-import { toast } from 'react-hot-toast';
-import { Button } from '@/components/ui/button';
-import { WithdrawDialog } from '@/components/layout/tutor/WithdrawalModal';
-import { WithdrawalHistory } from '@/components/layout/tutor/WithdrawalHistory';
-import axiosInstance from '@/config/axiosConfig';
-import TutorHeader from '@/components/layout/tutor/TutorHeader';
+import React, { useEffect, useState } from "react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { BookOpen, Star, Users, Search, Bell } from "lucide-react";
+import Sidebar from "../../components/layout/tutor/Sidebar";
+import { useDispatch, useSelector } from "react-redux";
+import { logoutTutor, selectTutor } from "../../store/slices/tutorSlice";
+import defProfile from "../../assets/user-profile.png";
+import { useNavigate } from "react-router";
+import { toast } from "react-hot-toast";
+import { Button } from "@/components/ui/button";
+import { WithdrawDialog } from "@/components/layout/tutor/WithdrawalModal";
+import { WithdrawalHistory } from "@/components/layout/tutor/WithdrawalHistory";
+import axiosInstance from "@/config/axiosConfig";
+import TutorHeader from "@/components/layout/tutor/TutorHeader";
 
 const chartData = [
   { name: "Mon", value1: 70, value2: 120, value3: 90 },
@@ -31,83 +38,80 @@ const StatCard = ({ icon: Icon, label, value, iconColor, iconBg }) => (
       </div>
     )}
     <div>
-      <p className="text-sm text-gray-500">{label || 'N/A'}</p>
+      <p className="text-sm text-gray-500">{label || "N/A"}</p>
       <p className="text-2xl font-semibold">{value || 0}</p>
     </div>
   </div>
 );
 
 const Dashboard = () => {
+  const tutorState = useSelector(selectTutor);
+  const [tutor, setTutor] = useState({});
+  const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
+  const [payoutsHistory, setPayoutsHistory] = useState([]);
 
-  const tutorState=useSelector(selectTutor);
-  const [tutor,setTutor]=useState({});
-  const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false)
-  const[payoutsHistory,setPayoutsHistory]=useState([]) 
+  const [totalReviews, setTotalReviews] = useState(null);
+  const [myCourses, setMyCourses] = useState(null);
+  const [totalStudents, setTotalStudents] = useState(null);
+  const [averageRating, setAverageRating] = useState(null);
 
-  const [totalReviews,setTotalReviews]=useState(null);
-  const [myCourses,setMyCourses]=useState(null);
-  const [totalStudents,setTotalStudents]=useState(null);
-  const [averageRating,setAverageRating]=useState(null);
+  useEffect(() => {
+    const fetchPayoutHistory = async () => {
+      if (!tutorState._id) {
+        console.log("Tutor ID is missing");
+        return;
+      }
 
+      try {
+        const response = await axiosInstance.get(
+          `/tutor/payouts/${tutorState._id}/history`
+        );
+        setPayoutsHistory(response.data.payouts);
+      } catch (error) {
+        console.log("Error fetching payout history:", error);
+      }
+    };
 
+    const fetchTutorDetails = async () => {
+      try {
+        const response = await axiosInstance.get(
+          `/tutor/tutor/${tutorState._id}`
+        );
+        setTutor(response.data.tutor);
+        setTotalReviews(response.data.totalReviews);
+        setMyCourses(response.data.myCourses);
+        setTotalStudents(response.data.totalStudents);
+        setAverageRating(response.data.averageRating);
+      } catch (error) {
+        console.log("Error fetching payout history:", error);
+      }
+    };
 
- useEffect(() => {
-  const fetchPayoutHistory = async () => {
-    if (!tutorState._id) {
-      console.log('Tutor ID is missing');
-      return;
-    }
+    fetchTutorDetails();
+    fetchPayoutHistory();
+  }, [tutor._id, withdrawDialogOpen]);
 
-    try {
-      const response = await axiosInstance.get(`/tutor/payouts-history/${tutorState._id}`);
-      setPayoutsHistory(response.data.payouts);
-    } catch (error) {
-      console.log('Error fetching payout history:', error);
-    }
+  const getDecimalValue = (decimalObj) => {
+    if (!decimalObj) return 0;
+    return parseFloat(decimalObj.$numberDecimal || 0);
   };
 
-  const fetchTutorDetails=async()=>{
-    try {
-      const response = await axiosInstance.get(`/tutor/get-tutorInfo/${tutorState._id}`);
-     setTutor(response.data.tutor);
-     setTotalReviews(response.data.totalReviews);
-     setMyCourses(response.data.myCourses);
-     setTotalStudents(response.data.totalStudents);
-     setAverageRating(response.data.averageRating);
-
-    } catch (error) {
-      console.log('Error fetching payout history:', error);
-    }
-  }
-
-  fetchTutorDetails();
-  fetchPayoutHistory();
-
-}, [tutor._id,withdrawDialogOpen]);  
-
-const getDecimalValue = (decimalObj) => {
-  if (!decimalObj) return 0;
-  return parseFloat(decimalObj.$numberDecimal || 0);
-};
-
-
-const totalRevenue = getDecimalValue(tutor.totalRevenue);
-const amountWithdrawn = getDecimalValue(tutor.amountWithdrawn);
-const availableBalance = totalRevenue - amountWithdrawn;
-
+  const totalRevenue = getDecimalValue(tutor.totalRevenue);
+  const amountWithdrawn = getDecimalValue(tutor.amountWithdrawn);
+  const availableBalance = totalRevenue - amountWithdrawn;
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
       {/* Sidebar */}
-      
+
       <div className="sticky top-0 h-screen">
-<Sidebar activeSection={"Dashboard"} />
-</div>
+        <Sidebar activeSection={"Dashboard"} />
+      </div>
 
       {/* Main Content */}
       <main className="w-full">
         {/* Header */}
-       <TutorHeader heading="Dashboard" subheading='Good Morning'/>
+        <TutorHeader heading="Dashboard" subheading="Good Morning" />
 
         {/* Dashboard Content */}
         <div className="px-8 mt-5">
@@ -120,7 +124,7 @@ const availableBalance = totalRevenue - amountWithdrawn;
               iconColor="text-orange-500"
               iconBg="bg-orange-50"
             />
-          
+
             <StatCard
               icon={Users}
               label="Students Enrolled"
@@ -128,16 +132,14 @@ const availableBalance = totalRevenue - amountWithdrawn;
               iconColor="text-yellow-500"
               iconBg="bg-yellow-50"
             />
-           
-             <StatCard
+
+            <StatCard
               label="total Reviews"
               value={totalReviews}
               iconColor="text-red-500"
               iconBg="bg-red-50"
             />
           </div>
-
-
 
           {/* Financial Stats */}
           <div className="mb-6 grid grid-cols-3 gap-6">
@@ -156,14 +158,16 @@ const availableBalance = totalRevenue - amountWithdrawn;
             <div className="flex items-center justify-between rounded-lg border bg-white p-6">
               <div>
                 <p className="text-sm text-gray-500">Available Balance</p>
-                <p className="text-2xl font-semibold">₹ {availableBalance.toLocaleString()}</p>
+                <p className="text-2xl font-semibold">
+                  ₹ {availableBalance.toLocaleString()}
+                </p>
               </div>
               <Button
-                    className="bg-orange-500 hover:bg-orange-600"
-                    onClick={() => setWithdrawDialogOpen(true)}
-                  >
-                    Withdraw
-                  </Button>
+                className="bg-orange-500 hover:bg-orange-600"
+                onClick={() => setWithdrawDialogOpen(true)}
+              >
+                Withdraw
+              </Button>
             </div>
           </div>
 
@@ -177,7 +181,9 @@ const availableBalance = totalRevenue - amountWithdrawn;
                 </select>
               </div>
               <div className="mb-6 flex items-end gap-4">
-                <div className="text-4xl font-bold">{averageRating?.toFixed(1)}</div>
+                <div className="text-4xl font-bold">
+                  {averageRating?.toFixed(1)}
+                </div>
                 <div className="flex text-yellow-400">
                   {[...Array(5)].map((_, i) => (
                     <Star key={i} className="h-5 w-5 fill-current" />
@@ -224,16 +230,29 @@ const availableBalance = totalRevenue - amountWithdrawn;
                     <XAxis dataKey="name" />
                     <YAxis />
                     <Tooltip />
-                    <Line type="monotone" dataKey="value1" stroke="#8884d8" strokeWidth={2} />
-                    <Line type="monotone" dataKey="value2" stroke="#82ca9d" strokeWidth={2} />
-                    <Line type="monotone" dataKey="value3" stroke="#ffc658" strokeWidth={2} />
+                    <Line
+                      type="monotone"
+                      dataKey="value1"
+                      stroke="#8884d8"
+                      strokeWidth={2}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="value2"
+                      stroke="#82ca9d"
+                      strokeWidth={2}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="value3"
+                      stroke="#ffc658"
+                      strokeWidth={2}
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>
-            <WithdrawalHistory
-              withdrawals={payoutsHistory}
-            />
+            <WithdrawalHistory withdrawals={payoutsHistory} />
           </div>
         </div>
       </main>
@@ -248,4 +267,3 @@ const availableBalance = totalRevenue - amountWithdrawn;
 };
 
 export default Dashboard;
-

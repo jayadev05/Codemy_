@@ -114,7 +114,7 @@ fetchReports();
   const fetchReports=async()=>{
     try {
   
-      const response=await axiosInstance.get('http://localhost:3000/admin/get-reports');
+      const response=await axiosInstance.get('http://localhost:3000/admin/reports');
       setReports(response.data.repopulatedReports);
   
     } catch (error) {
@@ -137,7 +137,7 @@ fetchReports();
   const sendAction =async (userId) => {
     try {
       
-      const response=await axiosInstance.post('http://localhost:3000/admin/send-notification',{userId,actionTaken});
+      const response=await axiosInstance.post('http://localhost:3000/admin/notifications',{userId,actionTaken});
 
       if(response.status===200){
         toast.success("Updated the status and Notified the user sucessfully!")
@@ -159,7 +159,7 @@ fetchReports();
 
     try {
       
-      const response = await axiosInstance.put('http://localhost:3000/admin/handle-report',{reportId,status});
+      const response = await axiosInstance.put('http://localhost:3000/admin/reports',{reportId,status});
 
       if(response.status===200){
           try {

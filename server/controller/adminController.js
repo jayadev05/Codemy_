@@ -447,8 +447,9 @@ const reviewInstructorApplication = async (req, res) => {
           );
 
           await mailSender(application.email, subject, htmlContent);
+          
         } catch (error) {
-          toast.error("Failed to send approval email", {
+          console.error("Failed to send approval email", {
             tutorId: newTutor._id,
             error: error.message,
           });
@@ -1217,6 +1218,7 @@ const handlePayoutRequest = async (req, res) => {
 const getOrders = async (req, res) => {
   try {
     const orders = await Order.find()
+    .sort({"timestamps.createdAt":-1})
       .populate("userId", "fullName profileImg email")
       .populate({
         path: "courses",

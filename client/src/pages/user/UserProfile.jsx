@@ -23,11 +23,13 @@ const Courses = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  const userId=user._id
+
   useEffect(() => {
     const fetchCourseByUserId = async () => {
       try {
         const response = await axiosInstance.get(
-          `http://localhost:3000/course/student-courses/${user._id}`
+          `http://localhost:3000/course/user-courses/${userId}`
         );
 
         setCourses(response.data.courses);
@@ -45,7 +47,7 @@ const Courses = () => {
 
     try {
       const response = await axiosInstance.post(
-        `http://localhost:3000/course/generate-certificate`,
+        `http://localhost:3000/course/certificate/generate`,
         {
           userId: user._id,
           courseId,

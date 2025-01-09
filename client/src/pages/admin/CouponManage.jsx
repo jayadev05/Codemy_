@@ -75,7 +75,7 @@ const admin= useSelector(selectAdmin);
   const fetchCoupons = async () => {
     try {
       setIsLoading(true)
-      const response = await axiosInstance.get('/admin/get-coupons')
+      const response = await axiosInstance.get('/admin/coupons')
       
       setCoupons(response.data.coupons);
 
@@ -91,7 +91,7 @@ const admin= useSelector(selectAdmin);
     e.preventDefault()
     try {
 
-      const response= await axiosInstance.post('/admin/create-coupon',formData);
+      const response= await axiosInstance.post('/admin/coupons',formData);
 
       console.log("response status",response.status);
       
@@ -110,7 +110,7 @@ const admin= useSelector(selectAdmin);
   const toggleCouponStatus = async (couponId) => {
     try {
     
-        const response = await axiosInstance.put(`/admin/toggle-coupon-status/${couponId}`);
+        const response = await axiosInstance.put(`/admin/coupons/${couponId}/status`);
 
          await fetchCoupons()
 
@@ -123,7 +123,7 @@ const admin= useSelector(selectAdmin);
   const deleteCoupon = async (couponId) => {
     try {
       
-        const response= await axiosInstance.delete(`/admin/delete-coupon/${couponId}`);
+        const response= await axiosInstance.delete(`/admin/coupon/${couponId}`);
 
        await fetchCoupons()
 
@@ -237,6 +237,7 @@ const admin= useSelector(selectAdmin);
                   <Input
                     id="validTill"
                     type="datetime-local"
+                    min={new Date().toISOString().slice(0, 16)}
                     value={formData.validTill}
                     onChange={(e) => setFormData({ ...formData, validTill: e.target.value })}
                     required

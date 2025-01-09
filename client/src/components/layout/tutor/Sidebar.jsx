@@ -30,7 +30,7 @@ const Sidebar = ({ activeSection }) => {
 
   const fetchChats = async () => {
     try {
-      const response = await axiosInstance.get(`/chat/get-all-chats/${tutor._id}`)
+      const response = await axiosInstance.get(`/chat/chats/${tutor._id}`)
       setChats(response.data)
     } catch (error) {
       console.error("Error fetching chats:", error)
@@ -39,7 +39,7 @@ const Sidebar = ({ activeSection }) => {
 
   const onLogout = () => {
     try {
-      const response = axios.post("http://localhost:3000/tutor/logout")
+      const response = axios.post("http://localhost:3000/tutor/auth/logout")
       dispatch(logoutTutor(tutor))
       toast.success("Logged out successfully", {
         style: { borderRadius: "10px", background: "#111826", color: "#fff" },

@@ -70,7 +70,7 @@ function TutorEditCourse() {
   const fetchLessons = async () => {
     try {
       const response = await axiosInstance.get(
-        `http://localhost:3000/course/get-lessons/${courseFromRedux._id}`
+        `http://localhost:3000/course/lessons/${courseFromRedux._id}`
       );
 
       setLessons(response.data);
@@ -263,7 +263,7 @@ function TutorEditCourse() {
     e.preventDefault();
     try {
       const response = await axiosInstance.put(
-        `http://localhost:3000/course/edit-course/${courseFromRedux._id}`,
+        `http://localhost:3000/course/course/${courseFromRedux._id}/edit`,
         { course }
       );
 
@@ -300,7 +300,7 @@ function TutorEditCourse() {
     try {
       if (lessonToDelete) {
         const response = await axiosInstance.delete(
-          `http://localhost:3000/course/delete-lesson?lessonId=${lessonToDelete}&courseId=${courseFromRedux._id}`
+          `http://localhost:3000/course/lesson?lessonId=${lessonToDelete}&courseId=${courseFromRedux._id}`
         );
 
         setLessons((prevLessons) =>
@@ -353,7 +353,7 @@ function TutorEditCourse() {
         {/* Main Content */}
         <main className="w-full">
           {/* Header */}
-          <TutorHeader heading="Edit Course"/>
+          <TutorHeader heading="Edit Course" />
 
           {/* View course Content */}
           <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">

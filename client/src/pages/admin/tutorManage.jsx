@@ -55,17 +55,17 @@ const TutorManagement = () => {
   }, []);
 
   const fetchTutorsAndApplications = async () => {
-    try { 
+    try {
       const [tutorsResponse, applicationsResponse] = await Promise.all([
-        axiosInstance.get("http://localhost:3000/admin/get-tutors"),
-        axiosInstance.get("http://localhost:3000/admin/instructor-applications"),
+        axiosInstance.get("http://localhost:3000/admin/tutors"),
+        axiosInstance.get(
+          "http://localhost:3000/admin/instructor-applications"
+        ),
       ]);
 
       // Ensure we have a clean list of tutors and applications
       setTutors(tutorsResponse.data.tutors || []);
       setApplications(applicationsResponse.data.applications || []);
-
-   
     } catch (err) {
       setError("Failed to fetch tutors and applications");
 
@@ -78,37 +78,38 @@ const TutorManagement = () => {
   const handleApplicationAction = async (applicationId, action) => {
     try {
       setLoading(action);
-      
+
       // Update application status
       const response = await axiosInstance.patch(
-        `/admin/approve-tutor/${applicationId}`,
+        `/admin/instructor-application/${applicationId}/approve`,
         { status: action }
       );
-  
+
       // Review application
       const result = await axiosInstance.put(
         `/admin/instructor-applications/${applicationId}/review`,
         { status: response.data.status }
       );
-  
+
       if (action === "approved" && result.data.tutor) {
         // Update tutors list
-        setTutors(prevTutors => {
+        setTutors((prevTutors) => {
           const newTutor = result.data.tutor;
-          return prevTutors.find(t => t._id === newTutor._id)
-            ? prevTutors.map(t => t._id === newTutor._id ? newTutor : t)
+          return prevTutors.find((t) => t._id === newTutor._id)
+            ? prevTutors.map((t) => (t._id === newTutor._id ? newTutor : t))
             : [...prevTutors, newTutor];
         });
-  
-        setApplications(prev => prev.filter(app => app._id !== applicationId));
+
+        setApplications((prev) =>
+          prev.filter((app) => app._id !== applicationId)
+        );
         dispatch(logoutUser(user));
         setActiveTab("tutors");
         toast.success("Tutor Application Approved Successfully");
       } else {
-        setApplications(prev => 
-          prev.map(app => app._id === applicationId 
-            ? { ...app, status: "rejected" } 
-            : app
+        setApplications((prev) =>
+          prev.map((app) =>
+            app._id === applicationId ? { ...app, status: "rejected" } : app
           )
         );
         toast.error("Tutor Application Rejected");
@@ -125,8 +126,8 @@ const TutorManagement = () => {
     try {
       const endpoint =
         currentStatus === false
-          ? `http://localhost:3000/admin/listtutor/${id}`
-          : `http://localhost:3000/admin/unlisttutor/${id}`;
+          ? `http://localhost:3000/admin/tutor/${id}/list`
+          : `http://localhost:3000/admin/tutor/${id}/unlist`;
 
       const result = await axiosInstance.put(endpoint);
 
@@ -153,7 +154,6 @@ const TutorManagement = () => {
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
   };
-
 
   // Conversion function
   const convertDecimalToNumber = (decimalObj) => {
@@ -183,8 +183,6 @@ const TutorManagement = () => {
     setSelectedCertificate(null);
   };
 
- 
-
   const filteredItems =
     activeTab === "tutors"
       ? tutors.filter(
@@ -200,8 +198,6 @@ const TutorManagement = () => {
             application.email.toLowerCase().includes(searchTerm.toLowerCase())
         );
 
-  
-
   const paginatedItems = paginateData(filteredItems);
 
   return (
@@ -211,7 +207,7 @@ const TutorManagement = () => {
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <AdminHeader heading="Tutor Management"/>
+        <AdminHeader heading="Tutor Management" />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
           <div className="max-w-6xl mx-auto px-4 py-8">
             <div className="bg-white rounded-xl shadow-lg lg:min-h-[550px] p-8">
@@ -405,29 +401,38 @@ const TutorManagement = () => {
                           <FileText className="h-6 w-6" />
                         </button>
                         <div className="flex space-x-2">
-                        <button
-  onClick={() => handleApplicationAction(item._id, "approved")}
-  className="px-4 py-2 text-sm bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-  disabled={item.status !== "pending" || loading === "approved"}
->
-  {loading === "approved" ? (
-   <Loader2 className="h-4 w-4 animate-spin" />
-  ) : (
-    "Approve"
-  )}
-</button>
-<button
-  onClick={() => handleApplicationAction(item._id, "rejected")}
-  className="px-4 py-2 text-sm bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-  disabled={item.status !== "pending" || loading === "rejected"}
->
-  {loading === "rejected" ? (
-  <Loader2 className="h-4 w-4 animate-spin" />
-  ) : (
-    "Reject"
-  )}
-</button>
-
+                          <button
+                            onClick={() =>
+                              handleApplicationAction(item._id, "approved")
+                            }
+                            className="px-4 py-2 text-sm bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                            disabled={
+                              item.status !== "pending" ||
+                              loading === "approved"
+                            }
+                          >
+                            {loading === "approved" ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              "Approve"
+                            )}
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleApplicationAction(item._id, "rejected")
+                            }
+                            className="px-4 py-2 text-sm bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                            disabled={
+                              item.status !== "pending" ||
+                              loading === "rejected"
+                            }
+                          >
+                            {loading === "rejected" ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              "Reject"
+                            )}
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -436,15 +441,14 @@ const TutorManagement = () => {
               )}
             </div>
             <div className="flex justify-center">
-            <Pagination
-              className="flex items-center justify-between mt-3"
-              totalData={filteredItems.length}
-              dataPerPage={dataPerPage}
-              currentPage={currentPage}
-              setCurrentPage={handlePageChange}
-            />
+              <Pagination
+                className="flex items-center justify-between mt-3"
+                totalData={filteredItems.length}
+                dataPerPage={dataPerPage}
+                currentPage={currentPage}
+                setCurrentPage={handlePageChange}
+              />
             </div>
-           
           </div>
         </main>
       </div>
@@ -469,8 +473,8 @@ const TutorManagement = () => {
               {selectedApplication.profileImg && (
                 <div className="flex justify-center mb-4">
                   <img
-                  crossOrigin="anonymous"
-                  referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
+                    referrerPolicy="no-referrer"
                     src={selectedApplication.profileImg}
                     alt={`${selectedApplication.fullName}'s profile`}
                     className="w-32 h-32 rounded-full object-cover border-4 border-orange-500"

@@ -1,28 +1,29 @@
 const express = require("express");
-const { createChat, getChatsByUserId, getTutorsByUserId, getMessagesByChatId, createMessage, getStudentsByUserId, markMessageAsRead, deleteChat } = require("../../controller/chatController");
-const Chat=require('../../model/chatModel')
-const Message=require('../../model/messageModel');
+const {
+  createChat,
+  getChatsByUserId,
+  getTutorsByUserId,
+  getMessagesByChatId,
+  createMessage,
+  getStudentsByUserId,
+  markMessageAsRead,
+  deleteChat,
+} = require("../../controller/chatController");
+const Chat = require("../../model/chatModel");
+const Message = require("../../model/messageModel");
 const chatRoute = express.Router();
-const verifyUser = require('../../middleware/authMiddleware')
+const verifyUser = require("../../middleware/authMiddleware");
 
+chatRoute.post("/chats", createChat);
+chatRoute.post("/messages", createMessage);
 
+chatRoute.put("/messages/read", markMessageAsRead);
 
-chatRoute.post('/create-chat',createChat);
-chatRoute.post('/create-message',createMessage);
+chatRoute.get("/chats/:userId", verifyUser, getChatsByUserId);
+chatRoute.get("/tutors", getTutorsByUserId);
+chatRoute.get("/tutor/:tutorId/students", getStudentsByUserId);
+chatRoute.get("/chats/:chatId/messages", getMessagesByChatId);
 
-chatRoute.put('/messages-read',markMessageAsRead);
-
-
-chatRoute.get("/get-all-chats/:userId" ,verifyUser,getChatsByUserId);
-chatRoute.get("/get-tutors",getTutorsByUserId);
-chatRoute.get("/get-students/:tutorId",getStudentsByUserId);
-chatRoute.get("/get-messages/:chatId",getMessagesByChatId);
-
-
-
-chatRoute.patch("/delete-chat",deleteChat);
-
-
-
+chatRoute.patch("/delete-chat", deleteChat);
 
 module.exports = chatRoute;

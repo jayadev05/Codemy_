@@ -17,7 +17,7 @@ export const handleChatDeletion = async (chatId, userId, axiosInstance, callback
   
   export const handleChatCreation = async (recipientId, userId, userType, axiosInstance) => {
     try {
-      const response = await axiosInstance.post("/chat/create-chat", {
+      const response = await axiosInstance.post("/chat/chats", {
         [userType === "user" ? "tutorId" : "userId"]: recipientId,
         [userType === "user" ? "userId" : "tutorId"]: userId,
       });

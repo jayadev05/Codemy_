@@ -6,37 +6,32 @@ const { addLesson, updateLesson, getLessons, deleteLesson, updateCourseProgress 
 const { addToCart, viewCart, removeFromCart } = require("../../controller/cartController");
 
 
-courseRoute.post('/create-course',createCourse);
-courseRoute.post('/add-lesson',addLesson);
-courseRoute.post('/addToWishlist',addToWishlist);
-courseRoute.post('/addToCart',addToCart);
-courseRoute.post('/add-rating',rateCourse);
-courseRoute.post('/generate-certificate',handleCertificate);
+courseRoute.post('/courses',createCourse);
+courseRoute.post('/lessons',addLesson);
+courseRoute.post('/ratings',rateCourse);
+courseRoute.post('/certificate/generate',handleCertificate);
 
 
-courseRoute.get('/get-courses',getCourses);
-courseRoute.get('/get-course-info',verifyUser,getBasicCourseInfo);
-courseRoute.get('/get-wishlist',getWishlist);
-courseRoute.get('/get-cart',viewCart);
+courseRoute.get('/courses',getCourses);
+courseRoute.get('/courses/basic-info',getBasicCourseInfo);
 courseRoute.get('/tutor-courses/:tutorId',getCoursesByTutorId);  
-courseRoute.get('/student-courses/:userId',getCoursesByStudentId);  
-courseRoute.get('/view-course/:id',viewCourse)
+courseRoute.get('/user-courses/:userId',getCoursesByStudentId);  
+courseRoute.get('/course/:id',viewCourse)
 courseRoute.get('/play-course',playCourse);
-courseRoute.get('/get-lessons/:courseId',getLessons);
-courseRoute.get('/get-ratings',isRated);
-courseRoute.get('/get-course-review',getRatingsbyCourseId);
+courseRoute.get('/lessons/:courseId',getLessons);
+courseRoute.get('/ratings',isRated);
+courseRoute.get('/reviews',getRatingsbyCourseId);
 
 
 
 
-courseRoute.put('/update-lesson/:lessonId', updateLesson);
-courseRoute.put('/update-course-progress',updateCourseProgress);
-courseRoute.put('/edit-course/:id',editCourse);
+courseRoute.put('/lesson/:lessonId', updateLesson);
+courseRoute.put('/course-progress',updateCourseProgress);
+courseRoute.put('/course/:id/edit',editCourse);
 
-courseRoute.delete('/delete-course',deleteCourse);
-courseRoute.delete('/delete-lesson',deleteLesson);
-courseRoute.delete('/deleteFromWishlist',removeFromWishlist);
-courseRoute.delete('/removeFromCart',removeFromCart);
+courseRoute.delete('/course',deleteCourse);
+courseRoute.delete('/lesson',deleteLesson);
+
 
 
 

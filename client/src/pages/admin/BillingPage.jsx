@@ -24,6 +24,7 @@ import axiosInstance from "@/config/axiosConfig";
 import DateRangePicker from "@/components/layout/admin/DateRangePicker";
 import { Button } from "@/components/ui/button";
 import AdminHeader from "@/components/layout/admin/AdminHeader";
+import useCurrencyFormat from "@/hooks/UseCurrencyFormat";
 
 const BillingPage = () => {
   const admin = useSelector(selectAdmin);
@@ -47,7 +48,7 @@ const BillingPage = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const response = await axiosInstance.get(`/admin/get-orders`);
+        const response = await axiosInstance.get(`/admin/orders`);
 
         setOrders(response.data);
       } catch (error) {
@@ -58,10 +59,15 @@ const BillingPage = () => {
     fetchOrders();
   }, [admin._id]);
 
+  const formatCurrency = (num) => {
+    const cleanedNum = num?.toString().replace(/[^\d]/g, "");
+    return cleanedNum ? Number(cleanedNum).toLocaleString("en-IN") : "";
+  };
+
   const downloadInvoice = async (orderId) => {
     try {
       const response = await axiosInstance.get(
-        `/admin/download-invoice/${orderId}`,
+        `/admin/orders/${orderId}/invoice`,
         {
           responseType: "blob",
         }
@@ -122,12 +128,15 @@ const BillingPage = () => {
   };
 
   const paginatedOrders = paginateData(orders);
+
   const totalRevenue = orders
     .filter((order) => order.orderStatus === "Completed")
     .reduce((acc, order) => acc + order.totalAmount, 0);
+
   const totalCoursesSold = orders.filter(
     (order) => order.orderStatus === "Completed"
   ).length;
+
   const pendingOrders = orders.filter(
     (order) => order.orderStatus === "Pending"
   ).length;
@@ -157,7 +166,7 @@ const BillingPage = () => {
                   Total Revenue
                 </h3>
                 <p className="text-2xl font-bold text-gray-900">
-                  ₹ {totalRevenue / 100}
+                  ₹ {formatCurrency( totalRevenue / 100) }
                 </p>
                 <div className="flex items-center mt-2">
                   <span className="text-green-500 text-sm flex items-center">

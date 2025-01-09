@@ -27,7 +27,7 @@ const generateSalesReport = async (startDate, endDate) => {
     const metrics = orders.reduce(
       (acc, order) => {
         acc.totalSales++;
-        acc.totalRevenue += order.totalAmount;
+        acc.totalRevenue += order.totalAmount/100;
         acc.totalDiscount += order.discount?.discountAmount || 0;
         acc.paymentMethods[order.payment.paymentMethod] =
           (acc.paymentMethods[order.payment.paymentMethod] || 0) + 1;
@@ -250,7 +250,7 @@ const generateSalesReport = async (startDate, endDate) => {
       
       // Amount
       doc.text(
-        `Rs. ${order.totalAmount.toLocaleString()}`,
+        `Rs. ${order.totalAmount/100}`,
         xOffset,
         rowY + 5,
         { width: columnWidths[3] - 10 }

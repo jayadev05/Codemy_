@@ -253,7 +253,7 @@ const SettingsForm = () => {
       };
 
       const existCheck = await axiosInstance.post(
-        "http://localhost:3000/admin/check-mail",
+        "http://localhost:3000/admin/auth/check-mail",
         {
           phone: payload.phone,
           username: payload.userName,
@@ -312,7 +312,7 @@ const SettingsForm = () => {
       }
 
       const response = await axiosInstance.put(
-        "http://localhost:3000/user/update-profile",
+        "http://localhost:3000/user/profile",
         payload
       );
 
@@ -352,7 +352,7 @@ const SettingsForm = () => {
       };
       axios.defaults.withCredentials = true;
       const response = await axiosInstance.put(
-        "http://localhost:3000/user/change-password",
+        "http://localhost:3000/user/password",
         payload
       );
 

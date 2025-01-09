@@ -21,7 +21,7 @@ import { useSelector } from "react-redux";
 import { selectUser } from "@/store/slices/userSlice";
 import axiosInstance from "@/config/axiosConfig";
 import { jwtDecode } from "jwt-decode";
-import Sidebar from "@/components/layout/tutor/sidebar";
+import Sidebar from "@/components/layout/tutor/Sidebar";
 import { selectTutor } from "@/store/slices/tutorSlice";
 import TypingIndicator from "@/components/utils/TypingIndicator";
 import toast from "react-hot-toast";
@@ -78,14 +78,35 @@ export default function TutorChatPage() {
 
   //handling video call
   useEffect(() => {
-    const handleIncomingCall = (data) => {
-      console.log("Incoming call from:", data.from);
-      setIncomingCallInfo({
-        isSomeoneCalling: true,
-        from: data.from,
-        callerData: data.callerData,
-        signalData: data.signalData,
-      });
+    const handleIncomingCall = async (data) => {
+      try {
+        console.log("Incoming call from:", data.from);
+        
+        // First ensure we have valid data
+        if (!data?.from || !data?.callerData || !data?.signalData) {
+          console.error("Invalid incoming call data received");
+          return;
+        }
+    
+        // Acknowledge the call first
+        await socketService.acknowledgeCall(data.from);
+    
+        // Then update the UI state
+        setIncomingCallInfo({
+          isSomeoneCalling: true,
+          from: data.from,
+          callerData: data.callerData,
+          signalData: data.signalData,
+        });
+    
+      } catch (error) {
+        console.error("Error handling incoming call:", error);
+        // Optionally notify the caller about the failure
+        socketService.socket?.emit("call-failed", {
+          to: data.from,
+          reason: "Failed to process incoming call"
+        });
+      }
     };
 
     const handleCallAccepted = ({ signalData }) => {
@@ -325,9 +346,7 @@ export default function TutorChatPage() {
   // Fetch all chats for the current user
   const fetchChats = async () => {
     try {
-      const response = await axiosInstance.get(
-        `/chat/get-all-chats/${tutor._id}`
-      );
+      const response = await axiosInstance.get(`/chat/chats/${tutor._id}`);
 
       const filteredChat = response.data.filter((chat) => {
         if (chat.deletedBy.length > 0) {
@@ -367,7 +386,7 @@ export default function TutorChatPage() {
   // Fetch messages for a specific chat
   const fetchMessages = async (chatId) => {
     try {
-      const response = await axiosInstance.get(`/chat/get-messages/${chatId}`);
+      const response = await axiosInstance.get(`/chat/${chatId}/messages`);
       console.log(response);
       setMessages(response.data);
     } catch (error) {
@@ -380,9 +399,7 @@ export default function TutorChatPage() {
     try {
       setLoading(true);
 
-      const response = await axiosInstance.get(
-        `/chat/get-students/${tutor._id}`
-      );
+      const response = await axiosInstance.get(`/chat/tutor/${tutor._id}/students`);
 
       setStudents(response.data.students);
     } catch (error) {
@@ -419,7 +436,7 @@ export default function TutorChatPage() {
 
   const markMessagesAsRead = async (chatId, userType) => {
     try {
-      await axiosInstance.put(`/chat/messages-read`, {
+      await axiosInstance.put(`/chat/messages/read`, {
         chatId,
         userType,
       });
@@ -453,9 +470,7 @@ export default function TutorChatPage() {
   const handleChatSelect = async (chat) => {
     try {
       // Fetch messages before updating selectedChat
-      const response = await axiosInstance.get(
-        `/chat/get-messages/${chat._id}`
-      );
+      const response = await axiosInstance.get(`/chat/chats/${chat._id}/messages`);
 
       // Update messages first
       setMessages(response.data);
@@ -501,7 +516,7 @@ export default function TutorChatPage() {
       console.log("Sending message with data:", messageData);
 
       const response = await axiosInstance.post(
-        "/chat/create-message",
+        "/chat/messages",
         messageData
       );
 
@@ -784,19 +799,13 @@ export default function TutorChatPage() {
   };
 
   const initiateCall = async () => {
-    if (!tutor._id) return;
+    if (!tutor._id || connectionRef.current) return; // Prevent multiple connections
 
     setIsCalling(true);
     setoutgoingCallInfo({
       callerData: {
-        avatar:
-          userType === "user"
-            ? selectedChat?.tutorId?.profileImg
-            : selectedChat?.userId?.profileImg,
-        name:
-          userType === "user"
-            ? selectedChat?.tutorId?.fullName
-            : selectedChat?.userId?.fullName,
+        avatar: userType === "user" ? selectedChat?.tutorId?.profileImg : selectedChat?.userId?.profileImg,
+        name: userType === "user" ? selectedChat?.tutorId?.fullName : selectedChat?.userId?.fullName,
       },
     });
 
@@ -807,161 +816,157 @@ export default function TutorChatPage() {
       });
 
       setStream(mediaStream);
-      setIsCalling(true);
 
       if (myVideoRef.current) {
         myVideoRef.current.srcObject = mediaStream;
-        console.log("my video mounted for caller side");
       }
 
       createInitiatorPeer(mediaStream);
     } catch (error) {
       console.error("Error accessing media devices:", error);
+      setIsCalling(false);
     }
-  };
+};
 
-  // Separate function to create initiator peer
-  const createInitiatorPeer = (mediaStream) => {
-    if (!mediaStream?.getTracks().length) {
-      console.error("No media tracks available");
-      return;
+const createInitiatorPeer = (mediaStream) => {
+    if (!mediaStream?.getTracks().length || connectionRef.current) {
+        console.error("No media tracks available or connection exists");
+        return;
     }
 
     const peer = new SimplePeer({
-      initiator: true,
-      trickle: false,
-      stream: mediaStream,
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:global.stun.twilio.com:3478' }
-        ]
-      }
+        initiator: true,
+        trickle: false,
+        stream: mediaStream,
+        config: {
+            iceServers: [
+                { urls: "stun:stun.l.google.com:19302" },
+                { urls: "stun:global.stun.twilio.com:3478" },
+            ],
+        },
     });
 
-    peer.on("signal", async(signalData) => {
-      await socketService.initializeCall({
-        recieverId: receiverId,
-        signalData,
-        from: socketService.socket.id,
-        callerName: tutor.fullName,
-        callerAvatar: tutor.profileImg,
-        callerUserId: tutor._id,
-      });
+    // Set up signal handler before emitting any signals
+    let signalAttempts = 0;
+    peer.on("signal",  (signalData) => {
+        if (signalData.type === "offer" && signalAttempts === 0) {
+            signalAttempts++;
+            try {
+                 socketService.initializeCall({
+                    recieverId: receiverId,
+                    signalData,
+                    from: socketService.socket.id,
+                    callerName: tutor.fullName,
+                    callerAvatar: tutor.profileImg,
+                    callerUserId: tutor._id,
+                });
+            } catch (error) {
+                console.error("Failed to initialize call:", error);
+                handleEndCall();
+            }
+        }
     });
 
+    connectionRef.current = peer;
+    setupPeerEventListeners(peer);
+};
+
+const answerCall = async () => {
+    if (!incomingCallInfo?.signalData || connectionRef.current) return;
+
+    try {
+        const mediaStream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true,
+        });
+
+        setStream(mediaStream);
+        setIncomingCallInfo((prev)=>({...prev,isSomeoneCalling:false}))
+
+        if (myVideoRef.current) {
+            myVideoRef.current.srcObject = mediaStream;
+        }
+
+        createAnswerPeer(mediaStream);
+    } catch (error) {
+        console.error("Error accessing media devices:", error);
+        handleEndCall();
+    }
+};
+
+const createAnswerPeer = (mediaStream) => {
+    if (!mediaStream?.getTracks().length || connectionRef.current) {
+        console.error("Invalid media stream or connection exists");
+        return;
+    }
+
+    const peer = new SimplePeer({
+        initiator: false,
+        trickle: false,
+        stream: mediaStream,
+        config: {
+            iceServers: [
+                { urls: "stun:stun.l.google.com:19302" },
+                { urls: "stun:global.stun.twilio.com:3478" },
+            ],
+        },
+    });
+
+    // Set up signal handler before processing the offer
+    let answerSent = false;
+    peer.on("signal",  (signalData) => {
+        if (signalData.type === "answer" && !answerSent) {
+            answerSent = true;
+            try {
+                 socketService.answerCall({
+                    signalData,
+                    to: incomingCallInfo.from,
+                });
+            } catch (error) {
+                console.error("Failed to send answer:", error);
+                handleEndCall();
+            }
+        }
+    });
+
+    connectionRef.current = peer;
+    setupPeerEventListeners(peer);
+
+    // Process the offer
+    try {
+        peer.signal(incomingCallInfo.signalData);
+    } catch (error) {
+        console.error("Error processing offer:", error);
+        handleEndCall();
+    }
+};
+
+// Common event listeners for both initiator and answerer
+const setupPeerEventListeners = (peer) => {
     peer.on("stream", (remoteStream) => {
-      console.log("Received remote stream:", remoteStream);
-      if (peerVideoRef.current) {
-        peerVideoRef.current.srcObject = remoteStream;
-      }
+        if (peerVideoRef.current) {
+            peerVideoRef.current.srcObject = remoteStream;
+        }
     });
 
     peer.on("connect", () => {
-      console.log("Peer connection established");
-      setIsCallActive(true);
+        console.log("Peer connection established");
+        setIsCalling(false);
+        setIsCallActive(true);
+        setIsCallAccepted(true);
     });
 
     peer.on("error", (err) => {
-      console.error("Peer error:", err);
-      handleEndCall();
+        console.error("Peer error:", err);
+        handleEndCall();
     });
 
     peer.on("close", () => {
-      console.log("Peer connection closed");
-      handleEndCall();
+        console.log("Peer connection closed");
+        handleEndCall();
     });
+};
 
-    connectionRef.current = peer;
-  };
-
-  const answerCall = async () => {
-    if (!incomingCallInfo?.signalData) return;
-
-    try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
-      setStream(mediaStream);
-
-      // Update video ref with new stream
-      if (myVideoRef.current) {
-        myVideoRef.current.srcObject = mediaStream;
-      }
-
-      // Create peer with the new stream
-      createAnswerPeer(mediaStream);
-    } catch (error) {
-      console.error("Error accessing media devices:", error);
-      // Handle error - maybe show a notification to user
-    }
-  };
-
-  // Separate function to create answering peer
-  const createAnswerPeer = (mediaStream) => {
-    if (!mediaStream?.getTracks().length) {
-      console.error("Invalid media stream");
-      return;
-    }
-  
-    
-    const configuration = {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:global.stun.twilio.com:3478' },
-        
-      ],
-      iceTransportPolicy: 'all',
-      iceCandidatePoolSize: 10
-    };
-  
-    const peer = new SimplePeer({
-      initiator: false,
-      trickle: true, // Enable trickle ICE
-      stream: mediaStream,
-      config: configuration
-    });
-  
-   
-    peer.on("signal",async signalData => {
-      console.log("Answer peer signaling:", signalData.type);
-     
-        await socketService.answerCall({
-          signalData,
-          to: incomingCallInfo.from
-        });
-      
-     
-    });
-  
-    peer.on("connect", () => {
-      console.log("Peer connection established");
-     
-      setIsCallActive(true);
-      setIsCallAccepted(true);
-      setIsCalling(false)
-    });
-  
-    peer.on("error", err => {
-      console.error("Peer connection error:", err);
-     
-    });
-  
-    // Process the offer
-    try {
-      console.log("Processing offer signal");
-      peer.signal(incomingCallInfo.signalData);
-    } catch (error) {
-      console.error("Error processing offer:", error);
-     
-    }
-  
-    connectionRef.current = peer;
-  
-  };
-  
- 
   const handleEndCall = (sendSocketEvent = true) => {
     // Clean up peer connection
     if (connectionRef.current) {
@@ -1036,11 +1041,10 @@ export default function TutorChatPage() {
 
       <div className="flex-1">
         {/* Header */}
-        <TutorHeader heading="Messages"/>
+        <TutorHeader heading="Messages" />
 
         {/* Chat Container */}
         <div className="flex h-[calc(100vh-90px)] bg-white">
-
           {/* Chat List */}
           <div
             className={`${
@@ -1278,22 +1282,22 @@ export default function TutorChatPage() {
                       >
                         {message.sender.userId !== tutor._id && (
                           <Avatar className="h-6 w-6 mt-1">
-                            <img
-                              crossOrigin="anonymous"
-                              referrerPolicy="no-referrer"
-                              src={
-                                userType === "user"
-                                  ? selectedChat.tutorId?.profileImg
-                                  : selectedChat.userId?.profileImg
-                              }
-                              alt="Sender's avatar"
-                            />
-                            <AvatarFallback>
-                              {userType === "tutor"
-                                ? selectedChat.tutorId?.fullName?.charAt(0)
-                                : selectedChat.userId?.fullName?.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
+                          <img
+                            crossOrigin="anonymous"
+                            referrerPolicy="no-referrer"
+                            src={
+                              userType === "user"
+                                ? selectedChat.tutorId?.profileImg
+                                : selectedChat.userId?.profileImg
+                            }
+                            alt="Sender's avatar"
+                          />
+                          <AvatarFallback>
+                            {userType === "tutor"
+                              ? selectedChat.tutorId?.fullName?.charAt(0)
+                              : selectedChat.userId?.fullName?.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
                         )}
                         <div>
                           <div
@@ -1395,7 +1399,6 @@ export default function TutorChatPage() {
               </div>
             )}
           </div>
-
         </div>
 
         <ComposeModalUser
@@ -1405,7 +1408,7 @@ export default function TutorChatPage() {
           recipients={students}
           tutor={tutor}
         />
-        
+
         <VideoCallInterface
           stream={stream}
           myVideoRef={myVideoRef}

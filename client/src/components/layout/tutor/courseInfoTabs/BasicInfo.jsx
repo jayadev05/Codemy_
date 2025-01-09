@@ -55,7 +55,7 @@ function BasicInfo({ initialData, sendData }) {
   const fetchCategories = async () => {
     try {
       const response = await axiosInstance.get(
-        "http://localhost:3000/admin/get-categories"
+        "http://localhost:3000/admin/categories"
       );
       setCategories(response.data);
     } catch (error) {

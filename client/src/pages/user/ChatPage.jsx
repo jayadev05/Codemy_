@@ -83,16 +83,39 @@ export default function ChatInterface() {
 
   //handling video call
   useEffect(() => {
-    const handleIncomingCall = (data) => {
-      console.log("Incoming call from:", data.from);
-      setIncomingCallInfo({
-        isSomeoneCalling: true,
-        from: data.from,
-        callerData: data.callerData,
-        signalData: data.signalData,
-      });
+    
+    const handleIncomingCall = async (data) => {
+      try {
+        console.log("Incoming call from:", data.from);
+        
+        // First ensure we have valid data
+        if (!data?.from || !data?.callerData || !data?.signalData) {
+          console.error("Invalid incoming call data received");
+          return;
+        }
+    
+        // Acknowledge the call first
+        await socketService.acknowledgeCall(data.from);
+    
+        // Then update the UI state
+        setIncomingCallInfo({
+          isSomeoneCalling: true,
+          from: data.from,
+          callerData: data.callerData,
+          signalData: data.signalData,
+        });
+    
+      } catch (error) {
+        console.error("Error handling incoming call:", error);
+        // Optionally notify the caller about the failure
+        socketService.socket?.emit("call-failed", {
+          to: data.from,
+          reason: "Failed to process incoming call"
+        });
+      }
     };
 
+  
     const handleCallAccepted = ({ signalData }) => {
       setIsCallAccepted(true);
       setIsCalling(false);
@@ -330,9 +353,7 @@ export default function ChatInterface() {
   // Fetch all chats for the current user
   const fetchChats = async () => {
     try {
-      const response = await axiosInstance.get(
-        `/chat/get-all-chats/${user._id}`
-      );
+      const response = await axiosInstance.get(`/chat/chats/${user._id}`);
 
       const filteredChat = response.data.filter((chat) => {
         if (chat.deletedBy.length > 0) {
@@ -365,7 +386,7 @@ export default function ChatInterface() {
   // Fetch messages for a specific chat
   const fetchMessages = async (chatId) => {
     try {
-      const response = await axiosInstance.get(`/chat/get-messages/${chatId}`);
+      const response = await axiosInstance.get(`/chat/${chatId}/messages`);
       setMessages(response.data);
     } catch (error) {
       console.error("Error fetching messages:", error);
@@ -383,7 +404,7 @@ export default function ChatInterface() {
     try {
       setLoading(true);
 
-      const response = await axiosInstance.get("/chat/get-tutors", {
+      const response = await axiosInstance.get("/chat/tutors", {
         params: { courseIds },
       });
 
@@ -424,7 +445,7 @@ export default function ChatInterface() {
 
   const markMessagesAsRead = async (chatId, userType) => {
     try {
-      await axiosInstance.put(`/chat/messages-read`, {
+      await axiosInstance.put(`/chat/messages/read`, {
         chatId,
         userType,
       });
@@ -459,9 +480,7 @@ export default function ChatInterface() {
     if (!chat?._id) return; // Validate chat existence
 
     try {
-      const response = await axiosInstance.get(
-        `/chat/get-messages/${chat._id}`
-      );
+      const response = await axiosInstance.get(`/chat/chats/${chat._id}/messages`);
 
       // Update state together to avoid race conditions
       setSelectedChat(chat);
@@ -504,7 +523,7 @@ export default function ChatInterface() {
       console.log("Sending message with data:", messageData);
 
       const response = await axiosInstance.post(
-        "/chat/create-message",
+        "/chat/messages",
         messageData
       );
       console.log("This is ti", response.data.contentType);
@@ -786,19 +805,13 @@ export default function ChatInterface() {
   };
 
   const initiateCall = async () => {
-    if (!user._id) return;
+    if (!user._id || connectionRef.current) return; // Prevent multiple connections
 
     setIsCalling(true);
     setoutgoingCallInfo({
       callerData: {
-        avatar:
-          userType === "user"
-            ? selectedChat?.tutorId?.profileImg
-            : selectedChat?.userId?.profileImg,
-        name:
-          userType === "user"
-            ? selectedChat?.tutorId?.fullName
-            : selectedChat?.userId?.fullName,
+        avatar: userType === "user" ? selectedChat?.tutorId?.profileImg : selectedChat?.userId?.profileImg,
+        name: userType === "user" ? selectedChat?.tutorId?.fullName : selectedChat?.userId?.fullName,
       },
     });
 
@@ -812,204 +825,188 @@ export default function ChatInterface() {
 
       if (myVideoRef.current) {
         myVideoRef.current.srcObject = mediaStream;
-        console.log("my video mounted for caller side");
       }
 
       createInitiatorPeer(mediaStream);
     } catch (error) {
       console.error("Error accessing media devices:", error);
+      setIsCalling(false);
     }
-  };
+};
 
-  // Separate function to create initiator peer
-  const createInitiatorPeer = (mediaStream) => {
-    if (!mediaStream?.getTracks().length) {
-      console.error("No media tracks available");
-      return;
+const createInitiatorPeer = (mediaStream) => {
+    if (!mediaStream?.getTracks().length || connectionRef.current) {
+        console.error("No media tracks available or connection exists");
+        return;
     }
 
     const peer = new SimplePeer({
-      initiator: true,
-      trickle: false,
-      stream: mediaStream,
-      config: {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:global.stun.twilio.com:3478' }
-        ]
-      }
+        initiator: true,
+        trickle: false,
+        stream: mediaStream,
+        config: {
+            iceServers: [
+                { urls: "stun:stun.l.google.com:19302" },
+                { urls: "stun:global.stun.twilio.com:3478" },
+            ],
+        },
     });
 
-    peer.on("signal", async(signalData) => {
-      if (signalData.type === "offer") {
-        await socketService.initializeCall({
-          recieverId: receiverId,
-          signalData,
-          from: socketService.socket.id,
-          callerName: user.fullName,
-          callerAvatar: user.profileImg,
-          callerUserId: user._id,
+    // Set up signal handler before emitting any signals
+    let signalAttempts = 0;
+    peer.on("signal",  (signalData) => {
+        if (signalData.type === "offer" && signalAttempts === 0) {
+            signalAttempts++;
+            try {
+                 socketService.initializeCall({
+                    recieverId: receiverId,
+                    signalData,
+                    from: socketService.socket.id,
+                    callerName: user.fullName,
+                    callerAvatar: user.profileImg,
+                    callerUserId: user._id,
+                });
+            } catch (error) {
+                console.error("Failed to initialize call:", error);
+                handleEndCall();
+            }
+        }
+    });
+
+    connectionRef.current = peer;
+    setupPeerEventListeners(peer);
+};
+
+const answerCall = async () => {
+    if (!incomingCallInfo?.signalData || connectionRef.current) return;
+
+    try {
+        const mediaStream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true,
         });
-      }
+
+        setStream(mediaStream);
+        setIncomingCallInfo((prev)=>({...prev,isSomeoneCalling:false}))
+
+        if (myVideoRef.current) {
+            myVideoRef.current.srcObject = mediaStream;
+        }
+
+        createAnswerPeer(mediaStream);
+    } catch (error) {
+        console.error("Error accessing media devices:", error);
+        handleEndCall();
+    }
+};
+
+const createAnswerPeer = (mediaStream) => {
+    if (!mediaStream?.getTracks().length || connectionRef.current) {
+        console.error("Invalid media stream or connection exists");
+        return;
+    }
+
+    const peer = new SimplePeer({
+        initiator: false,
+        trickle: false,
+        stream: mediaStream,
+        config: {
+            iceServers: [
+                { urls: "stun:stun.l.google.com:19302" },
+                { urls: "stun:global.stun.twilio.com:3478" },
+            ],
+        },
     });
 
+    // Set up signal handler before processing the offer
+    let answerSent = false;
+    peer.on("signal",  (signalData) => {
+        if (signalData.type === "answer" && !answerSent) {
+            answerSent = true;
+            try {
+                 socketService.answerCall({
+                    signalData,
+                    to: incomingCallInfo.from,
+                });
+            } catch (error) {
+                console.error("Failed to send answer:", error);
+                handleEndCall();
+            }
+        }
+    });
+
+    connectionRef.current = peer;
+    setupPeerEventListeners(peer);
+
+    // Process the offer
+    try {
+        peer.signal(incomingCallInfo.signalData);
+    } catch (error) {
+        console.error("Error processing offer:", error);
+        handleEndCall();
+    }
+};
+
+// Common event listeners for both initiator and answerer
+const setupPeerEventListeners = (peer) => {
     peer.on("stream", (remoteStream) => {
-      console.log("Received reciever stream:", remoteStream);
-      if (peerVideoRef.current) {
-        peerVideoRef.current.srcObject = remoteStream;
-      }
+        if (peerVideoRef.current) {
+            peerVideoRef.current.srcObject = remoteStream;
+        }
     });
 
     peer.on("connect", () => {
-      console.log("Peer connection established");
-      setIsCalling(false);
-      setIsCallActive(true);
+        console.log("Peer connection established");
+        setIsCalling(false);
+        setIsCallActive(true);
+        setIsCallAccepted(true);
     });
 
     peer.on("error", (err) => {
-      console.error("Peer error:", err);
-      setIsCalling(false);
-      handleEndCall();
+        console.error("Peer error:", err);
+        handleEndCall();
     });
 
     peer.on("close", () => {
-      console.log("Peer connection closed");
-
-      handleEndCall();
+        console.log("Peer connection closed");
+        handleEndCall();
     });
+};
 
-    connectionRef.current = peer;
-  };
+const handleEndCall = (sendSocketEvent = true) => {
+  // Clean up peer connection
+  if (connectionRef.current) {
+    connectionRef.current.destroy();
+    connectionRef.current = null;
+  }
 
-  const answerCall = async () => {
-    if (!incomingCallInfo?.signalData) return;
+  // Clean up video elements
+  if (myVideoRef.current) {
+    myVideoRef.current.srcObject = null;
+  }
+  if (peerVideoRef.current) {
+    peerVideoRef.current.srcObject = null;
+  }
 
-    try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
-
-      setStream(mediaStream);
-     
-
-      // Update video ref with new stream
-      if (myVideoRef.current) {
-        myVideoRef.current.srcObject = mediaStream;
-        console.log(
-          "my video ref on reciever side",
-          myVideoRef.current?.srcObject
-        );
-      }
-
-      // Create peer with the new stream
-      createAnswerPeer(mediaStream);
-    } catch (error) {
-      console.error("Error accessing media devices:", error);
-      // Handle error - maybe show a notification to user
-    }
-  };
-
-  // Separate function to create answering peer
-  const createAnswerPeer = (mediaStream) => {
-    if (!mediaStream?.getTracks().length) {
-      console.error("Invalid media stream");
-      return;
-    }
-  
-    
-    const configuration = {
-      iceServers: [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:global.stun.twilio.com:3478' },
-        
-      ],
-      iceTransportPolicy: 'all',
-      iceCandidatePoolSize: 10
-    };
-  
-    const peer = new SimplePeer({
-      initiator: false,
-      trickle: true, // Enable trickle ICE
-      stream: mediaStream,
-      config: configuration
+  // Stop all tracks in the stream
+  if (stream) {
+    stream.getTracks().forEach((track) => {
+      track.stop();
+      stream.removeTrack(track);
     });
-  
-    
-  
-    peer.on("signal", async signalData => {
-      console.log("Answer peer signaling:", signalData.type);
-     
-       await socketService.answerCall({
-          signalData,
-          to: incomingCallInfo.from
-        });
-      
-      
-    });
-  
-    peer.on("connect", () => {
-      console.log("Peer connection established");
-     
-      setIsCallActive(true);
-      setIsCallAccepted(true);
-      setIsCalling(false)
-    });
-  
-    peer.on("error", err => {
-      console.error("Peer connection error:", err);
-     
-    });
-  
-    // Process the offer
-    try {
-      console.log("Processing offer signal");
-      peer.signal(incomingCallInfo.signalData);
-    } catch (error) {
-      console.error("Error processing offer:", error);
-      
-    }
-  
-    connectionRef.current = peer;
-    
-  };
-  
+  }
 
+  setStream(null);
+  setIsCallActive(false);
+  setIsCallAccepted(false);
+  setIncomingCallInfo(null);
+  setIsCalling(false);
 
-  const handleEndCall = (sendSocketEvent = true) => {
-    // Clean up peer connection
-    if (connectionRef.current) {
-      connectionRef.current.destroy();
-      connectionRef.current = null;
-    }
-
-    // Clean up video elements
-    if (myVideoRef.current) {
-      myVideoRef.current.srcObject = null;
-    }
-    if (peerVideoRef.current) {
-      peerVideoRef.current.srcObject = null;
-    }
-
-    // Stop all tracks in the stream
-    if (stream) {
-      stream.getTracks().forEach((track) => {
-        track.stop();
-        stream.removeTrack(track);
-      });
-    }
-
-    setStream(null);
-    setIsCallActive(false);
-    setIsCalling(false);
-    setIsCallAccepted(false);
-    setIncomingCallInfo(null);
-
-    // Only send socket event if explicitly requested
-    if (sendSocketEvent && receiverId) {
-      socketService.endCall({ receiverId });
-    }
-  };
+  // Only send socket event if explicitly requested
+  if (sendSocketEvent && receiverId) {
+    socketService.endCall({ receiverId });
+  }
+};
 
   const handleRejectCall = () => {
     socketService.rejectCall({ to: incomingCallInfo.from });
@@ -1049,388 +1046,388 @@ export default function ChatInterface() {
       <Header />
       <MainHeader />
       <Tabs />
-       {/* Chat Container */}
-       <div className="flex h-[calc(100vh-90px)] bg-white">
-          {/* Chat List */}
-          <div
-            className={`${
-              selectedChat ? "hidden" : "w-full"
-            } md:block md:w-80 border-r flex flex-col`}
-          >
-            <div className="p-3 lg:p-4 border-b">
-              <div className="flex items-center justify-between mb-3">
-                <h1 className="text-lg font-semibold">Chat</h1>
-                <Button
-                  className="bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm"
-                  size="sm"
-                  onClick={() => setComposeOpen(true)}
-                >
-                  + Compose
-                </Button>
-              </div>
-              <div className="relative">
-                <Input
-                  className="pl-8 bg-gray-50 text-sm"
-                  placeholder="Search"
-                  type="search"
-                />
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-              </div>
+      {/* Chat Container */}
+      <div className="flex h-[calc(100vh-90px)] bg-white">
+        {/* Chat List */}
+        <div
+          className={`${
+            selectedChat ? "hidden" : "w-full"
+          } md:block md:w-80 border-r flex flex-col`}
+        >
+          <div className="p-3 lg:p-4 border-b">
+            <div className="flex items-center justify-between mb-3">
+              <h1 className="text-lg font-semibold">Chat</h1>
+              <Button
+                className="bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm"
+                size="sm"
+                onClick={() => setComposeOpen(true)}
+              >
+                + Compose
+              </Button>
             </div>
-
-            <ScrollArea className="flex-1">
-              <div className="divide-y">
-                {chats
-                  .filter((chat) => {
-                    return (
-                      chat &&
-                      chat._id &&
-                      ((userType === "user" && chat.tutorId) ||
-                        (userType === "tutor" && chat.userId))
-                    );
-                  })
-                  .map((chat) => {
-                    const otherUser =
-                      userType === "user" ? chat.tutorId : chat.userId;
-
-                    // Additional validation to ensure otherUser exists
-                    if (!otherUser) {
-                      return null;
-                    }
-
-                    return (
-                      <div
-                        key={chat._id}
-                        className={`p-4 hover:bg-gray-50 cursor-pointer ${
-                          selectedChat?._id === chat._id ? "bg-orange-50" : ""
-                        }`}
-                        onClick={() => handleChatSelect(chat)}
-                      >
-                        <div className="flex gap-3">
-                          <div className="relative">
-                            <Avatar className="h-12 w-12">
-                              {otherUser?.profileImg ? (
-                                <AvatarImage
-                                  referrerPolicy="no-referrer"
-                                  crossOrigin="anonymous"
-                                  src={otherUser?.profileImg}
-                                  alt={`${
-                                    otherUser?.fullName || "User"
-                                  }'s avatar`}
-                                  onError={(e) => {
-                                    e.target.src = "/placeholder.svg"; // Fallback image
-                                  }}
-                                />
-                              ) : (
-                                <AvatarFallback>
-                                  {(otherUser?.fullName || "?").charAt(0)}
-                                </AvatarFallback>
-                              )}
-                            </Avatar>
-                            <span
-                              className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white ${
-                                chat.isOnline?.[
-                                  userType === "user" ? "tutor" : "student"
-                                ]
-                                  ? "bg-green-500"
-                                  : "bg-gray-300"
-                              }`}
-                            />
-                          </div>
-                          <div className="flex-1 overflow-hidden">
-                            <div className="flex items-center justify-between">
-                              <h3 className="font-semibold truncate">
-                                {otherUser?.fullName || "Unknown User"}
-                              </h3>
-                              <span className="text-xs text-gray-500">
-                                {chat.lastMessage?.timestamp &&
-                                  formatTime(chat.lastMessage.timestamp)}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <p className="text-sm text-gray-600 truncate">
-                                {chat.lastMessage?.contentType === "media"
-                                  ? `Media 📷`
-                                  : chat.lastMessage?.content ||
-                                    "Start a conversation"}
-                              </p>
-                              {chat.unreadCount?.[
-                                userType === "user" ? "student" : "tutor"
-                              ] > 0 && (
-                                <p className="text-xs bg-orange-400 px-[9px] py-[3px] rounded-full text-white">
-                                  {
-                                    chat.unreadCount[
-                                      userType === "user" ? "student" : "tutor"
-                                    ]
-                                  }
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-            </ScrollArea>
+            <div className="relative">
+              <Input
+                className="pl-8 bg-gray-50 text-sm"
+                placeholder="Search"
+                type="search"
+              />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+            </div>
           </div>
 
-          {/* Chat Area */}
-          <div
-            className={`${
-              !selectedChat ? "hidden" : "flex flex-col w-full"
-            } md:flex md:flex-1`}
-          >
-            {selectedChat ? (
-              <>
-                <div className="flex items-center justify-between p-3 border-b">
-                  <div className="flex items-center gap-2">
-                    <button
-                      className="md:hidden"
-                      onClick={() => setSelectedChat(null)}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-6 w-6"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 19l-7-7 7-7"
-                        />
-                      </svg>
-                    </button>
-                    <div className="relative">
-                      <Avatar className="h-8 w-8">
-                        <img
-                          crossOrigin="anonymous"
-                          referrerPolicy="no-referrer"
-                          src={
-                            userType === "user"
-                              ? selectedChat.tutorId?.profileImg
-                              : selectedChat.userId?.profileImg
-                          }
-                          alt="Chat partner's avatar"
-                        />
-                        <AvatarFallback>
-                          {userType === "user"
-                            ? selectedChat.tutorId?.fullName?.charAt(0)
-                            : selectedChat.userId?.fullName?.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                    </div>
-                    <div>
-                      <h2 className="font-semibold text-sm">
-                        {userType === "user"
-                          ? selectedChat.tutorId?.fullName
-                          : selectedChat.userId?.fullName}
-                      </h2>
-                      <p
-                        className={`text-xs ${
-                          selectedChat.isOnline[
-                            userType === "user" ? "tutor" : "student"
-                          ]
-                            ? "text-green-600"
-                            : "text-gray-500"
-                        }`}
-                      >
-                        {selectedChat.isOnline[
-                          userType === "user" ? "tutor" : "student"
-                        ]
-                          ? "Online"
-                          : "Offline"}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Video className="cursor-pointer" onClick={initiateCall} />
-                    <div className="relative">
-                      <Button
-                        onClick={() => handleOptionsModalOpen()}
-                        variant="ghost"
-                        size="icon"
-                      >
-                        <MoreHorizontal className="h-5 w-5" />
-                      </Button>
-                      {optionsModalOpen && (
-                        <div className="absolute right-4 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50 border border-gray-200">
-                          <button className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors">
-                            <AlertTriangle className="w-4 h-4 mr-2 text-orange-500" />
-                            Block Tutor
-                          </button>
-                          <button
-                            onClick={handleDeleteChat}
-                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors"
-                          >
-                            <Trash2Icon className="w-4 h-4 mr-2 text-orange-500" />
-                            Delete chat
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+          <ScrollArea className="flex-1">
+            <div className="divide-y">
+              {chats
+                .filter((chat) => {
+                  return (
+                    chat &&
+                    chat._id &&
+                    ((userType === "user" && chat.tutorId) ||
+                      (userType === "tutor" && chat.userId))
+                  );
+                })
+                .map((chat) => {
+                  const otherUser =
+                    userType === "user" ? chat.tutorId : chat.userId;
 
-                <ScrollArea className="flex-1 p-3">
-                  <div className="space-y-3">
-                    {messages.map((message) => (
-                      <div
-                        key={message._id}
-                        className={`flex gap-2 max-w-[85%] ${
-                          message.sender.userId === user._id
-                            ? "justify-end ml-auto"
-                            : ""
-                        }`}
-                      >
-                        {message.sender.userId !== user._id && (
-                          <Avatar className="h-6 w-6 mt-1">
-                            <img
-                              crossOrigin="anonymous"
-                              referrerPolicy="no-referrer"
-                              src={
-                                userType === "user"
-                                  ? selectedChat.tutorId?.profileImg
-                                  : selectedChat.userId?.profileImg
-                              }
-                              alt="Sender's avatar"
-                            />
-                            <AvatarFallback>
-                              {userType === "tutor"
-                                ? selectedChat.tutorId?.fullName?.charAt(0)
-                                : selectedChat.userId?.fullName?.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                        )}
-                        <div>
-                          <div
-                            className={`rounded-2xl p-2 text-sm ${
-                              message.sender.userId === user._id
-                                ? "bg-[#ff6738] text-white"
-                                : "bg-[#ffeee8]"
-                            }`}
-                          >
-                            {renderMessageContent(message)}
-                          </div>
-                          <div className="flex mt-1">
-                            {message.sender.userId === user._id && (
-                              <MessageStatus status={message.status} />
+                  // Additional validation to ensure otherUser exists
+                  if (!otherUser) {
+                    return null;
+                  }
+
+                  return (
+                    <div
+                      key={chat._id}
+                      className={`p-4 hover:bg-gray-50 cursor-pointer ${
+                        selectedChat?._id === chat._id ? "bg-orange-50" : ""
+                      }`}
+                      onClick={() => handleChatSelect(chat)}
+                    >
+                      <div className="flex gap-3">
+                        <div className="relative">
+                          <Avatar className="h-12 w-12">
+                            {otherUser?.profileImg ? (
+                              <AvatarImage
+                                referrerPolicy="no-referrer"
+                                crossOrigin="anonymous"
+                                src={otherUser?.profileImg}
+                                alt={`${
+                                  otherUser?.fullName || "User"
+                                }'s avatar`}
+                                onError={(e) => {
+                                  e.target.src = "/placeholder.svg"; // Fallback image
+                                }}
+                              />
+                            ) : (
+                              <AvatarFallback>
+                                {(otherUser?.fullName || "?").charAt(0)}
+                              </AvatarFallback>
                             )}
-                            <span className="text-xs text-gray-500 ml-2">
-                              {formatTime(
-                                message.createdAt || message.timestamps
-                              )}
+                          </Avatar>
+                          <span
+                            className={`absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white ${
+                              chat.isOnline?.[
+                                userType === "user" ? "tutor" : "student"
+                              ]
+                                ? "bg-green-500"
+                                : "bg-gray-300"
+                            }`}
+                          />
+                        </div>
+                        <div className="flex-1 overflow-hidden">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-semibold truncate">
+                              {otherUser?.fullName || "Unknown User"}
+                            </h3>
+                            <span className="text-xs text-gray-500">
+                              {chat.lastMessage?.timestamp &&
+                                formatTime(chat.lastMessage.timestamp)}
                             </span>
                           </div>
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm text-gray-600 truncate">
+                              {chat.lastMessage?.contentType === "media"
+                                ? `Media 📷`
+                                : chat.lastMessage?.content ||
+                                  "Start a conversation"}
+                            </p>
+                            {chat.unreadCount?.[
+                              userType === "user" ? "student" : "tutor"
+                            ] > 0 && (
+                              <p className="text-xs bg-orange-400 px-[9px] py-[3px] rounded-full text-white">
+                                {
+                                  chat.unreadCount[
+                                    userType === "user" ? "student" : "tutor"
+                                  ]
+                                }
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        {message.sender.userId === user._id && (
-                          <Avatar className="h-6 w-6 mt-1">
-                            <AvatarImage
-                              src={user?.profileImg}
-                              alt="Your avatar"
-                            />
-                            <AvatarFallback>
-                              {user?.fullName.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                        )}
                       </div>
-                    ))}
-                    {isTyping && <TypingIndicator />}
-
-                    <div ref={messagesEndRef}></div>
-                  </div>
-                </ScrollArea>
-
-                <div className="p-3 border-t">
-                  {selectedFile && (
-                    <div className="mb-2 relative inline-block">
-                      {previewUrl && (
-                        <img
-                          src={previewUrl}
-                          alt="Preview"
-                          className="h-20 w-20 object-cover rounded-lg"
-                        />
-                      )}
-                      <button
-                        onClick={clearSelectedFile}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
                     </div>
-                  )}
-                  <form onSubmit={handleSendMessage} className="flex gap-2">
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileSelect}
-                      accept="image/jpeg,image/png,image/gif,video/mp4"
-                      className="hidden"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <ImageIcon className="h-5 w-5 text-gray-500" />
-                    </Button>
-                    <Input
-                      className="flex-1 text-sm"
-                      placeholder="Type your message"
-                      value={inputMessage}
-                      onChange={(e) => {
-                        setInputMessage(e.target.value);
-                        handleTyping();
-                      }}
-                      disabled={!!selectedFile}
-                    />
-                    <Button
-                      type="submit"
-                      className="bg-[#ff4f38] hover:bg-[#e63f2a]"
-                    >
-                      <span className="hidden sm:inline">Send</span>
-                      <Send className="h-4 w-4 sm:ml-2" />
-                    </Button>
-                  </form>
-                </div>
-              </>
-            ) : (
-              <div className="hidden md:flex flex-1 items-center justify-center text-gray-500 text-sm">
-                Select a chat to start messaging
-              </div>
-            )}
-          </div>
+                  );
+                })}
+            </div>
+          </ScrollArea>
         </div>
 
-        <ComposeModal
-          open={composeOpen}
-          onOpenChange={setComposeOpen}
-          onChatCreated={handleCreateChat}
-          recipients={tutors}
-          user={user}
-        />
-        <VideoCallInterface
-          stream={stream}
-          myVideoRef={myVideoRef}
-          peerVideoRef={peerVideoRef}
-          isCallAccepted={isCallAccepted}
-          incomingCallInfo={incomingCallInfo}
-          outgoingCallInfo={outgoingCallInfo}
-          isCalling={isCalling}
-          onAnswer={answerCall}
-          onReject={handleRejectCall}
-          onEndCall={handleEndCall}
-          isCallActive={isCallActive || isCallAccepted}
-          onToggleAudio={onToggleAudio}
-          onToggleVideo={onToggleVideo}
-          isAudioEnabled={isAudioEnabled}
-          isVideoEnabled={isVideoEnabled}
-        />
+        {/* Chat Area */}
+        <div
+          className={`${
+            !selectedChat ? "hidden" : "flex flex-col w-full"
+          } md:flex md:flex-1`}
+        >
+          {selectedChat ? (
+            <>
+              <div className="flex items-center justify-between p-3 border-b">
+                <div className="flex items-center gap-2">
+                  <button
+                    className="md:hidden"
+                    onClick={() => setSelectedChat(null)}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 19l-7-7 7-7"
+                      />
+                    </svg>
+                  </button>
+                  <div className="relative">
+                    <Avatar className="h-8 w-8">
+                      <img
+                        crossOrigin="anonymous"
+                        referrerPolicy="no-referrer"
+                        src={
+                          userType === "user"
+                            ? selectedChat.tutorId?.profileImg
+                            : selectedChat.userId?.profileImg
+                        }
+                        alt="Chat partner's avatar"
+                      />
+                      <AvatarFallback>
+                        {userType === "user"
+                          ? selectedChat.tutorId?.fullName?.charAt(0)
+                          : selectedChat.userId?.fullName?.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </div>
+                  <div>
+                    <h2 className="font-semibold text-sm">
+                      {userType === "user"
+                        ? selectedChat.tutorId?.fullName
+                        : selectedChat.userId?.fullName}
+                    </h2>
+                    <p
+                      className={`text-xs ${
+                        selectedChat.isOnline[
+                          userType === "user" ? "tutor" : "student"
+                        ]
+                          ? "text-green-600"
+                          : "text-gray-500"
+                      }`}
+                    >
+                      {selectedChat.isOnline[
+                        userType === "user" ? "tutor" : "student"
+                      ]
+                        ? "Online"
+                        : "Offline"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Video className="cursor-pointer" onClick={initiateCall} />
+                  <div className="relative">
+                    <Button
+                      onClick={() => handleOptionsModalOpen()}
+                      variant="ghost"
+                      size="icon"
+                    >
+                      <MoreHorizontal className="h-5 w-5" />
+                    </Button>
+                    {optionsModalOpen && (
+                      <div className="absolute right-4 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50 border border-gray-200">
+                        <button className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors">
+                          <AlertTriangle className="w-4 h-4 mr-2 text-orange-500" />
+                          Block Tutor
+                        </button>
+                        <button
+                          onClick={handleDeleteChat}
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 w-full transition-colors"
+                        >
+                          <Trash2Icon className="w-4 h-4 mr-2 text-orange-500" />
+                          Delete chat
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <ScrollArea className="flex-1 p-3">
+                <div className="space-y-3">
+                  {messages.map((message) => (
+                    <div
+                      key={message._id}
+                      className={`flex gap-2 max-w-[85%] ${
+                        message.sender.userId === user._id
+                          ? "justify-end ml-auto"
+                          : ""
+                      }`}
+                    >
+                      {message.sender.userId !== user._id && (
+                        <Avatar className="h-6 w-6 mt-1">
+                          <img
+                            crossOrigin="anonymous"
+                            referrerPolicy="no-referrer"
+                            src={
+                              userType === "user"
+                                ? selectedChat.tutorId?.profileImg
+                                : selectedChat.userId?.profileImg
+                            }
+                            alt="Sender's avatar"
+                          />
+                          <AvatarFallback>
+                            {userType === "tutor"
+                              ? selectedChat.tutorId?.fullName?.charAt(0)
+                              : selectedChat.userId?.fullName?.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
+                      <div>
+                        <div
+                          className={`rounded-2xl p-2 text-sm ${
+                            message.sender.userId === user._id
+                              ? "bg-[#ff6738] text-white"
+                              : "bg-[#ffeee8]"
+                          }`}
+                        >
+                          {renderMessageContent(message)}
+                        </div>
+                        <div className="flex mt-1">
+                          {message.sender.userId === user._id && (
+                            <MessageStatus status={message.status} />
+                          )}
+                          <span className="text-xs text-gray-500 ml-2">
+                            {formatTime(
+                              message.createdAt || message.timestamps
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                      {message.sender.userId === user._id && (
+                        <Avatar className="h-6 w-6 mt-1">
+                          <AvatarImage
+                            src={user?.profileImg}
+                            alt="Your avatar"
+                          />
+                          <AvatarFallback>
+                            {user?.fullName.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
+                    </div>
+                  ))}
+                  {isTyping && <TypingIndicator />}
+
+                  <div ref={messagesEndRef}></div>
+                </div>
+              </ScrollArea>
+
+              <div className="p-3 border-t">
+                {selectedFile && (
+                  <div className="mb-2 relative inline-block">
+                    {previewUrl && (
+                      <img
+                        src={previewUrl}
+                        alt="Preview"
+                        className="h-20 w-20 object-cover rounded-lg"
+                      />
+                    )}
+                    <button
+                      onClick={clearSelectedFile}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+                <form onSubmit={handleSendMessage} className="flex gap-2">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileSelect}
+                    accept="image/jpeg,image/png,image/gif,video/mp4"
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <ImageIcon className="h-5 w-5 text-gray-500" />
+                  </Button>
+                  <Input
+                    className="flex-1 text-sm"
+                    placeholder="Type your message"
+                    value={inputMessage}
+                    onChange={(e) => {
+                      setInputMessage(e.target.value);
+                      handleTyping();
+                    }}
+                    disabled={!!selectedFile}
+                  />
+                  <Button
+                    type="submit"
+                    className="bg-[#ff4f38] hover:bg-[#e63f2a]"
+                  >
+                    <span className="hidden sm:inline">Send</span>
+                    <Send className="h-4 w-4 sm:ml-2" />
+                  </Button>
+                </form>
+              </div>
+            </>
+          ) : (
+            <div className="hidden md:flex flex-1 items-center justify-center text-gray-500 text-sm">
+              Select a chat to start messaging
+            </div>
+          )}
+        </div>
+      </div>
+
+      <ComposeModal
+        open={composeOpen}
+        onOpenChange={setComposeOpen}
+        onChatCreated={handleCreateChat}
+        recipients={tutors}
+        user={user}
+      />
+      <VideoCallInterface
+        stream={stream}
+        myVideoRef={myVideoRef}
+        peerVideoRef={peerVideoRef}
+        isCallAccepted={isCallAccepted}
+        incomingCallInfo={incomingCallInfo}
+        outgoingCallInfo={outgoingCallInfo}
+        isCalling={isCalling}
+        onAnswer={answerCall}
+        onReject={handleRejectCall}
+        onEndCall={handleEndCall}
+        isCallActive={isCallActive || isCallAccepted}
+        onToggleAudio={onToggleAudio}
+        onToggleVideo={onToggleVideo}
+        isAudioEnabled={isAudioEnabled}
+        isVideoEnabled={isVideoEnabled}
+      />
     </>
   );
 }

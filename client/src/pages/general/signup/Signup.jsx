@@ -115,7 +115,7 @@ const validateForm = () => {
      try {
       setIsLoading(true);
 
-      const response = await axios.post('http://localhost:3000/user/sendotp', {
+      const response = await axios.post('http://localhost:3000/user/otp/send', {
         email: formData.email
       });
 
@@ -151,7 +151,7 @@ const validateForm = () => {
 
       setIsLoading(true);
       // First, check if email already exists
-      const checkEmailResponse = await axios.post('http://localhost:3000/admin/check-mail', {
+      const checkEmailResponse = await axios.post('http://localhost:3000/admin/auth/check-mail', {
         email: formData.email,
         username:formData.username
       });
@@ -181,7 +181,7 @@ const validateForm = () => {
       setIsLoading(true);
       
       if (authResult.code) {
-        const response = await axios.post('http://localhost:3000/user/google', {
+        const response = await axios.post('http://localhost:3000/user/login/google', {
           code: authResult.code
         });
 

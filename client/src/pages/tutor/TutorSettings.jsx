@@ -283,7 +283,7 @@ export default function TutorSettings() {
     try {
       // Check for existing phone or username
       const existCheck = await axiosInstance.post(
-        "http://localhost:3000/admin/check-mail",
+        "http://localhost:3000/admin/auth/check-mail",
         {
           phone: personalInfo.phone,
           username: personalInfo.userName,
@@ -317,7 +317,7 @@ export default function TutorSettings() {
 
       // If no validation errors, proceed with update
       const response = await axiosInstance.put(
-        "http://localhost:3000/tutor/update-profile",
+        "http://localhost:3000/tutor/profile",
         personalInfo
       );
 
@@ -374,7 +374,7 @@ export default function TutorSettings() {
 
     try {
       const response = await axiosInstance.put(
-        "http://localhost:3000/tutor/change-password",
+        "http://localhost:3000/tutor/password",
         { passwordChange }
       );
       toast.success(response.data.message || "Password changed successfully", {

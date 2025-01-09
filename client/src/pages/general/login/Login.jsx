@@ -95,7 +95,7 @@ const Login = () => {
       setIsLoading(true);
 
       if (authResult.code) {
-        const response = await axiosInstance.post("http://localhost:3000/user/google", {
+        const response = await axiosInstance.post("http://localhost:3000/user/login/google", {
           code: authResult.code,
         });
 

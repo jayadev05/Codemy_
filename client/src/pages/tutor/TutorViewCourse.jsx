@@ -1,21 +1,21 @@
-"use client"
+"use client";
 
-import { Bell, Search } from 'lucide-react'
-import { useSelector } from "react-redux"
-import { selectCourse } from "../../store/slices/courseSlice"
-import { selectTutor } from "../../store/slices/tutorSlice"
+import { Bell, Search } from "lucide-react";
+import { useSelector } from "react-redux";
+import { selectCourse } from "../../store/slices/courseSlice";
+import { selectTutor } from "../../store/slices/tutorSlice";
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,47 +23,45 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 
-import Sidebar from "../../components/layout/tutor/Sidebar"
-import { CourseStats } from '@/components/layout/tutor/courseDetails/CourseStats'
-import { CourseRatingOverview } from '@/components/layout/tutor/courseDetails/CourseRatings'
-import { CourseReviews } from '@/components/layout/tutor/courseDetails/CourseReviews'
-import { useEffect, useState } from 'react'
-import axiosInstance from '@/config/axiosConfig'
-import TutorHeader from '@/components/layout/tutor/TutorHeader'
-
+import Sidebar from "../../components/layout/tutor/Sidebar";
+import { CourseStats } from "@/components/layout/tutor/courseDetails/CourseStats";
+import { CourseRatingOverview } from "@/components/layout/tutor/courseDetails/CourseRatings";
+import { CourseReviews } from "@/components/layout/tutor/courseDetails/CourseReviews";
+import { useEffect, useState } from "react";
+import axiosInstance from "@/config/axiosConfig";
+import TutorHeader from "@/components/layout/tutor/TutorHeader";
 
 function TutorViewCourse() {
-  const tutor = useSelector(selectTutor)
-  const course = useSelector(selectCourse)
-  const [reviews,setReviews]=useState([]);
+  const tutor = useSelector(selectTutor);
+  const course = useSelector(selectCourse);
+  const [reviews, setReviews] = useState([]);
 
-  console.log("Reviews",reviews)
+  console.log("Reviews", reviews);
 
-  const ratings = course.ratings.length > 0 ? course.ratings : [0]
+  const ratings = course.ratings.length > 0 ? course.ratings : [0];
 
-  useEffect(()=>{
-
-    const fetchReviews=async()=>{
+  useEffect(() => {
+    const fetchReviews = async () => {
       try {
-        const response = await axiosInstance.get(`/tutor/get-reviews/${course._id}`);
-    
-        setReviews(response.data.reviews);
+        const response = await axiosInstance.get(
+          `/tutor/reviews/${course._id}`
+        );
 
+        setReviews(response.data.reviews);
       } catch (error) {
-        console.log(error)
+        console.log(error);
       }
-    }
+    };
 
     fetchReviews();
-
-  },[])
+  }, []);
 
   const formatCurrency = (num) => {
-    const cleanedNum = num.toString().replace(/[^\d]/g, "")
-    return cleanedNum ? Number(cleanedNum).toLocaleString("en-IN") : ""
-  }
+    const cleanedNum = num.toString().replace(/[^\d]/g, "");
+    return cleanedNum ? Number(cleanedNum).toLocaleString("en-IN") : "";
+  };
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -72,7 +70,7 @@ function TutorViewCourse() {
       </div>
 
       <main className="flex-1">
-      <TutorHeader heading="Course Details"/>
+        <TutorHeader heading="Course Details" />
 
         <div className="space-y-6 p-6">
           <Card>
@@ -86,7 +84,8 @@ function TutorViewCourse() {
               </div>
               <div className="flex-1">
                 <CardDescription>
-                  Last updated: {new Date(course.updatedAt).toLocaleDateString()}
+                  Last updated:{" "}
+                  {new Date(course.updatedAt).toLocaleDateString()}
                 </CardDescription>
                 <CardTitle className="mb-4 mt-2 text-2xl">
                   {course.title}
@@ -120,8 +119,7 @@ function TutorViewCourse() {
         </div>
       </main>
     </div>
-  )
+  );
 }
 
-export default TutorViewCourse
-
+export default TutorViewCourse;

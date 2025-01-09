@@ -46,7 +46,7 @@ const PurchaseHistory = () => {
       try {
         setIsLoading(true);
         const response = await axiosInstance.get(
-          `http://localhost:3000/checkout/get-order-history/${user._id}`
+          `http://localhost:3000/checkout/orders/${user._id}/history`
         );
         setOrders(response.data.data);
         setError(null);
@@ -115,7 +115,7 @@ const PurchaseHistory = () => {
         paymentResponse;
 
       const response = await axios.post(
-        "http://localhost:3000/checkout/verify-payment",
+        "http://localhost:3000/checkout/payment/verify",
         { razorpay_order_id, razorpay_payment_id, razorpay_signature }
       );
 
@@ -218,7 +218,7 @@ const PurchaseHistory = () => {
                   <div
                     key={order.orderId}
                     onClick={() => handleOrderClick(order)}
-                    className="overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-md"
+                    className="overflow-hidden rounded-xl bg-white shadow-sm transition-all hover:shadow-md hover:cursor-pointer"
                   >
                     <div className="flex gap-6 p-6">
                       <div className="relative h-24 w-36 flex-shrink-0 overflow-hidden rounded-lg">
@@ -253,8 +253,7 @@ const PurchaseHistory = () => {
                                 ? `${course?.title.slice(0, 25)} ...+${
                                     order.course?.length - 1
                                   }`
-                                : course?.title ||
-                                  "Course details unavailable"}
+                                : course?.title || "Course details unavailable"}
                             </h3>
                             <div className="flex items-center gap-3">
                               <span

@@ -28,7 +28,7 @@ export default function ShoppingCart() {
     const fetchCart = async () => {
       try {
         const response = await axiosInstance.get(
-          "http://localhost:3000/course/get-cart",
+          "http://localhost:3000/user/cart",
           {
             params: { userId: user._id },
           }
@@ -45,12 +45,9 @@ export default function ShoppingCart() {
 
   const handleRemoveFromCart = async (courseId) => {
     try {
-      await axiosInstance.delete(
-        "http://localhost:3000/course/removeFromCart",
-        {
-          params: { userId: user._id, courseId },
-        }
-      );
+      await axiosInstance.delete("http://localhost:3000/user/cart/remove", {
+        params: { userId: user._id, courseId },
+      });
 
       dispatch(removeFromCart(courseId));
 

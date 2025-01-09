@@ -110,7 +110,7 @@ export default function Dashboard() {
     try {
       setIsLoading(true)
       const [coursesRes, payoutsRes] = await Promise.allSettled([
-        axiosInstance.get("/course/get-courses", {
+        axiosInstance.get("/course/courses", {
           params: { sortBy },
         }),
         axiosInstance.get("/admin/payout-requests")
@@ -133,8 +133,8 @@ export default function Dashboard() {
 
   const handleToggleList = async (id, isListed) => {
     try {
-      const endpoint = isListed ? "unlistCourse" : "listCourse"
-      await axiosInstance.put(`/admin/${endpoint}/${id}`)
+      const endpoint = isListed ? "unlist" : "list"
+      await axiosInstance.put(`/admin/course/${id}/${endpoint}`);
       setCourses((prevCourses) =>
         prevCourses.map((course) =>
           course._id === id ? { ...course, isListed: !course.isListed } : course
@@ -151,7 +151,7 @@ export default function Dashboard() {
   const handleDeleteCourse = async (courseId, tutorId) => {
     try {
       await axiosInstance.delete(
-        `/course/delete-course?courseId=${courseId}&tutorId=${tutorId}`
+        `/course/course?courseId=${courseId}&tutorId=${tutorId}`
       )
       setCourses((prevCourses) =>
         prevCourses.filter((course) => course._id !== courseId)

@@ -18,8 +18,9 @@ const initializeSocket = (server) => {
       allowedHeaders: ['Content-Type', 'Authorization', 'x-refresh-token'],  
       credentials: true,
     },
-    pingTimeout: 60000,
-    pingInterval: 25000,
+    pingTimeout: 120000,        // Increased to 2 minutes
+    pingInterval: 25000,        // Keep this as is
+    connectTimeout: 60000,      // Increased to 1 minute
   });
 
   ioInstance = io;
@@ -161,9 +162,9 @@ const initializeSocket = (server) => {
 
 
   
-      socket.on('join', ({ userId }) => {
-        socket.join(userId);
-        console.log(`User ${userId} joined their room`);
+      socket.on('join', (roomId) => {
+        socket.join(roomId);
+        console.log(`User ${roomId} joined their room`);
       });
   
       // Handle disconnect
