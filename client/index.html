@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+<meta
+  http-equiv="Content-Security-Policy"
+  content="
+    default-src 'self';
+    connect-src 'self' https://checkout.razorpay.com https://api.razorpay.com https://lumberjack.razorpay.com http://localhost:3000 ws://localhost:3000 https://checkout.razorpay.com https://lumberjack.razorpay.com https://lumberjack-cx.razorpay.com https://accounts.google.com https://api.stripe.com https://api.cloudinary.com;
+    script-src 'self' 'unsafe-inline' https://checkout.razorpay.com https://cdn.jsdelivr.net https://accounts.google.com https://js.stripe.com https://checkout.razorpay.com https://lumberjack.razorpay.com https://lumberjack-cx.razorpay.com;
+    style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline';
+    img-src 'self' data: https: blob:;
+    font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com;
+    frame-src 'self' https://accounts.google.com https://api.razorpay.com https://js.stripe.com;
+    media-src 'self' https://res.cloudinary.com;
+  "
+/>
+
+
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Codemy</title>
+
+    <link rel="icon" type="image/png" href="/logo_cap.png" />
+
+    <!-- Remix icon  -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css"
+      rel="stylesheet"
+    />
+
+    <!-- Razorpay script -->
+    <script defer src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
