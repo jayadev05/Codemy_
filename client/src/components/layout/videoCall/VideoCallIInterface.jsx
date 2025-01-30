@@ -112,8 +112,8 @@ const VideoCallInterface = ({
       </Dialog>
 
       {/* Active Call Interface */}
-      {isCallActive && (
-        <div className="fixed inset-0 p-5 bg-gradient-to-br from-gray-900 to-black z-50 flex items-center justify-center backdrop-blur-sm">
+      
+        <div className={`fixed inset-0 p-5 bg-gradient-to-br from-gray-900 to-black z-50 flex items-center justify-center backdrop-blur-sm visibility: ${isCallActive ? 'visible' : 'hidden'} `}>
           <Card className="w-full h-full max-w-7xl bg-gray-900/50 backdrop-blur-md border-gray-800">
             <CardContent className="p-8">
               <div className="relative h-[86vh] rounded-xl overflow-hidden">
@@ -253,7 +253,7 @@ const VideoCallInterface = ({
             </CardContent>
           </Card>
         </div>
-      )}
+      
     </>
   )
 }

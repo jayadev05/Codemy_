@@ -13,10 +13,6 @@ import {
   X,
   Star,
   Loader2,
-  LucideSmilePlus,
-  LucideBadgePlus,
-  LucideMessageCircleMore,
-  LucideThumbsUp,
   ThumbsUp,
 } from "lucide-react";
 import Header from "../../../components/layout/Header";
@@ -29,11 +25,9 @@ import { selectUser } from "../../../store/slices/userSlice";
 import toast from "react-hot-toast";
 import ReportModal from "../../../components/utils/ReportModal";
 import { selectCourse } from "@/store/slices/courseSlice";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import axiosInstance from "@/config/axiosConfig";
+import { Label } from "@radix-ui/react-label";
 
 export default function CoursePlayer() {
   const user = useSelector(selectUser);
@@ -353,9 +347,10 @@ export default function CoursePlayer() {
       <Header />
       <MainHeader />
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+        {/* Certificate Modal */}
         {showCertificateModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4 transform transition-all">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl p-4 sm:p-8 max-w-md w-full mx-auto transform transition-all">
               <div className="relative">
                 <button
                   onClick={() => setShowCertificateModal(false)}
@@ -365,12 +360,12 @@ export default function CoursePlayer() {
                 </button>
                 <div className="text-center">
                   <div className="mb-4 inline-flex p-3 bg-yellow-100 rounded-full">
-                    <Trophy className="w-12 h-12 text-yellow-500" />
+                    <Trophy className="w-8 h-8 sm:w-12 sm:h-12 text-yellow-500" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
                     Congratulations! 🎉
                   </h3>
-                  <p className="text-gray-600 mb-6">
+                  <p className="text-sm sm:text-base text-gray-600 mb-6">
                     You've completed the course! Your certificate is ready to be
                     generated.
                   </p>
@@ -379,28 +374,16 @@ export default function CoursePlayer() {
                       if (!certificateUrl) handleCertificate();
                     }}
                     disabled={certificateLoading}
-                    className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-2.5 sm:py-3 px-4 sm:px-6 rounded-lg font-semibold hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed text-sm sm:text-base"
                   >
                     {certificateLoading ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Generating Certificate...
-                      </>
-                    ) : certificateUrl ? (
-                      <a
-                        href={certificateUrl}
-                        download="Certificate.png"
-                        className="flex gap-3 items-center "
-                      >
-                        <Download className="w-5 h-5" />
-                        Download Certificate
-                      </a>
+                      <Loader2 className="animate-spin w-5 h-5 mr-2" />
                     ) : (
-                      <>
-                        <Download className="w-5 h-5" />
-                        Get Your Certificate
-                      </>
+                      <Download className="w-5 h-5 mr-2" />
                     )}
+                    {certificateLoading
+                      ? "Generating..."
+                      : "Download Certificate"}
                   </button>
                 </div>
               </div>
@@ -408,34 +391,42 @@ export default function CoursePlayer() {
           </div>
         )}
 
+        {/* Rating Modal */}
         {ratingModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            
             <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4 transform transition-all">
+              
               <div className="relative">
+                
                 <button
                   onClick={() => setRatingModalOpen(false)}
                   className="absolute -right-2 -top-2 text-gray-500 hover:text-gray-700"
                 >
+                  
                   <X className="w-6 h-6" />
                 </button>
-
                 <div className="text-center">
+                  
                   <div className="mb-3 inline-flex p-3 bg-yellow-100 rounded-full">
+                    
                     <ThumbsUp className="w-12 h-12 text-yellow-500" />
                   </div>
-
                   <p className="text-gray-600 mb-6">
+                    
                     You've completed the course! Please give the course a
                     rating.
                   </p>
-
                   <div className="flex justify-center items-center mb-6">
+                    
                     {renderStarRating()}
                   </div>
-
                   <div className="space-y-4 mb-6">
+                    
                     <div className="space-y-2">
+                      
                       <Label htmlFor="feedback" className="text-left block">
+                        
                         Share your feedback
                       </Label>
                       <Textarea
@@ -448,10 +439,10 @@ export default function CoursePlayer() {
                       />
                     </div>
                     <div className="text-sm text-muted-foreground text-right">
+                      
                       {feedback.length}/250 characters
                     </div>
                   </div>
-
                   <button
                     onClick={() => {
                       submitCourseReview(feedback);
@@ -460,6 +451,7 @@ export default function CoursePlayer() {
                     disabled={!courseRating}
                     className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                   >
+                    
                     Submit Rating
                   </button>
                 </div>
@@ -469,8 +461,10 @@ export default function CoursePlayer() {
         )}
 
         <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-4">
+          <div className="container mx-auto px-4 py-3 sm:py-4 flex items-center justify-between">
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 w-full">
+            <div className="flex items-center gap-2 sm:gap-4">
               <button
                 onClick={() => navigate("/user/profile")}
                 className="text-gray-500 hover:text-gray-800 transition-colors"
@@ -481,10 +475,11 @@ export default function CoursePlayer() {
                 {course?.title}
               </h1>
             </div>
-            <div className="flex items-center gap-4">
+
+            <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto pb-2 sm:pb-0">
               <button
                 onClick={handleReview}
-                className="bg-orange-100 text-orange-500 px-4 py-2"
+                className="bg-orange-100 text-orange-500 px-3 sm:px-4 py-1.5 sm:py-2 text-sm whitespace-nowrap rounded-lg"
               >
                 Write A Review
               </button>
@@ -514,6 +509,7 @@ export default function CoursePlayer() {
                 <ChevronLeft className="w-5 h-5" />
                 Previous
               </button>
+
               <button
                 onClick={handleNextLesson}
                 className={`
@@ -576,12 +572,15 @@ export default function CoursePlayer() {
                 />
               </div>
             </div>
+
+            </div>
+
           </div>
         </header>
 
-        <div className="container mx-auto px-4 py-6 flex gap-6 flex-grow">
+        <div className="container mx-auto px-4 py-4 sm:py-6 flex flex-col lg:flex-row gap-4 sm:gap-6">
           {/* Video and Lesson Details Section */}
-          <div className="flex-2 w-full max-w-4xl">
+          <div className="w-full lg:flex-2 lg:max-w-4xl">
             {activeLesson && (
               <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl mb-6">
                 {activeLesson ? (
@@ -604,20 +603,20 @@ export default function CoursePlayer() {
               </div>
             )}
 
-            <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-              <div className="flex items-center justify-between mb-6">
+            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 mb-4 sm:mb-6">
+              <div className="flex items-center justify-start mb-4 sm:mb-6 overflow-x-auto">
                 <div className="flex gap-2">
                   {tabs.map(({ id, icon: Icon }) => (
                     <button
                       key={`tab-${id}`}
                       onClick={() => setActiveTab(id)}
-                      className={`px-4 py-2 font-medium capitalize transition-all duration-200 rounded-lg flex items-center ${
+                      className={`px-3 sm:px-4 py-1.5 sm:py-2 font-medium capitalize transition-all duration-200 rounded-lg flex items-center whitespace-nowrap text-sm sm:text-base ${
                         activeTab === id
                           ? "text-white bg-gradient-to-r from-orange-500 to-orange-600 shadow-md"
                           : "text-gray-600 hover:bg-gray-100"
                       }`}
                     >
-                      <Icon className="w-5 h-5 mr-2" />
+                      <Icon className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
                       {id.replace("-", " ")}
                     </button>
                   ))}
@@ -628,17 +627,17 @@ export default function CoursePlayer() {
                 <div className="prose max-w-none">
                   {activeTab === "description" && (
                     <div className="space-y-4">
-                      <h2 className="text-2xl font-bold text-gray-900">
+                      <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                         {activeLesson.title}
                       </h2>
-                      <p className="text-gray-600 leading-relaxed">
+                      <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
                         {activeLesson.description}
                       </p>
                     </div>
                   )}
                   {activeTab === "attatchments" && (
                     <div className="space-y-4">
-                      <h2 className="text-2xl font-bold text-gray-900">
+                      <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                         Lecture Notes
                       </h2>
                       <div className="space-y-2">
@@ -648,7 +647,7 @@ export default function CoursePlayer() {
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          <FileText className="w-5 h-5 text-orange-500 mr-3" />
+                          <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-orange-500 mr-3" />
                           Notes(pdf)
                         </a>
                       </div>
@@ -659,15 +658,16 @@ export default function CoursePlayer() {
             </div>
           </div>
 
-          <div className="flex-1">
-            <div className="bg-white rounded-xl shadow-sm sticky top-24">
-              <div className="p-6 border-b border-gray-200">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">
+          {/* Course Contents Sidebar */}
+          <div className="w-full lg:flex-1">
+            <div className="bg-white rounded-xl shadow-sm lg:sticky lg:top-24">
+              <div className="p-4 sm:p-6 border-b border-gray-200">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
                   Course Contents
                 </h2>
 
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="flex-1 h-2 sm:h-3 bg-gray-200 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-orange-500 to-orange-600 rounded-full transition-all duration-500"
                       style={{
@@ -675,14 +675,13 @@ export default function CoursePlayer() {
                       }}
                     />
                   </div>
-
-                  <span className="text-sm font-semibold text-gray-700">
+                  <span className="text-xs sm:text-sm font-semibold text-gray-700">
                     {calculateOverallProgress()}%
                   </span>
                 </div>
               </div>
 
-              <div className="divide-y divide-gray-100 max-h-[calc(100vh-300px)] overflow-y-auto">
+              <div className="divide-y divide-gray-100 max-h-[50vh] lg:max-h-[calc(100vh-300px)] overflow-y-auto">
                 {course?.lessons?.map((lesson) => {
                   const progress = lessonProgress[lesson.id] || {};
                   const isActive = activeLesson?.id === lesson?.id;
@@ -691,32 +690,39 @@ export default function CoursePlayer() {
                     <div
                       key={`lesson-item-${lesson?.id}`}
                       onClick={() => setActiveLesson(lesson)}
-                      className={`flex items-center gap-3 p-4 hover:bg-orange-50 cursor-pointer transition-all duration-200
-          ${isActive ? "bg-orange-50 border-l-4  !border-orange-500" : ""}
-          ${progress.status === "completed" ? "opacity-90" : ""}
-        `}
+                      className={`flex items-center gap-2 sm:gap-3 p-3 sm:p-4 hover:bg-orange-50 cursor-pointer transition-all duration-200
+                      ${
+                        isActive
+                          ? "bg-orange-50 border-l-4 !border-orange-500"
+                          : ""
+                      }
+                      ${progress.status === "completed" ? "opacity-90" : ""}
+                    `}
                       style={
                         isActive ? { borderLeft: "4px solid #f97316" } : {}
                       }
                     >
                       {getLessonStatusIcon(lesson)}
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <p
-                          className={`text-sm font-medium 
-              ${isActive ? "text-orange-600" : "text-gray-900"}
-              ${progress.status === "completed" ? "text-gray-600" : ""}
-            `}
+                          className={`text-xs sm:text-sm font-medium truncate
+                          ${isActive ? "text-orange-600" : "text-gray-900"}
+                          ${
+                            progress.status === "completed"
+                              ? "text-gray-600"
+                              : ""
+                          }
+                        `}
                         >
                           {lesson?.title}
                         </p>
-                        <p className="text-xs text-gray-500 flex justify-between mt-1">
+                        <p className="text-xs text-gray-500 flex justify-between mt-0.5 sm:mt-1">
                           <span>
                             {lesson.duration} {lesson.durationUnit}
                           </span>
                           {progress.status === "in-progress" && (
                             <span className="text-orange-500 font-medium">
                               {Math.round(progress.watchedPercentage || 0)}%
-                              watched
                             </span>
                           )}
                         </p>

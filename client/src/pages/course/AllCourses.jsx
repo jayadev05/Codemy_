@@ -334,145 +334,136 @@ export default function CourseListing() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col mx-auto ">
-      <Header />
+    <div className="min-h-screen flex flex-col mx-auto">
+  <Header />
 
-      <main
-        className="flex-1 bg-gray-50 min-h-[90vh] dark:bg-[#1d2026]
-      "
-      >
-        <MainHeader />
+  <main className="flex-1 bg-gray-50 min-h-[90vh] dark:bg-[#1d2026]">
+    <MainHeader />
 
-        {/* Filter Section */}
-        <FilterSection />
+    <FilterSection />
 
-        {/* Overlay */}
-        {isFilterOpen && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-20"
-            onClick={() => setIsFilterOpen(false)}
-          />
-        )}
+    {isFilterOpen && (
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 z-20"
+        onClick={() => setIsFilterOpen(false)}
+      />
+    )}
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Filter Bar */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setIsFilterOpen(true)}
-                className="px-4 py-2 text-sm bg-white dark:bg-[#1d2026] rounded-md border shadow-sm flex items-center gap-1"
-              >
-                Filter
-                <Filter className="w-4 pt-[2px] " />
-              </button>
-              <div className="relative">
-                <input
-                  type="search"
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                  placeholder="Search courses..."
-                  className="w-64 px-4 py-2 text-sm rounded-md border shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600 dark:text-white">
-                Sort by:
-              </span>
-              <select
-                name="sortBy"
-                value={sortBy}
-                onChange={handleSortChange}
-                id="sortBy"
-                className="border rounded-md px-2 py-1 text-sm"
-              >
-                <option value="latest">Latest</option>
-                <option value="trending">Trending</option>
-                <option value="popular">Popular</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Course Grid */}
-          <div className="grid gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-12">
-            {courses.map((course) => (
-              <div
-                key={course._id}
-                className="flex flex-col overflow-hidden rounded-lg bg-white dark:bg-slate-900 dark:border border-gray-600 shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out"
-              >
-                <div className="relative aspect-[3/2] w-full">
-                  <img
-                    onClick={() => handleCourseView(course._id)}
-                    src={course.thumbnail}
-                    alt={`${course.title} thumbnail`}
-                    className="h-full w-full object-cover cursor-pointer"
-                  />
-
-                  {user &&
-                    (user?.activeCourses?.includes(course._id) ? null : (
-                      <button
-                        onClick={() => handleWishlist(course._id)}
-                        className="absolute top-2 right-2 p-2 bg-white bg-opacity-70 rounded-full hover:bg-opacity-100 transition-all duration-300"
-                        aria-label="Add to wishlist"
-                      >
-                        <Heart className="w-5 h-5 text-gray-600 hover:text-red-500 transition-colors duration-300" />
-                      </button>
-                    ))}
-                </div>
-                <div className="flex flex-col flex-grow p-4">
-                  <span className="inline-block self-start rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-800">
-                    {course.categoryId.title}
-                  </span>
-                  <h3
-                    onClick={() => handleCourseView(course._id)}
-                    className="mt-2 text-lg font-semibold line-clamp-2 text-gray-900 dark:text-white flex-grow cursor-pointer"
-                  >
-                    {course.title}
-                  </h3>
-                  <div className="mt-3 flex items-center gap-2">
-                    <div className="flex text-orange-400">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-4 h-4 ${
-                            i < Math.floor(course.averageRating)
-                              ? "text-orange-400 fill-current"
-                              : "text-gray-300"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">
-                      {course.averageRating.toFixed(1)}
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      ({course.enrolleeCount.toLocaleString()} students)
-                    </span>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="text-xl font-bold text-gray-900 dark:text-white">
-                      ₹{formatCurrency(course.price.$numberDecimal)}
-                    </span>
-                    {user?.activeCourses?.includes(course._id) ? null : (
-                      <button
-                        className="z-10"
-                        onClick={() =>
-                          handleAddToCart(course._id, course.price)
-                        }
-                        title="add to cart"
-                      >
-                        <ShoppingBag />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+      {/* Filter Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-8 mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 w-full sm:w-auto">
+          <button
+            onClick={() => setIsFilterOpen(true)}
+            className="px-3 sm:px-4 py-2 text-sm bg-white dark:bg-[#1d2026] rounded-md border shadow-sm flex items-center justify-center gap-1 w-full sm:w-auto"
+          >
+            Filter
+            <Filter className="w-4 pt-[2px]" />
+          </button>
+          <div className="relative flex-grow sm:flex-grow-0">
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              placeholder="Search courses..."
+              className="w-full sm:w-64 px-4 py-2 text-sm rounded-md border shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+            />
           </div>
         </div>
-      </main>
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          <span className="text-sm text-gray-600 dark:text-white">Sort by:</span>
+          <select
+            name="sortBy"
+            value={sortBy}
+            onChange={handleSortChange}
+            id="sortBy"
+            className="border rounded-md px-2 py-1 text-sm flex-grow sm:flex-grow-0"
+          >
+            <option value="latest">Latest</option>
+            <option value="trending">Trending</option>
+            <option value="popular">Popular</option>
+          </select>
+        </div>
+      </div>
 
-      <SecondaryFooter />
+      {/* Course Grid */}
+      <div className="grid gap-4 sm:gap-6 lg:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 mb-8 sm:mb-12">
+        {courses.map((course) => (
+          <div
+            key={course._id}
+            className="flex flex-col overflow-hidden rounded-lg bg-white dark:bg-slate-900 dark:border border-gray-600 shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out"
+          >
+            <div className="relative aspect-[3/2] w-full">
+              <img
+                onClick={() => handleCourseView(course._id)}
+                src={course.thumbnail || "/placeholder.svg"}
+                alt={`${course.title} thumbnail`}
+                className="h-full w-full object-cover cursor-pointer"
+              />
+
+              {user &&
+                (user?.activeCourses?.includes(course._id) ? null : (
+                  <button
+                    onClick={() => handleWishlist(course._id)}
+                    className="absolute top-2 right-2 p-2 bg-white bg-opacity-70 rounded-full hover:bg-opacity-100 transition-all duration-300"
+                    aria-label="Add to wishlist"
+                  >
+                    <Heart className="w-5 h-5 text-gray-600 hover:text-red-500 transition-colors duration-300" />
+                  </button>
+                ))}
+            </div>
+            <div className="flex flex-col flex-grow p-3 sm:p-4">
+              <span className="inline-block self-start rounded-full bg-orange-100 px-2 sm:px-3 py-1 text-xs font-semibold text-orange-800">
+                {course.categoryId.title}
+              </span>
+              <h3
+                onClick={() => handleCourseView(course._id)}
+                className="mt-2 text-base sm:text-lg font-semibold line-clamp-2 text-gray-900 dark:text-white flex-grow cursor-pointer"
+              >
+                {course.title}
+              </h3>
+              <div className="mt-2 sm:mt-3 flex items-center gap-1 sm:gap-2">
+                <div className="flex text-orange-400">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`w-3 h-3 sm:w-4 sm:h-4 ${
+                        i < Math.floor(course.averageRating)
+                          ? "text-orange-400 fill-current"
+                          : "text-gray-300"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
+                  {course.averageRating.toFixed(1)}
+                </span>
+                <span className="text-xs sm:text-sm text-gray-500">
+                  ({course.enrolleeCount.toLocaleString()} students)
+                </span>
+              </div>
+              <div className="mt-2 sm:mt-3 flex items-center justify-between">
+                <span className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
+                  ₹{formatCurrency(course.price.$numberDecimal)}
+                </span>
+                {user?.activeCourses?.includes(course._id) ? null : (
+                  <button
+                    className="z-10"
+                    onClick={() => handleAddToCart(course._id, course.price)}
+                    title="add to cart"
+                  >
+                    <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
+  </main>
+
+  <SecondaryFooter />
+</div>
   );
 }

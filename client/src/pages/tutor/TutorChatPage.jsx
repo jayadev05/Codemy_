@@ -53,15 +53,15 @@ export default function TutorChatPage() {
   const messagesEndRef = useRef(null);
 
   //video call
-  const myVideoRef = useRef();
-  const peerVideoRef = useRef();
-  const connectionRef = useRef();
+  const myVideoRef = useRef(null);
+  const peerVideoRef = useRef(null);
+  const connectionRef = useRef(null);
 
   const [stream, setStream] = useState(null);
   const [isCalling, setIsCalling] = useState(false);
   const [isCallAccepted, setIsCallAccepted] = useState(false);
   const [incomingCallInfo, setIncomingCallInfo] = useState({});
-  const [outgoingCallInfo, setoutgoingCallInfo] = useState({});
+  const [outgoingCallInfo, setOutgoingCallInfo] = useState({});
   const [isCallActive, setIsCallActive] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
@@ -75,6 +75,11 @@ export default function TutorChatPage() {
     userType === "user"
       ? selectedChat?.tutorId?._id
       : selectedChat?.userId?._id;
+
+      // In your component
+useEffect(() => {
+  console.log('Video ref status:', myVideoRef.current);
+}, [incomingCallInfo?.isSomeoneCalling, isCallActive]);
 
   //handling video call
   useEffect(() => {
@@ -97,7 +102,8 @@ export default function TutorChatPage() {
           signalData: data.signalData,
         });
 
-        console.log("Incoming call from :",incomingCallInfo.from)
+        console.log("Incoming call from :",data.from)
+        console.log("signal Data:", data.signalData);
         
     
       } catch (error) {
@@ -113,6 +119,8 @@ export default function TutorChatPage() {
     const handleCallAccepted = ({ signalData }) => {
       setIsCallAccepted(true);
       setIsCalling(false);
+
+    
 
       if (connectionRef.current) {
         connectionRef.current.signal(signalData);
@@ -151,7 +159,7 @@ export default function TutorChatPage() {
       socketService.off("call-ended", handleCallEnded);
       socketService.off("user-disconnected", handleUserDisconnected);
     };
-  }, [stream, incomingCallInfo?.isSomeoneCalling]);
+  }, [stream, incomingCallInfo]);
 
   //fetch students
   useEffect(() => {
@@ -797,7 +805,7 @@ export default function TutorChatPage() {
     if (!tutor._id || connectionRef.current) return; // Prevent multiple connections
 
     setIsCalling(true);
-    setoutgoingCallInfo({
+    setOutgoingCallInfo({
       callerData: {
         avatar: userType === "user" ? selectedChat?.tutorId?.profileImg : selectedChat?.userId?.profileImg,
         name: userType === "user" ? selectedChat?.tutorId?.fullName : selectedChat?.userId?.fullName,
@@ -811,6 +819,8 @@ export default function TutorChatPage() {
       });
 
       setStream(mediaStream);
+
+      console.log("myvideo ref".myVideoRef)
 
       if (myVideoRef.current) {
         myVideoRef.current.srcObject = mediaStream;
@@ -876,6 +886,8 @@ const answerCall = async () => {
 
         setStream(mediaStream);
         setIncomingCallInfo((prev)=>({...prev,isSomeoneCalling:false}))
+
+        console.log("myvideo ref".myVideoRef)
 
         if (myVideoRef.current) {
             myVideoRef.current.srcObject = mediaStream;
@@ -963,7 +975,7 @@ const setupPeerEventListeners = (peer) => {
   const handleEndCall = (sendSocketEvent = true) => {
     // Clean up peer connection
     if (connectionRef.current) {
-      connectionRef.current.destroy();
+      connectionRef.current.destroy(); 
       connectionRef.current = null;
     }
 

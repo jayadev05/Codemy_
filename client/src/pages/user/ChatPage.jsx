@@ -56,15 +56,15 @@ export default function ChatInterface() {
   const messagesEndRef = useRef(null);
 
   //video call
-  const myVideoRef = useRef();
-  const peerVideoRef = useRef();
-  const connectionRef = useRef();
+  const myVideoRef = useRef(null);
+  const peerVideoRef = useRef(null);
+  const connectionRef = useRef(null);
 
   const [stream, setStream] = useState(null);
   const [isCalling, setIsCalling] = useState(false);
   const [isCallAccepted, setIsCallAccepted] = useState(false);
   const [incomingCallInfo, setIncomingCallInfo] = useState({});
-  const [outgoingCallInfo, setoutgoingCallInfo] = useState({});
+  const [outgoingCallInfo, setOutgoingCallInfo] = useState({});
   const [isCallActive, setIsCallActive] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isVideoEnabled, setIsVideoEnabled] = useState(true);
@@ -81,12 +81,19 @@ export default function ChatInterface() {
 
   console.log("My socket id :", socketService.socket?.id);
 
+// In your component
+useEffect(() => {
+  console.log('Video ref status:', myVideoRef.current);
+}, [incomingCallInfo?.isSomeoneCalling, isCallActive]);
+
+
   //handling video call
   useEffect(() => {
     
     const handleIncomingCall = async (data) => {
       try {
         console.log("Incoming call from:", data.from);
+        console.log("signal Data:", data.signalData);
         
         // First ensure we have valid data
         if (!data?.from || !data?.callerData || !data?.signalData) {
@@ -117,6 +124,7 @@ export default function ChatInterface() {
     const handleCallAccepted = ({ signalData }) => {
       setIsCallAccepted(true);
       setIsCalling(false);
+      console.log("signal data", signalData)
       if (connectionRef.current) {
         connectionRef.current.signal(signalData);
       }
@@ -154,7 +162,7 @@ export default function ChatInterface() {
       socketService.off("call-ended", handleCallEnded);
       socketService.off("user-disconnected", handleUserDisconnected);
     };
-  }, [stream, incomingCallInfo?.isSomeoneCalling]);
+  }, [stream, incomingCallInfo]);
 
   //fetch tutors
   useEffect(() => {
@@ -806,7 +814,7 @@ export default function ChatInterface() {
     if (!user._id || connectionRef.current) return; // Prevent multiple connections
 
     setIsCalling(true);
-    setoutgoingCallInfo({
+    setOutgoingCallInfo({
       callerData: {
         avatar: userType === "user" ? selectedChat?.tutorId?.profileImg : selectedChat?.userId?.profileImg,
         name: userType === "user" ? selectedChat?.tutorId?.fullName : selectedChat?.userId?.fullName,
@@ -824,6 +832,8 @@ export default function ChatInterface() {
       if (myVideoRef.current) {
         myVideoRef.current.srcObject = mediaStream;
       }
+
+      console.log("myvideo ref".myVideoRef)
 
       createInitiatorPeer(mediaStream);
     } catch (error) {
@@ -886,6 +896,8 @@ const answerCall = async () => {
 
         setStream(mediaStream);
         setIncomingCallInfo((prev)=>({...prev,isSomeoneCalling:false}))
+
+        console.log("myvideo ref".myVideoRef)
 
         if (myVideoRef.current) {
             myVideoRef.current.srcObject = mediaStream;
